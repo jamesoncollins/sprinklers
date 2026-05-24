@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sprinklers Planner</title>
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <h1>Sprinklers Planner</h1>
+        <div class="actions">
+          <button id="new-project">New Project</button>
+          <button id="save-project">Save JSON</button>
+          <label class="file-btn">
+            Load JSON
+            <input id="load-project" type="file" accept="application/json" />
+          </label>
+        </div>
+      </header>
+
+      <main class="layout">
+        <aside class="panel">
+          <h2>Catalog / Project</h2>
+          <p>Phase 1: CSV catalog import will appear here.</p>
+        </aside>
+
+        <section class="canvas" aria-label="Map canvas">
+          <div class="canvas-placeholder">Map canvas placeholder (Phase 2)</div>
+        </section>
+
+        <aside class="panel">
+          <h2>Selected Sprinkler</h2>
+          <p>Select a sprinkler on the map to edit details.</p>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
