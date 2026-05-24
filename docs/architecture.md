@@ -1,0 +1,117 @@
+# Architecture Draft
+
+## Delivery model
+
+- **Primary target:** HTML5 single-page web app.
+- **MVP deployment:** static hosting (no backend required).
+- **Offline-friendly:** works with user-provided CSV catalogs and JSON project files.
+
+## High-level components
+
+1. **Catalog Service**
+   - Loads one or more CSV files with sprinkler/nozzle performance rows.
+   - Exposes lookup by manufacturer/model/nozzle and pressure.
+   - Interpolates flow/radius between known pressure points.
+
+2. **Project Model**
+   - Stores sites, zones, sprinklers, and analysis results.
+   - Serialized as portable JSON.
+
+3. **Map Canvas**
+   - Renders satellite imagery basemap.
+   - Enables marker placement/editing for sprinklers.
+   - Renders throw sectors and zone coloring.
+
+4. **Analysis Engine**
+   - Computes per-sprinkler throw and precipitation.
+   - Aggregates per-zone flow and precipitation.
+
+## Suggested project JSON structure
+
+```json
+{
+  "version": 1,
+  "site": {
+    "name": "Front and Back Yard",
+    "address": "",
+    "imageSource": "satellite"
+  },
+  "zones": [
+    { "id": "zone-1", "name": "Front Lawn" }
+  ],
+  "sprinklers": [
+    {
+      "id": "spk-1",
+      "zoneId": "zone-1",
+      "lat": 0,
+      "lng": 0,
+      "headModel": "",
+      "nozzleModel": "",
+      "pressurePsi": 45,
+      "arcDegrees": 180,
+      "orientationDegrees": 0,
+      "radiusFt": 0,
+      "flowGpm": 0
+    }
+  ]
+}
+```
+
+## Catalog CSV schema (v1)
+
+- `manufacturer`
+- `head_model`
+- `nozzle_model`
+- `pressure_psi`
+- `flow_gpm`
+- `radius_ft`
+- `arc_degrees` (optional nominal test arc)
+- `notes`
+
+## Interpolation approach
+
+For selected `(manufacturer, head_model, nozzle_model)`:
+
+- Find nearest lower and upper rows around input pressure.
+- If exact pressure exists, use exact row values.
+- If bounds exist, linearly interpolate for `flow_gpm` and `radius_ft`.
+- If out of range, clamp to nearest pressure row and flag warning.
+
+## Future enhancements
+
+- Head-to-head overlap scoring and DU estimate.
+- Soil infiltration and cycle/soak recommendations.
+- Pipe sizing and hydraulic pressure loss estimation.
+- PDF report export with legends and zone summaries.
+- Optional cloud backend for collaboration and shared catalogs.
+
+
+## Catalog storage decision
+
+- **External interchange:** CSV (manufacturer/user-provided).
+- **Internal canonical model:** JSON (`CatalogV1`) generated from CSV import.
+
+### Rationale
+
+- CSV is the best interoperability format for irrigation spec tables.
+- JSON enables strict typing, schema validation, indexing, and forward-compatible migrations.
+
+### Suggested `CatalogV1` shape
+
+```json
+{
+  "version": 1,
+  "models": [
+    {
+      "manufacturer": "Hunter",
+      "headModel": "PGP-ADJ",
+      "nozzleModel": "Blue-2.0",
+      "points": [
+        { "pressurePsi": 25, "flowGpm": 1.4, "radiusFt": 33 },
+        { "pressurePsi": 35, "flowGpm": 1.7, "radiusFt": 33 },
+        { "pressurePsi": 45, "flowGpm": 2.0, "radiusFt": 34 }
+      ]
+    }
+  ]
+}
+```

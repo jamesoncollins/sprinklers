@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "site": {
+    "name": "Demo Property",
+    "address": "",
+    "imageSource": "satellite"
+  },
+  "zones": [
+    {
+      "id": "zone-front",
+      "name": "Front Lawn"
+    },
+    {
+      "id": "zone-back",
+      "name": "Back Lawn"
+    }
+  ],
+  "sprinklers": [
+    {
+      "id": "spk-front-1",
+      "zoneId": "zone-front",
+      "lat": 37.00001,
+      "lng": -122.00001,
+      "headModel": "PGP-ADJ",
+      "nozzleModel": "Blue-2.0",
+      "pressurePsi": 45,
+      "arcDegrees": 180,
+      "orientationDegrees": 90,
+      "radiusFt": 34,
+      "flowGpm": 2.0
+    }
+  ]
+}
