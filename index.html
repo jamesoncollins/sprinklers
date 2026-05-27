@@ -23,7 +23,34 @@
       <main class="layout">
         <aside class="panel">
           <h2>Catalog / Project</h2>
-          <p>Phase 1: CSV catalog import will appear here.</p>
+          <label class="field-label file-btn">
+            Import CSV Catalog
+            <input id="load-catalog" type="file" accept=".csv,text/csv" />
+          </label>
+          <p id="catalog-status" class="status-text">No catalog loaded.</p>
+
+          <div class="field-group">
+            <label for="manufacturer-select">Manufacturer</label>
+            <select id="manufacturer-select"></select>
+          </div>
+
+          <div class="field-group">
+            <label for="head-select">Head Model</label>
+            <select id="head-select"></select>
+          </div>
+
+          <div class="field-group">
+            <label for="nozzle-select">Nozzle Model</label>
+            <select id="nozzle-select"></select>
+          </div>
+
+          <div class="field-group">
+            <label for="pressure-input">Pressure (PSI)</label>
+            <input id="pressure-input" type="number" min="1" step="0.1" value="45" />
+          </div>
+
+          <button id="lookup-performance" class="full-width">Lookup Performance</button>
+          <p id="lookup-result" class="status-text">Awaiting lookup.</p>
         </aside>
 
         <section class="canvas" aria-label="Map canvas">
