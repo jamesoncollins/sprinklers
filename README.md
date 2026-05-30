@@ -50,7 +50,7 @@ The Planning Canvas can use either the offline yard sketch grid or live satellit
 
 The repository keeps one growing built-in CSV catalog at `data/default-catalogs/default_sprinkler_catalog.csv`. It currently contains Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`), including the blue, red, and grey low-angle nozzle rows that used to live in separate starter files.
 
-The web app auto-loads this built-in catalog on startup and also exposes one **Load Built-in sprinkler catalog** button in the Catalog Lookup panel. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
+The web app auto-loads this built-in catalog on startup. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
 
 ## Data Strategy
 
