@@ -1,9 +1,61 @@
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
 const radiusScalePxPerFt = 4;
+const earthCircumferenceMeters = 40075016.686;
+const feetToMeters = 0.3048;
+const tileSizePx = 256;
+
+const defaultMapView = { lat: 39.8283, lng: -98.5795, zoom: 17 };
+
+const mapLayers = {
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    options: {
+      maxZoom: 19,
+      attribution:
+        'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+    },
+  },
+  simplified: {
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    options: {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    },
+  },
+};
+
+const defaultCatalogs = [
+  {
+    label: 'Hunter PGP-ADJ all',
+    path: 'data/default-catalogs/hunter_pgp_adj_all.csv',
+    fileName: 'hunter_pgp_adj_all.csv',
+  },
+  {
+    label: 'Blue nozzles',
+    path: 'data/default-catalogs/hunter_pgp_adj_blue.csv',
+    fileName: 'hunter_pgp_adj_blue.csv',
+  },
+  {
+    label: 'Red nozzles',
+    path: 'data/default-catalogs/hunter_pgp_adj_red.csv',
+    fileName: 'hunter_pgp_adj_red.csv',
+  },
+  {
+    label: 'Grey low angle',
+    path: 'data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv',
+    fileName: 'hunter_pgp_adj_grey_low_angle.csv',
+  },
+];
 
 const emptyProject = {
   version: 1,
-  site: { name: 'New Site', address: '', imageSource: 'satellite' },
+  site: {
+    name: 'New Site',
+    address: '',
+    imageSource: 'satellite',
+    mapCenter: { lat: defaultMapView.lat, lng: defaultMapView.lng },
+    mapZoom: defaultMapView.zoom,
+  },
   zones: [],
   sprinklers: [],
 };
@@ -12,12 +64,15 @@ let project = structuredClone(emptyProject);
 let catalogState = null;
 let selectedSprinklerId = null;
 let dragState = null;
+let panState = null;
+let suppressNextMapClick = false;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
 const loadInput = document.getElementById('load-project');
 const catalogInput = document.getElementById('load-catalog');
 const catalogStatus = document.getElementById('catalog-status');
+const defaultCatalogList = document.getElementById('default-catalog-list');
 const manufacturerSelect = document.getElementById('manufacturer-select');
 const headSelect = document.getElementById('head-select');
 const nozzleSelect = document.getElementById('nozzle-select');
@@ -29,6 +84,11 @@ const siteAddressInput = document.getElementById('site-address');
 const zonesList = document.getElementById('zones-list');
 const addZoneBtn = document.getElementById('add-zone');
 const mapCanvas = document.getElementById('map-canvas');
+const mapTileLayer = document.getElementById('map-tile-layer');
+const mapLayerSelect = document.getElementById('map-layer-select');
+const mapLayerButtons = [...document.querySelectorAll('[data-map-layer]')];
+const mapActionButtons = [...document.querySelectorAll('[data-map-action]')];
+const mapStatus = document.getElementById('map-status');
 const coverageLayer = document.getElementById('coverage-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
@@ -51,6 +111,193 @@ function setCatalogStatus(message) {
   catalogStatus.textContent = message;
 }
 
+function activeMapLayer() {
+  return project.site?.imageSource || 'satellite';
+}
+
+function usesTileMap() {
+  return activeMapLayer() !== 'sketch';
+}
+
+function syncMapViewToProject() {
+  const center = project.site.mapCenter || emptyProject.site.mapCenter;
+  project.site.mapCenter = { lat: center.lat, lng: center.lng };
+  project.site.mapZoom = project.site.mapZoom || defaultMapView.zoom;
+}
+
+function updateMapLayerControls(layerName) {
+  mapLayerSelect.value = layerName;
+  mapLayerButtons.forEach((button) => {
+    const isActive = button.dataset.mapLayer === layerName;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
+}
+
+function metersPerPixelAt(lat, zoom) {
+  return (earthCircumferenceMeters * Math.cos((lat * Math.PI) / 180)) / 2 ** (zoom + 8);
+}
+
+function latLngToWorldPoint(lat, lng, zoom) {
+  const scale = tileSizePx * 2 ** zoom;
+  const sinLat = Math.sin((Math.max(-85.05112878, Math.min(85.05112878, lat)) * Math.PI) / 180);
+  return {
+    x: ((lng + 180) / 360) * scale,
+    y: (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * scale,
+  };
+}
+
+function worldPointToLatLng(x, y, zoom) {
+  const scale = tileSizePx * 2 ** zoom;
+  const lng = (x / scale) * 360 - 180;
+  const n = Math.PI - (2 * Math.PI * y) / scale;
+  const lat = (180 / Math.PI) * Math.atan(Math.sinh(n));
+  return { lat, lng };
+}
+
+function mapTopLeftWorldPoint() {
+  const rect = mapCanvas.getBoundingClientRect();
+  const center = project.site.mapCenter || emptyProject.site.mapCenter;
+  const zoom = project.site.mapZoom || defaultMapView.zoom;
+  const centerPoint = latLngToWorldPoint(center.lat, center.lng, zoom);
+  return { x: centerPoint.x - rect.width / 2, y: centerPoint.y - rect.height / 2 };
+}
+
+function latLngToContainerPoint(lat, lng) {
+  const zoom = project.site.mapZoom || defaultMapView.zoom;
+  const worldPoint = latLngToWorldPoint(lat, lng, zoom);
+  const topLeft = mapTopLeftWorldPoint();
+  return { x: worldPoint.x - topLeft.x, y: worldPoint.y - topLeft.y };
+}
+
+function containerPointToLatLng(x, y) {
+  const zoom = project.site.mapZoom || defaultMapView.zoom;
+  const topLeft = mapTopLeftWorldPoint();
+  return worldPointToLatLng(topLeft.x + x, topLeft.y + y, zoom);
+}
+
+function tileUrl(layerName, x, y, z) {
+  const layer = mapLayers[layerName] || mapLayers.satellite;
+  return layer.url.replace('{z}', z).replace('{x}', x).replace('{y}', y);
+}
+
+function renderTileLayer() {
+  mapTileLayer.replaceChildren();
+  if (!usesTileMap()) return;
+
+  const rect = mapCanvas.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return;
+
+  const layerName = activeMapLayer();
+  const layer = mapLayers[layerName] || mapLayers.satellite;
+  const zoom = Math.max(1, Math.min(layer.options.maxZoom, Math.round(project.site.mapZoom || defaultMapView.zoom)));
+  project.site.mapZoom = zoom;
+  const topLeft = mapTopLeftWorldPoint();
+  const firstTileX = Math.floor(topLeft.x / tileSizePx);
+  const firstTileY = Math.floor(topLeft.y / tileSizePx);
+  const lastTileX = Math.floor((topLeft.x + rect.width) / tileSizePx);
+  const lastTileY = Math.floor((topLeft.y + rect.height) / tileSizePx);
+  const tileCount = 2 ** zoom;
+  delete mapTileLayer.dataset.errorShown;
+
+  for (let tileX = firstTileX; tileX <= lastTileX; tileX += 1) {
+    const wrappedTileX = ((tileX % tileCount) + tileCount) % tileCount;
+    for (let tileY = firstTileY; tileY <= lastTileY; tileY += 1) {
+      if (tileY < 0 || tileY >= tileCount) continue;
+      const image = document.createElement('img');
+      image.className = 'map-tile';
+      image.alt = '';
+      image.draggable = false;
+      image.src = tileUrl(layerName, wrappedTileX, tileY, zoom);
+      image.addEventListener('error', () => {
+        if (mapTileLayer.dataset.errorShown) return;
+        mapTileLayer.dataset.errorShown = 'true';
+        setMapStatus('Map imagery could not load from the tile provider. Try Simplified, Sketch, or check your network.');
+      });
+      image.style.left = `${tileX * tileSizePx - topLeft.x}px`;
+      image.style.top = `${tileY * tileSizePx - topLeft.y}px`;
+      mapTileLayer.appendChild(image);
+    }
+  }
+
+  const attribution = document.createElement('div');
+  attribution.className = 'map-attribution';
+  attribution.innerHTML = layer.options.attribution;
+  mapTileLayer.appendChild(attribution);
+}
+
+function setMapStatus(message) {
+  mapStatus.textContent = message;
+}
+
+function sprinklerRadiusPx(sprinkler) {
+  const radiusFt = Number(sprinkler.radiusFt) || 0;
+  if (usesTileMap() && Number.isFinite(sprinkler.lat)) {
+    const zoom = project.site.mapZoom || defaultMapView.zoom;
+    const metersPerPixel = metersPerPixelAt(sprinkler.lat, zoom);
+    return Math.max(10, (radiusFt * feetToMeters) / metersPerPixel);
+  }
+  return Math.max(10, radiusFt * radiusScalePxPerFt);
+}
+
+function pointFromSprinkler(sprinkler) {
+  if (usesTileMap() && Number.isFinite(sprinkler.lat) && Number.isFinite(sprinkler.lng)) {
+    const point = latLngToContainerPoint(sprinkler.lat, sprinkler.lng);
+    return { x: point.x, y: point.y, unit: 'px' };
+  }
+
+  return { x: sprinkler.xPercent, y: sprinkler.yPercent, unit: '%' };
+}
+
+function positionFromLatLng(latlng) {
+  const point = latLngToContainerPoint(latlng.lat, latlng.lng);
+  const rect = mapCanvas.getBoundingClientRect();
+  return {
+    lat: latlng.lat,
+    lng: latlng.lng,
+    xPercent: Math.min(100, Math.max(0, (point.x / rect.width) * 100)),
+    yPercent: Math.min(100, Math.max(0, (point.y / rect.height) * 100)),
+  };
+}
+
+function setMapLayer(layerName) {
+  const normalizedLayerName = layerName === 'sketch' || mapLayers[layerName] ? layerName : 'satellite';
+  project.site.imageSource = normalizedLayerName;
+  updateMapLayerControls(normalizedLayerName);
+  mapCanvas.classList.toggle('sketch-layer', normalizedLayerName === 'sketch');
+  mapCanvas.classList.toggle('tile-layer', normalizedLayerName !== 'sketch');
+  setMapStatus(
+    normalizedLayerName === 'sketch'
+      ? 'Sketch grid is on. Click to add sprinklers.'
+      : `${normalizedLayerName === 'satellite' ? 'Satellite imagery' : 'Simplified map'} is on. Drag the map to pan; click to add sprinklers.`,
+  );
+  renderTileLayer();
+  renderCanvas();
+}
+
+function setMapCenter(lat, lng, zoom = project.site.mapZoom || defaultMapView.zoom) {
+  project.site.mapCenter = { lat, lng };
+  project.site.mapZoom = zoom;
+  syncMapViewToProject();
+  renderTileLayer();
+  renderCanvas();
+}
+
+function adjustMapZoom(delta) {
+  const layer = mapLayers[activeMapLayer()] || mapLayers.satellite;
+  project.site.mapZoom = Math.max(1, Math.min(layer.options.maxZoom, (project.site.mapZoom || defaultMapView.zoom) + delta));
+  renderTileLayer();
+  renderCanvas();
+}
+
+function initMap() {
+  setMapLayer(activeMapLayer());
+  window.addEventListener('resize', () => {
+    renderTileLayer();
+    renderCanvas();
+  });
+}
+
 function parseCsv(text) {
   const [headerLine, ...lines] = text.trim().split(/\r?\n/);
   if (!headerLine) return [];
@@ -66,6 +313,24 @@ function parseCsv(text) {
       });
       return row;
     });
+}
+
+function loadCatalogFromText(text, sourceLabel) {
+  const rows = parseCsv(text);
+  const { models, warnings } = buildCatalog(rows);
+  if (models.length === 0) {
+    setCatalogStatus(`Catalog import failed. ${warnings.slice(0, 3).join(' | ') || 'No valid rows found.'}`);
+    return false;
+  }
+
+  catalogState = { version: 1, models };
+  setOptions(manufacturerSelect, getManufacturers(), 'Select manufacturer');
+  setOptions(headSelect, [], 'Select head model');
+  setOptions(nozzleSelect, [], 'Select nozzle model');
+
+  const warningText = warnings.length ? ` Warnings: ${warnings.length}.` : '';
+  setCatalogStatus(`Imported ${sourceLabel}: ${models.length} model/nozzle combinations.${warningText}`);
+  return true;
 }
 
 function buildCatalog(rows) {
@@ -228,6 +493,7 @@ function ensureDefaultZone() {
 function updateProjectInputs() {
   siteNameInput.value = project.site?.name || '';
   siteAddressInput.value = project.site?.address || '';
+  updateMapLayerControls(activeMapLayer());
 }
 
 function selectedSprinkler() {
@@ -256,6 +522,7 @@ function hydrateProject(loaded) {
   };
   ensureDefaultZone();
   selectedSprinklerId = project.sprinklers[0]?.id || null;
+  setMapLayer(activeMapLayer());
   render();
 }
 
@@ -322,14 +589,15 @@ function renderCanvas() {
 
   project.sprinklers.forEach((sprinkler) => {
     const color = getZoneColor(sprinkler.zoneId);
-    const radiusPx = Math.max(10, (Number(sprinkler.radiusFt) || 0) * radiusScalePxPerFt);
+    const radiusPx = sprinklerRadiusPx(sprinkler);
+    const position = pointFromSprinkler(sprinkler);
     const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
     const orientation = Number(sprinkler.orientationDegrees) || 0;
 
     const coverage = document.createElement('div');
     coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
-    coverage.style.left = `${sprinkler.xPercent}%`;
-    coverage.style.top = `${sprinkler.yPercent}%`;
+    coverage.style.left = `${position.x}${position.unit}`;
+    coverage.style.top = `${position.y}${position.unit}`;
     coverage.style.width = `${radiusPx * 2}px`;
     coverage.style.height = `${radiusPx * 2}px`;
     coverage.style.color = color;
@@ -340,8 +608,8 @@ function renderCanvas() {
     const marker = document.createElement('button');
     marker.type = 'button';
     marker.className = `sprinkler-marker ${sprinkler.id === selectedSprinklerId ? 'selected' : ''}`;
-    marker.style.left = `${sprinkler.xPercent}%`;
-    marker.style.top = `${sprinkler.yPercent}%`;
+    marker.style.left = `${position.x}${position.unit}`;
+    marker.style.top = `${position.y}${position.unit}`;
     marker.style.backgroundColor = color;
     marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr)`;
     marker.setAttribute('aria-label', `Select sprinkler ${sprinkler.headModel || sprinkler.id}`);
@@ -416,6 +684,7 @@ function addAnalysisCard(label, value, detail, warning = false) {
 function render() {
   updateProjectInputs();
   renderZones();
+  renderTileLayer();
   renderCanvas();
   renderInspector();
   renderAnalysis();
@@ -423,10 +692,15 @@ function render() {
 
 function canvasPositionFromEvent(event) {
   const rect = mapCanvas.getBoundingClientRect();
-  return {
-    xPercent: Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100)),
-    yPercent: Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100)),
-  };
+  const xPercent = Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100));
+  const yPercent = Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100));
+
+  if (usesTileMap()) {
+    const latlng = containerPointToLatLng(event.clientX - rect.left, event.clientY - rect.top);
+    return { lat: latlng.lat, lng: latlng.lng, xPercent, yPercent };
+  }
+
+  return { xPercent, yPercent };
 }
 
 function addSprinklerAt(position) {
@@ -480,25 +754,42 @@ catalogInput.addEventListener('change', async (event) => {
   if (!file) return;
 
   try {
-    const rows = parseCsv(await file.text());
-    const { models, warnings } = buildCatalog(rows);
-    if (models.length === 0) {
-      setCatalogStatus(`Catalog import failed. ${warnings.slice(0, 3).join(' | ') || 'No valid rows found.'}`);
-      return;
-    }
-
-    catalogState = { version: 1, models };
-    setOptions(manufacturerSelect, getManufacturers(), 'Select manufacturer');
-    setOptions(headSelect, [], 'Select head model');
-    setOptions(nozzleSelect, [], 'Select nozzle model');
-
-    const warningText = warnings.length ? ` Warnings: ${warnings.length}.` : '';
-    setCatalogStatus(`Imported ${models.length} model/nozzle combinations.${warningText}`);
+    loadCatalogFromText(await file.text(), file.name);
   } catch (error) {
     setCatalogStatus(`Failed to parse CSV: ${error.message}`);
   } finally {
     catalogInput.value = '';
   }
+});
+
+defaultCatalogs.forEach((catalog) => {
+  const row = document.createElement('div');
+  row.className = 'default-catalog-row';
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = `Import ${catalog.label}`;
+  button.addEventListener('click', async () => {
+    try {
+      setCatalogStatus(`Importing ${catalog.label}...`);
+      const response = await fetch(catalog.path);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      loadCatalogFromText(await response.text(), catalog.fileName);
+    } catch (error) {
+      setCatalogStatus(`Failed to import ${catalog.label}: ${error.message}`);
+    }
+  });
+
+  const downloadLink = document.createElement('a');
+  downloadLink.href = catalog.path;
+  downloadLink.download = catalog.fileName;
+  downloadLink.textContent = 'Download CSV';
+  downloadLink.setAttribute('aria-label', `Download ${catalog.label} CSV for manual import`);
+
+  row.append(button, downloadLink);
+  defaultCatalogList.appendChild(row);
 });
 
 lookupBtn.addEventListener('click', () => {
@@ -563,30 +854,135 @@ siteAddressInput.addEventListener('input', () => {
   project.site.address = siteAddressInput.value;
 });
 
+mapLayerSelect.addEventListener('change', () => {
+  setMapLayer(mapLayerSelect.value);
+});
+
+mapLayerButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    setMapLayer(button.dataset.mapLayer);
+  });
+});
+
+function locateMapToCurrentPosition() {
+  if (!navigator.geolocation) {
+    setMapStatus('Your browser does not support location lookup.');
+    return;
+  }
+
+  setMapStatus('Finding your location...');
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      setMapLayer('satellite');
+      setMapCenter(position.coords.latitude, position.coords.longitude, 19);
+      setMapStatus('Satellite imagery centered on your current location. Drag to pan; click to add sprinklers.');
+    },
+    (error) => {
+      setMapStatus(`Unable to use your location: ${error.message}`);
+    },
+    { enableHighAccuracy: true, timeout: 10000 },
+  );
+}
+
+async function locateMapToProjectAddress() {
+  const query = siteAddressInput.value.trim();
+  if (!query) {
+    setMapStatus('Enter an address or notes in the Project address field first.');
+    siteAddressInput.focus();
+    return;
+  }
+
+  try {
+    setMapStatus(`Finding "${query}"...`);
+    const params = new URLSearchParams({ format: 'jsonv2', limit: '1', q: query });
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const results = await response.json();
+    if (!Array.isArray(results) || results.length === 0) {
+      setMapStatus(`No map result found for "${query}". Try a fuller street/city/state address.`);
+      return;
+    }
+
+    const [result] = results;
+    setMapLayer('satellite');
+    setMapCenter(Number(result.lat), Number(result.lon), 19);
+    setMapStatus(`Satellite imagery centered on ${result.display_name || query}. Drag to pan; click to add sprinklers.`);
+  } catch (error) {
+    setMapStatus(`Unable to find that address: ${error.message}`);
+  }
+}
+
+mapActionButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    if (button.dataset.mapAction === 'zoom-in') adjustMapZoom(1);
+    if (button.dataset.mapAction === 'zoom-out') adjustMapZoom(-1);
+    if (button.dataset.mapAction === 'locate') locateMapToCurrentPosition();
+    if (button.dataset.mapAction === 'address') locateMapToProjectAddress();
+  });
+});
+
+mapCanvas.addEventListener('pointerdown', (event) => {
+  if (!usesTileMap() || event.target.closest('.sprinkler-marker, .map-actions')) return;
+  const center = project.site.mapCenter || emptyProject.site.mapCenter;
+  panState = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    startCenterWorld: latLngToWorldPoint(center.lat, center.lng, project.site.mapZoom || defaultMapView.zoom),
+    moved: false,
+  };
+  mapCanvas.setPointerCapture(event.pointerId);
+});
+
 addZoneBtn.addEventListener('click', () => {
   project.zones.push({ id: crypto.randomUUID(), name: `Zone ${project.zones.length + 1}` });
   render();
 });
 
 mapCanvas.addEventListener('click', (event) => {
-  if (event.target.closest('.sprinkler-marker')) return;
+  if (event.target.closest('.sprinkler-marker, .map-actions')) return;
+  if (suppressNextMapClick) {
+    suppressNextMapClick = false;
+    return;
+  }
   addSprinklerAt(canvasPositionFromEvent(event));
 });
 
-sprinklerLayer.addEventListener('pointermove', (event) => {
-  if (!dragState) return;
-  const sprinkler = project.sprinklers.find((candidate) => candidate.id === dragState.id);
-  if (!sprinkler) return;
-  Object.assign(sprinkler, canvasPositionFromEvent(event));
+window.addEventListener('pointermove', (event) => {
+  if (dragState) {
+    const sprinkler = project.sprinklers.find((candidate) => candidate.id === dragState.id);
+    if (!sprinkler) return;
+    Object.assign(sprinkler, canvasPositionFromEvent(event));
+    renderCanvas();
+    return;
+  }
+
+  if (!panState || event.pointerId !== panState.pointerId) return;
+  const dx = event.clientX - panState.startX;
+  const dy = event.clientY - panState.startY;
+  if (Math.hypot(dx, dy) > 3) panState.moved = true;
+  const zoom = project.site.mapZoom || defaultMapView.zoom;
+  const center = worldPointToLatLng(panState.startCenterWorld.x - dx, panState.startCenterWorld.y - dy, zoom);
+  project.site.mapCenter = center;
+  renderTileLayer();
   renderCanvas();
 });
 
-sprinklerLayer.addEventListener('pointerup', () => {
+window.addEventListener('pointerup', (event) => {
   dragState = null;
+  if (panState && event.pointerId === panState.pointerId) {
+    suppressNextMapClick = panState.moved;
+    panState = null;
+  }
 });
 
-sprinklerLayer.addEventListener('pointercancel', () => {
+window.addEventListener('pointercancel', () => {
   dragState = null;
+  panState = null;
 });
 
 [selectedZone, selectedHead, selectedNozzle, selectedPressure, selectedFlow, selectedRadius, selectedArc, selectedOrientation].forEach(
@@ -623,3 +1019,4 @@ hydrateProject(emptyProject);
 setOptions(manufacturerSelect, [], 'Select manufacturer');
 setOptions(headSelect, [], 'Select head model');
 setOptions(nozzleSelect, [], 'Select nozzle model');
+initMap();
