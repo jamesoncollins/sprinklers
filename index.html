@@ -55,11 +55,20 @@
                 </div>
               </div>
               <div class="field-group">
-                <label for="satellite-zoom">Satellite zoom</label>
+                <label for="satellite-source">Imagery source</label>
+                <select id="satellite-source">
+                  <option value="esri-world">Esri World Imagery (global)</option>
+                  <option value="esri-clarity">Esri World Imagery Clarity (archive)</option>
+                  <option value="usgs-imagery">USGS Imagery Only (U.S.)</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="satellite-zoom">Satellite tile zoom</label>
                 <input id="satellite-zoom" type="range" min="16" max="21" step="1" />
                 <span id="satellite-zoom-value" class="range-value">19</span>
               </div>
-              <p id="satellite-status" class="status-text">Enter the property center coordinates to show live Esri World Imagery tiles behind the planning grid.</p>
+              <button id="reset-map-view" type="button" class="full-width secondary-btn">Reset Pan / Zoom</button>
+              <p id="satellite-status" class="status-text">Enter the property center coordinates to show live imagery tiles behind the planning grid. Winter/leaf-off availability depends on the imagery captured for that location; try Clarity or USGS when the default view is not useful.</p>
             </div>
           </section>
 
@@ -110,7 +119,7 @@
           <div class="canvas-toolbar">
             <div>
               <h2>Planning Canvas</h2>
-              <p>Click the yard canvas to add sprinklers. Drag points to reposition them.</p>
+              <p>Click to add sprinklers. Drag points to reposition. Ctrl+drag to pan, and use the scroll wheel to zoom.</p>
             </div>
             <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
           </div>
