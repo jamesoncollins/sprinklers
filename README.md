@@ -44,20 +44,13 @@ Optional later backend (not required for MVP):
 
 ## Satellite canvas background
 
-The Planning Canvas can use either the offline yard sketch grid or live satellite tiles. Select **Satellite imagery** in the Project panel, then enter the property's center latitude/longitude and choose a zoom level. These settings are saved in exported project JSON under `site.satellite`, so imported projects restore the same imagery view.
+The Planning Canvas can use either the offline yard sketch grid or live satellite tiles. Enter a property address and click **Look Up Address** to geocode it and automatically switch to satellite imagery, or manually select **Satellite imagery** and enter the property's center latitude/longitude. These settings are saved in exported project JSON under `site.satellite`, so imported projects restore the same imagery view.
 
 ## Default CSV catalogs
 
-The repository includes starter CSV catalogs under `data/default-catalogs/` for Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`).
+The repository keeps one growing built-in CSV catalog at `data/default-catalogs/default_sprinkler_catalog.csv`. It currently contains Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`), including the blue, red, and grey low-angle nozzle rows that used to live in separate starter files.
 
-Available starter files:
-
-- `data/default-catalogs/hunter_pgp_adj_all.csv` — all included PGP-ADJ blue, red, and grey low-angle nozzle rows.
-- `data/default-catalogs/hunter_pgp_adj_blue.csv` — PGP-ADJ blue nozzles.
-- `data/default-catalogs/hunter_pgp_adj_red.csv` — PGP-ADJ red nozzles.
-- `data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv` — PGP-ADJ grey low-angle nozzles.
-
-The web app also exposes these starter catalogs as one-click load buttons in the Catalog Lookup panel. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
+The web app auto-loads this built-in catalog on startup and also exposes one **Load Built-in sprinkler catalog** button in the Catalog Lookup panel. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
 
 ## Data Strategy
 
