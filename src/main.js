@@ -2,26 +2,10 @@ const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a
 const radiusScalePxPerFt = 4;
 
 const defaultCatalogs = [
-  {
-    label: 'Hunter PGP-ADJ all',
-    path: 'data/default-catalogs/hunter_pgp_adj_all.csv',
-    fileName: 'hunter_pgp_adj_all.csv',
-  },
-  {
-    label: 'Blue nozzles',
-    path: 'data/default-catalogs/hunter_pgp_adj_blue.csv',
-    fileName: 'hunter_pgp_adj_blue.csv',
-  },
-  {
-    label: 'Red nozzles',
-    path: 'data/default-catalogs/hunter_pgp_adj_red.csv',
-    fileName: 'hunter_pgp_adj_red.csv',
-  },
-  {
-    label: 'Grey low angle',
-    path: 'data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv',
-    fileName: 'hunter_pgp_adj_grey_low_angle.csv',
-  },
+  { label: 'Hunter PGP-ADJ all', path: 'data/default-catalogs/hunter_pgp_adj_all.csv' },
+  { label: 'Blue nozzles', path: 'data/default-catalogs/hunter_pgp_adj_blue.csv' },
+  { label: 'Red nozzles', path: 'data/default-catalogs/hunter_pgp_adj_red.csv' },
+  { label: 'Grey low angle', path: 'data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv' },
 ];
 
 const emptyProject = {
@@ -106,7 +90,7 @@ function loadCatalogFromText(text, sourceLabel) {
   setOptions(nozzleSelect, [], 'Select nozzle model');
 
   const warningText = warnings.length ? ` Warnings: ${warnings.length}.` : '';
-  setCatalogStatus(`Imported ${sourceLabel}: ${models.length} model/nozzle combinations.${warningText}`);
+  setCatalogStatus(`Loaded ${sourceLabel}: ${models.length} model/nozzle combinations.${warningText}`);
   return true;
 }
 
@@ -531,33 +515,22 @@ catalogInput.addEventListener('change', async (event) => {
 });
 
 defaultCatalogs.forEach((catalog) => {
-  const row = document.createElement('div');
-  row.className = 'default-catalog-row';
-
   const button = document.createElement('button');
   button.type = 'button';
-  button.textContent = `Import ${catalog.label}`;
+  button.textContent = catalog.label;
   button.addEventListener('click', async () => {
     try {
-      setCatalogStatus(`Importing ${catalog.label}...`);
+      setCatalogStatus(`Loading ${catalog.label}...`);
       const response = await fetch(catalog.path);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      loadCatalogFromText(await response.text(), catalog.fileName);
+      loadCatalogFromText(await response.text(), catalog.label);
     } catch (error) {
-      setCatalogStatus(`Failed to import ${catalog.label}: ${error.message}`);
+      setCatalogStatus(`Failed to load ${catalog.label}: ${error.message}`);
     }
   });
-
-  const downloadLink = document.createElement('a');
-  downloadLink.href = catalog.path;
-  downloadLink.download = catalog.fileName;
-  downloadLink.textContent = 'Download CSV';
-  downloadLink.setAttribute('aria-label', `Download ${catalog.label} CSV for manual import`);
-
-  row.append(button, downloadLink);
-  defaultCatalogList.appendChild(row);
+  defaultCatalogList.appendChild(button);
 });
 
 lookupBtn.addEventListener('click', () => {

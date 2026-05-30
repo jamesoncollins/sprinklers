@@ -53,7 +53,7 @@ Available starter files:
 - `data/default-catalogs/hunter_pgp_adj_red.csv` — PGP-ADJ red nozzles.
 - `data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv` — PGP-ADJ grey low-angle nozzles.
 
-The web app exposes these starter catalogs in the Catalog Lookup panel with both an **Import** button for immediate use and a **Download CSV** link so the same files can be saved locally and imported through the standard CSV file picker. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
+The web app also exposes these starter catalogs as one-click load buttons in the Catalog Lookup panel. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
 
 ## Data Strategy
 
