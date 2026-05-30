@@ -4,7 +4,7 @@
 
 - **Primary target:** HTML5 single-page web app.
 - **MVP deployment:** static hosting (no backend required).
-- **Offline-friendly:** works with user-provided CSV catalogs and JSON project files.
+- **Offline-friendly:** works with the built-in default CSV, user-provided CSV catalogs, and JSON project files. Address lookup and satellite imagery require network access.
 
 ## High-level components
 
@@ -18,7 +18,7 @@
    - Serialized as portable JSON.
 
 3. **Map Canvas**
-   - Renders satellite imagery basemap.
+   - Renders satellite imagery basemap from geocoded address or manual coordinates.
    - Enables marker placement/editing for sprinklers.
    - Renders throw sectors and zone coloring.
 
@@ -33,8 +33,13 @@
   "version": 1,
   "site": {
     "name": "Front and Back Yard",
-    "address": "",
-    "imageSource": "satellite"
+    "address": "123 Main St",
+    "imageSource": "satellite",
+    "satellite": {
+      "latitude": 37.0,
+      "longitude": -122.0,
+      "zoom": 19
+    }
   },
   "zones": [
     { "id": "zone-1", "name": "Front Lawn" }

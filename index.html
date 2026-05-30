@@ -31,8 +31,10 @@
               <input id="site-name" type="text" placeholder="New Site" />
             </div>
             <div class="field-group">
-              <label for="site-address">Address / notes</label>
-              <input id="site-address" type="text" placeholder="Optional" />
+              <label for="site-address">Address</label>
+              <input id="site-address" type="text" placeholder="123 Main St, City, State" />
+              <button id="lookup-address" type="button" class="full-width">Look Up Address</button>
+              <p id="address-lookup-status" class="status-text">Enter an address to automatically center satellite imagery.</p>
             </div>
             <div class="field-group">
               <label for="canvas-background">Canvas background</label>
@@ -57,7 +59,7 @@
                 <input id="satellite-zoom" type="range" min="16" max="21" step="1" />
                 <span id="satellite-zoom-value" class="range-value">19</span>
               </div>
-              <p class="status-text">Enter the property center coordinates to show live Esri World Imagery tiles behind the planning grid.</p>
+              <p id="satellite-status" class="status-text">Enter the property center coordinates to show live Esri World Imagery tiles behind the planning grid.</p>
             </div>
           </section>
 
@@ -74,7 +76,7 @@
               <input id="load-catalog" type="file" accept=".csv,text/csv" />
             </label>
             <div class="default-catalogs" aria-label="Default CSV catalogs">
-              <span>Starter CSVs</span>
+              <span>Default CSV</span>
               <div id="default-catalog-list" class="default-catalog-list"></div>
             </div>
             <p id="catalog-status" class="status-text">No catalog loaded.</p>

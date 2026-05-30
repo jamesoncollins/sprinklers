@@ -1,12 +1,7 @@
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
 const radiusScalePxPerFt = 4;
 
-const defaultCatalogs = [
-  { label: 'Hunter PGP-ADJ all', path: 'data/default-catalogs/hunter_pgp_adj_all.csv' },
-  { label: 'Blue nozzles', path: 'data/default-catalogs/hunter_pgp_adj_blue.csv' },
-  { label: 'Red nozzles', path: 'data/default-catalogs/hunter_pgp_adj_red.csv' },
-  { label: 'Grey low angle', path: 'data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv' },
-];
+const defaultCatalog = { label: 'Built-in sprinkler catalog', path: 'data/default-catalogs/default_sprinkler_catalog.csv' };
 
 const emptyProject = {
   version: 1,
@@ -40,6 +35,9 @@ const satelliteLatitudeInput = document.getElementById('satellite-latitude');
 const satelliteLongitudeInput = document.getElementById('satellite-longitude');
 const satelliteZoomInput = document.getElementById('satellite-zoom');
 const satelliteZoomValue = document.getElementById('satellite-zoom-value');
+const addressLookupBtn = document.getElementById('lookup-address');
+const addressLookupStatus = document.getElementById('address-lookup-status');
+const satelliteStatus = document.getElementById('satellite-status');
 const zonesList = document.getElementById('zones-list');
 const addZoneBtn = document.getElementById('add-zone');
 const mapCanvas = document.getElementById('map-canvas');
@@ -281,6 +279,14 @@ function hasSatelliteCenter() {
   return Number.isFinite(latitude) && Number.isFinite(longitude);
 }
 
+function setAddressLookupStatus(message) {
+  addressLookupStatus.textContent = message;
+}
+
+function setSatelliteStatus(message) {
+  satelliteStatus.textContent = message;
+}
+
 function updateProjectInputs() {
   siteNameInput.value = project.site?.name || '';
   siteAddressInput.value = project.site?.address || '';
@@ -305,16 +311,28 @@ function lonLatToTilePoint(longitude, latitude, zoom) {
 
 function renderSatelliteLayer() {
   satelliteLayer.replaceChildren();
-  const showSatellite = project.site?.imageSource === 'satellite' && hasSatelliteCenter();
-  mapCanvas.classList.toggle('satellite-enabled', showSatellite);
+  const wantsSatellite = project.site?.imageSource === 'satellite';
+  const showSatellite = wantsSatellite && hasSatelliteCenter();
+  mapCanvas.classList.toggle('satellite-enabled', wantsSatellite);
 
-  if (!showSatellite) return;
+  if (!wantsSatellite) {
+    setSatelliteStatus('Select Satellite imagery and look up an address or enter coordinates to show aerial imagery.');
+    return;
+  }
+
+  if (!showSatellite) {
+    setSatelliteStatus('Look up an address or enter latitude/longitude to load satellite imagery.');
+    return;
+  }
 
   const { latitude, longitude, zoom } = normalizeSatelliteSettings(project.site.satellite);
   const rect = mapCanvas.getBoundingClientRect();
   const width = rect.width || mapCanvas.clientWidth;
   const height = rect.height || mapCanvas.clientHeight;
-  if (!width || !height) return;
+  if (!width || !height) {
+    setSatelliteStatus('Satellite imagery will load once the canvas has a visible size.');
+    return;
+  }
 
   const tileSize = 256;
   const tilePoint = lonLatToTilePoint(longitude, latitude, zoom);
@@ -327,6 +345,25 @@ function renderSatelliteLayer() {
   const startY = Math.floor((centerWorldY - height / 2) / tileSize);
   const endY = Math.floor((centerWorldY + height / 2) / tileSize);
 
+  let tilesRequested = 0;
+  let tilesLoaded = 0;
+  let tilesFailed = 0;
+  const updateTileStatus = () => {
+    if (tilesRequested === 0) {
+      setSatelliteStatus('No satellite tiles are available for this canvas view.');
+      return;
+    }
+    if (tilesFailed === tilesRequested) {
+      setSatelliteStatus('Satellite tiles failed to load. Check your network connection or try a different zoom level.');
+      return;
+    }
+    if (tilesLoaded > 0) {
+      setSatelliteStatus(`Showing satellite imagery at ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (zoom ${zoom}).`);
+      return;
+    }
+    setSatelliteStatus(`Loading ${tilesRequested} satellite tile${tilesRequested === 1 ? '' : 's'}...`);
+  };
+
   for (let x = startX; x <= endX; x += 1) {
     for (let y = startY; y <= endY; y += 1) {
       if (y < 0 || y > maxTileIndex) continue;
@@ -335,12 +372,76 @@ function renderSatelliteLayer() {
       tile.className = 'satellite-tile';
       tile.alt = '';
       tile.draggable = false;
+      tile.addEventListener('load', () => {
+        tilesLoaded += 1;
+        updateTileStatus();
+      });
+      tile.addEventListener('error', () => {
+        tilesFailed += 1;
+        updateTileStatus();
+      });
+      tilesRequested += 1;
       tile.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${wrappedX}`;
       tile.style.left = `${width / 2 + x * tileSize - centerWorldX}px`;
       tile.style.top = `${height / 2 + y * tileSize - centerWorldY}px`;
       satelliteLayer.appendChild(tile);
     }
   }
+  updateTileStatus();
+}
+
+async function geocodeAddress(address) {
+  const trimmedAddress = address.trim();
+  if (!trimmedAddress) {
+    throw new Error('Enter an address first.');
+  }
+
+  const censusUrl = new URL('https://geocoding.geo.census.gov/geocoder/locations/onelineaddress');
+  censusUrl.search = new URLSearchParams({
+    address: trimmedAddress,
+    benchmark: 'Public_AR_Current',
+    format: 'json',
+  }).toString();
+
+  try {
+    const response = await fetch(censusUrl);
+    if (response.ok) {
+      const data = await response.json();
+      const match = data?.result?.addressMatches?.[0];
+      const coordinates = match?.coordinates;
+      const latitude = Number(coordinates?.y);
+      const longitude = Number(coordinates?.x);
+      if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+        return {
+          latitude,
+          longitude,
+          label: match.matchedAddress || trimmedAddress,
+          source: 'U.S. Census Geocoder',
+        };
+      }
+    }
+  } catch (error) {
+    // Fall back to OpenStreetMap Nominatim below.
+  }
+
+  const nominatimUrl = new URL('https://nominatim.openstreetmap.org/search');
+  nominatimUrl.search = new URLSearchParams({
+    q: trimmedAddress,
+    format: 'jsonv2',
+    limit: '1',
+  }).toString();
+  const nominatimResponse = await fetch(nominatimUrl, { headers: { Accept: 'application/json' } });
+  if (!nominatimResponse.ok) {
+    throw new Error(`Address lookup failed with HTTP ${nominatimResponse.status}.`);
+  }
+  const matches = await nominatimResponse.json();
+  const match = matches?.[0];
+  const latitude = Number(match?.lat);
+  const longitude = Number(match?.lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new Error('No matching address found. Try a more specific address.');
+  }
+  return { latitude, longitude, label: match.display_name || trimmedAddress, source: 'OpenStreetMap Nominatim' };
 }
 
 function selectedSprinkler() {
@@ -606,24 +707,24 @@ catalogInput.addEventListener('change', async (event) => {
   }
 });
 
-defaultCatalogs.forEach((catalog) => {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.textContent = catalog.label;
-  button.addEventListener('click', async () => {
-    try {
-      setCatalogStatus(`Loading ${catalog.label}...`);
-      const response = await fetch(catalog.path);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      loadCatalogFromText(await response.text(), catalog.label);
-    } catch (error) {
-      setCatalogStatus(`Failed to load ${catalog.label}: ${error.message}`);
+async function loadDefaultCatalog() {
+  try {
+    setCatalogStatus(`Loading ${defaultCatalog.label}...`);
+    const response = await fetch(defaultCatalog.path);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
-  });
-  defaultCatalogList.appendChild(button);
-});
+    loadCatalogFromText(await response.text(), defaultCatalog.label);
+  } catch (error) {
+    setCatalogStatus(`Failed to load ${defaultCatalog.label}: ${error.message}. You can still import a CSV catalog.`);
+  }
+}
+
+const defaultCatalogButton = document.createElement('button');
+defaultCatalogButton.type = 'button';
+defaultCatalogButton.textContent = `Load ${defaultCatalog.label}`;
+defaultCatalogButton.addEventListener('click', loadDefaultCatalog);
+defaultCatalogList.appendChild(defaultCatalogButton);
 
 lookupBtn.addEventListener('click', () => {
   const model = findSelectedModel();
@@ -685,6 +786,28 @@ siteNameInput.addEventListener('input', () => {
 
 siteAddressInput.addEventListener('input', () => {
   project.site.address = siteAddressInput.value;
+});
+
+addressLookupBtn.addEventListener('click', async () => {
+  const address = siteAddressInput.value;
+  addressLookupBtn.disabled = true;
+  setAddressLookupStatus('Looking up address...');
+  try {
+    const result = await geocodeAddress(address);
+    project.site.address = result.label;
+    project.site.imageSource = 'satellite';
+    project.site.satellite = normalizeSatelliteSettings({
+      ...project.site.satellite,
+      latitude: result.latitude,
+      longitude: result.longitude,
+    });
+    setAddressLookupStatus(`Found via ${result.source}. Centered map at ${result.latitude.toFixed(6)}, ${result.longitude.toFixed(6)}.`);
+    render();
+  } catch (error) {
+    setAddressLookupStatus(error.message);
+  } finally {
+    addressLookupBtn.disabled = false;
+  }
 });
 
 canvasBackgroundSelect.addEventListener('change', () => {
@@ -766,6 +889,7 @@ deleteSelectedBtn.addEventListener('click', () => {
 });
 
 hydrateProject(emptyProject);
+loadDefaultCatalog();
 setOptions(manufacturerSelect, [], 'Select manufacturer');
 setOptions(headSelect, [], 'Select head model');
 setOptions(nozzleSelect, [], 'Select nozzle model');
