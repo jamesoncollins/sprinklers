@@ -10,7 +10,7 @@ const defaultCatalogs = [
 
 const emptyProject = {
   version: 1,
-  site: { name: 'New Site', address: '', imageSource: 'satellite' },
+  site: { name: 'New Site', address: '', imageSource: 'yard', satellite: { latitude: null, longitude: null, zoom: 19 } },
   zones: [],
   sprinklers: [],
 };
@@ -34,9 +34,16 @@ const lookupBtn = document.getElementById('lookup-performance');
 const lookupResult = document.getElementById('lookup-result');
 const siteNameInput = document.getElementById('site-name');
 const siteAddressInput = document.getElementById('site-address');
+const canvasBackgroundSelect = document.getElementById('canvas-background');
+const satelliteControls = document.getElementById('satellite-controls');
+const satelliteLatitudeInput = document.getElementById('satellite-latitude');
+const satelliteLongitudeInput = document.getElementById('satellite-longitude');
+const satelliteZoomInput = document.getElementById('satellite-zoom');
+const satelliteZoomValue = document.getElementById('satellite-zoom-value');
 const zonesList = document.getElementById('zones-list');
 const addZoneBtn = document.getElementById('add-zone');
 const mapCanvas = document.getElementById('map-canvas');
+const satelliteLayer = document.getElementById('satellite-layer');
 const coverageLayer = document.getElementById('coverage-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
@@ -251,9 +258,89 @@ function ensureDefaultZone() {
   project.zones.push({ id: crypto.randomUUID(), name: 'Zone 1' });
 }
 
+function optionalNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function normalizeSatelliteSettings(settings = {}) {
+  const latitude = optionalNumber(settings.latitude);
+  const longitude = optionalNumber(settings.longitude);
+  const zoom = Number(settings.zoom);
+
+  return {
+    latitude: latitude === null ? null : Math.min(85, Math.max(-85, latitude)),
+    longitude: longitude === null ? null : Math.min(180, Math.max(-180, longitude)),
+    zoom: Number.isFinite(zoom) ? Math.min(21, Math.max(16, Math.round(zoom))) : 19,
+  };
+}
+
+function hasSatelliteCenter() {
+  const { latitude, longitude } = project.site.satellite || {};
+  return Number.isFinite(latitude) && Number.isFinite(longitude);
+}
+
 function updateProjectInputs() {
   siteNameInput.value = project.site?.name || '';
   siteAddressInput.value = project.site?.address || '';
+  canvasBackgroundSelect.value = project.site?.imageSource === 'satellite' ? 'satellite' : 'yard';
+  satelliteControls.classList.toggle('hidden', canvasBackgroundSelect.value !== 'satellite');
+
+  const satellite = normalizeSatelliteSettings(project.site?.satellite);
+  satelliteLatitudeInput.value = Number.isFinite(satellite.latitude) ? satellite.latitude : '';
+  satelliteLongitudeInput.value = Number.isFinite(satellite.longitude) ? satellite.longitude : '';
+  satelliteZoomInput.value = satellite.zoom;
+  satelliteZoomValue.textContent = satellite.zoom;
+}
+
+function lonLatToTilePoint(longitude, latitude, zoom) {
+  const latRad = (latitude * Math.PI) / 180;
+  const scale = 2 ** zoom;
+  return {
+    x: ((longitude + 180) / 360) * scale,
+    y: ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * scale,
+  };
+}
+
+function renderSatelliteLayer() {
+  satelliteLayer.replaceChildren();
+  const showSatellite = project.site?.imageSource === 'satellite' && hasSatelliteCenter();
+  mapCanvas.classList.toggle('satellite-enabled', showSatellite);
+
+  if (!showSatellite) return;
+
+  const { latitude, longitude, zoom } = normalizeSatelliteSettings(project.site.satellite);
+  const rect = mapCanvas.getBoundingClientRect();
+  const width = rect.width || mapCanvas.clientWidth;
+  const height = rect.height || mapCanvas.clientHeight;
+  if (!width || !height) return;
+
+  const tileSize = 256;
+  const tilePoint = lonLatToTilePoint(longitude, latitude, zoom);
+  const centerWorldX = tilePoint.x * tileSize;
+  const centerWorldY = tilePoint.y * tileSize;
+  const scale = 2 ** zoom;
+  const maxTileIndex = scale - 1;
+  const startX = Math.floor((centerWorldX - width / 2) / tileSize);
+  const endX = Math.floor((centerWorldX + width / 2) / tileSize);
+  const startY = Math.floor((centerWorldY - height / 2) / tileSize);
+  const endY = Math.floor((centerWorldY + height / 2) / tileSize);
+
+  for (let x = startX; x <= endX; x += 1) {
+    for (let y = startY; y <= endY; y += 1) {
+      if (y < 0 || y > maxTileIndex) continue;
+      const wrappedX = ((x % scale) + scale) % scale;
+      const tile = document.createElement('img');
+      tile.className = 'satellite-tile';
+      tile.alt = '';
+      tile.draggable = false;
+      tile.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${wrappedX}`;
+      tile.style.left = `${width / 2 + x * tileSize - centerWorldX}px`;
+      tile.style.top = `${height / 2 + y * tileSize - centerWorldY}px`;
+      satelliteLayer.appendChild(tile);
+    }
+  }
 }
 
 function selectedSprinkler() {
@@ -274,7 +361,11 @@ function hydrateProject(loaded) {
   project = {
     ...structuredClone(emptyProject),
     ...loaded,
-    site: { ...emptyProject.site, ...(loaded.site || {}) },
+    site: {
+      ...emptyProject.site,
+      ...(loaded.site || {}),
+      satellite: normalizeSatelliteSettings({ ...emptyProject.site.satellite, ...(loaded.site?.satellite || {}) }),
+    },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone) => ({ ...zone })) : [],
     sprinklers: Array.isArray(loaded.sprinklers)
       ? loaded.sprinklers.map((sprinkler, index) => normalizeSprinklerPosition({ ...sprinkler }, index))
@@ -442,6 +533,7 @@ function addAnalysisCard(label, value, detail, warning = false) {
 function render() {
   updateProjectInputs();
   renderZones();
+  renderSatelliteLayer();
   renderCanvas();
   renderInspector();
   renderAnalysis();
@@ -595,6 +687,26 @@ siteAddressInput.addEventListener('input', () => {
   project.site.address = siteAddressInput.value;
 });
 
+canvasBackgroundSelect.addEventListener('change', () => {
+  project.site.imageSource = canvasBackgroundSelect.value;
+  updateProjectInputs();
+  renderSatelliteLayer();
+});
+
+function updateSatelliteSettingsFromInputs() {
+  project.site.satellite = normalizeSatelliteSettings({
+    latitude: satelliteLatitudeInput.value === '' ? null : Number(satelliteLatitudeInput.value),
+    longitude: satelliteLongitudeInput.value === '' ? null : Number(satelliteLongitudeInput.value),
+    zoom: Number(satelliteZoomInput.value),
+  });
+  satelliteZoomValue.textContent = project.site.satellite.zoom;
+  renderSatelliteLayer();
+}
+
+[satelliteLatitudeInput, satelliteLongitudeInput, satelliteZoomInput].forEach((input) => {
+  input.addEventListener('input', updateSatelliteSettingsFromInputs);
+});
+
 addZoneBtn.addEventListener('click', () => {
   project.zones.push({ id: crypto.randomUUID(), name: `Zone ${project.zones.length + 1}` });
   render();
@@ -620,6 +732,8 @@ sprinklerLayer.addEventListener('pointerup', () => {
 sprinklerLayer.addEventListener('pointercancel', () => {
   dragState = null;
 });
+
+window.addEventListener('resize', renderSatelliteLayer);
 
 [selectedZone, selectedHead, selectedNozzle, selectedPressure, selectedFlow, selectedRadius, selectedArc, selectedOrientation].forEach(
   (input) => input.addEventListener('input', updateSelectedSprinklerFromForm),

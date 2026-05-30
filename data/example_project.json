@@ -3,7 +3,12 @@
   "site": {
     "name": "Demo Property",
     "address": "",
-    "imageSource": "satellite"
+    "imageSource": "satellite",
+    "satellite": {
+      "latitude": 37.0,
+      "longitude": -122.0,
+      "zoom": 19
+    }
   },
   "zones": [
     {
@@ -27,7 +32,9 @@
       "arcDegrees": 180,
       "orientationDegrees": 90,
       "radiusFt": 34,
-      "flowGpm": 2.0
+      "flowGpm": 2.0,
+      "xPercent": 50,
+      "yPercent": 50
     }
   ]
 }
