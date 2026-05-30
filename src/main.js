@@ -1,9 +1,60 @@
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
 const radiusScalePxPerFt = 4;
+const earthCircumferenceMeters = 40075016.686;
+const feetToMeters = 0.3048;
+
+const defaultMapView = { lat: 39.8283, lng: -98.5795, zoom: 4 };
+
+const mapLayers = {
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    options: {
+      maxZoom: 19,
+      attribution:
+        'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+    },
+  },
+  simplified: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    options: {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    },
+  },
+};
+
+const defaultCatalogs = [
+  {
+    label: 'Hunter PGP-ADJ all',
+    path: 'data/default-catalogs/hunter_pgp_adj_all.csv',
+    fileName: 'hunter_pgp_adj_all.csv',
+  },
+  {
+    label: 'Blue nozzles',
+    path: 'data/default-catalogs/hunter_pgp_adj_blue.csv',
+    fileName: 'hunter_pgp_adj_blue.csv',
+  },
+  {
+    label: 'Red nozzles',
+    path: 'data/default-catalogs/hunter_pgp_adj_red.csv',
+    fileName: 'hunter_pgp_adj_red.csv',
+  },
+  {
+    label: 'Grey low angle',
+    path: 'data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv',
+    fileName: 'hunter_pgp_adj_grey_low_angle.csv',
+  },
+];
 
 const emptyProject = {
   version: 1,
-  site: { name: 'New Site', address: '', imageSource: 'satellite' },
+  site: {
+    name: 'New Site',
+    address: '',
+    imageSource: 'satellite',
+    mapCenter: { lat: defaultMapView.lat, lng: defaultMapView.lng },
+    mapZoom: defaultMapView.zoom,
+  },
   zones: [],
   sprinklers: [],
 };
@@ -12,12 +63,15 @@ let project = structuredClone(emptyProject);
 let catalogState = null;
 let selectedSprinklerId = null;
 let dragState = null;
+let leafletMap = null;
+let activeTileLayer = null;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
 const loadInput = document.getElementById('load-project');
 const catalogInput = document.getElementById('load-catalog');
 const catalogStatus = document.getElementById('catalog-status');
+const defaultCatalogList = document.getElementById('default-catalog-list');
 const manufacturerSelect = document.getElementById('manufacturer-select');
 const headSelect = document.getElementById('head-select');
 const nozzleSelect = document.getElementById('nozzle-select');
@@ -29,6 +83,9 @@ const siteAddressInput = document.getElementById('site-address');
 const zonesList = document.getElementById('zones-list');
 const addZoneBtn = document.getElementById('add-zone');
 const mapCanvas = document.getElementById('map-canvas');
+const leafletMapEl = document.getElementById('leaflet-map');
+const mapLayerSelect = document.getElementById('map-layer-select');
+const mapLayerButtons = [...document.querySelectorAll('[data-map-layer]')];
 const coverageLayer = document.getElementById('coverage-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
@@ -51,6 +108,110 @@ function setCatalogStatus(message) {
   catalogStatus.textContent = message;
 }
 
+function activeMapLayer() {
+  return project.site?.imageSource || 'satellite';
+}
+
+function usesTileMap() {
+  return activeMapLayer() !== 'sketch' && leafletMap;
+}
+
+function syncMapViewToProject() {
+  if (!leafletMap) return;
+  const center = leafletMap.getCenter();
+  project.site.mapCenter = { lat: center.lat, lng: center.lng };
+  project.site.mapZoom = leafletMap.getZoom();
+}
+
+function updateMapLayerControls(layerName) {
+  mapLayerSelect.value = layerName;
+  mapLayerButtons.forEach((button) => {
+    const isActive = button.dataset.mapLayer === layerName;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
+}
+
+function metersPerPixelAt(lat, zoom) {
+  return (earthCircumferenceMeters * Math.cos((lat * Math.PI) / 180)) / 2 ** (zoom + 8);
+}
+
+function sprinklerRadiusPx(sprinkler) {
+  const radiusFt = Number(sprinkler.radiusFt) || 0;
+  if (usesTileMap() && Number.isFinite(sprinkler.lat)) {
+    const metersPerPixel = metersPerPixelAt(sprinkler.lat, leafletMap.getZoom());
+    return Math.max(10, (radiusFt * feetToMeters) / metersPerPixel);
+  }
+  return Math.max(10, radiusFt * radiusScalePxPerFt);
+}
+
+function pointFromSprinkler(sprinkler) {
+  if (usesTileMap() && Number.isFinite(sprinkler.lat) && Number.isFinite(sprinkler.lng)) {
+    const point = leafletMap.latLngToContainerPoint([sprinkler.lat, sprinkler.lng]);
+    return { x: point.x, y: point.y, unit: 'px' };
+  }
+
+  return { x: sprinkler.xPercent, y: sprinkler.yPercent, unit: '%' };
+}
+
+function positionFromLatLng(latlng) {
+  const point = leafletMap.latLngToContainerPoint(latlng);
+  const rect = mapCanvas.getBoundingClientRect();
+  return {
+    lat: latlng.lat,
+    lng: latlng.lng,
+    xPercent: Math.min(100, Math.max(0, (point.x / rect.width) * 100)),
+    yPercent: Math.min(100, Math.max(0, (point.y / rect.height) * 100)),
+  };
+}
+
+function setMapLayer(layerName) {
+  const normalizedLayerName = layerName === 'sketch' || mapLayers[layerName] ? layerName : 'satellite';
+  project.site.imageSource = normalizedLayerName;
+  updateMapLayerControls(normalizedLayerName);
+  mapCanvas.classList.toggle('sketch-layer', normalizedLayerName === 'sketch');
+  mapCanvas.classList.toggle('tile-layer', normalizedLayerName !== 'sketch');
+
+  if (!leafletMap) return;
+
+  if (activeTileLayer) {
+    activeTileLayer.remove();
+    activeTileLayer = null;
+  }
+
+  if (normalizedLayerName !== 'sketch') {
+    const layer = mapLayers[normalizedLayerName] || mapLayers.satellite;
+    activeTileLayer = window.L.tileLayer(layer.url, layer.options).addTo(leafletMap);
+    leafletMap.invalidateSize();
+  }
+
+  renderCanvas();
+}
+
+function initMap() {
+  if (!window.L) {
+    setMapLayer('sketch');
+    return;
+  }
+
+  const center = project.site.mapCenter || emptyProject.site.mapCenter;
+  leafletMap = window.L.map(leafletMapEl, {
+    center: [center.lat, center.lng],
+    zoom: project.site.mapZoom || defaultMapView.zoom,
+    zoomControl: true,
+  });
+
+  leafletMap.on('click', (event) => {
+    addSprinklerAt(positionFromLatLng(event.latlng));
+  });
+  leafletMap.on('moveend zoomend', () => {
+    syncMapViewToProject();
+    renderCanvas();
+  });
+
+  setMapLayer(activeMapLayer());
+}
+
 function parseCsv(text) {
   const [headerLine, ...lines] = text.trim().split(/\r?\n/);
   if (!headerLine) return [];
@@ -66,6 +227,24 @@ function parseCsv(text) {
       });
       return row;
     });
+}
+
+function loadCatalogFromText(text, sourceLabel) {
+  const rows = parseCsv(text);
+  const { models, warnings } = buildCatalog(rows);
+  if (models.length === 0) {
+    setCatalogStatus(`Catalog import failed. ${warnings.slice(0, 3).join(' | ') || 'No valid rows found.'}`);
+    return false;
+  }
+
+  catalogState = { version: 1, models };
+  setOptions(manufacturerSelect, getManufacturers(), 'Select manufacturer');
+  setOptions(headSelect, [], 'Select head model');
+  setOptions(nozzleSelect, [], 'Select nozzle model');
+
+  const warningText = warnings.length ? ` Warnings: ${warnings.length}.` : '';
+  setCatalogStatus(`Imported ${sourceLabel}: ${models.length} model/nozzle combinations.${warningText}`);
+  return true;
 }
 
 function buildCatalog(rows) {
@@ -228,6 +407,7 @@ function ensureDefaultZone() {
 function updateProjectInputs() {
   siteNameInput.value = project.site?.name || '';
   siteAddressInput.value = project.site?.address || '';
+  updateMapLayerControls(activeMapLayer());
 }
 
 function selectedSprinkler() {
@@ -256,6 +436,11 @@ function hydrateProject(loaded) {
   };
   ensureDefaultZone();
   selectedSprinklerId = project.sprinklers[0]?.id || null;
+  if (leafletMap) {
+    const center = project.site.mapCenter || emptyProject.site.mapCenter;
+    leafletMap.setView([center.lat, center.lng], project.site.mapZoom || defaultMapView.zoom);
+    setMapLayer(activeMapLayer());
+  }
   render();
 }
 
@@ -322,14 +507,15 @@ function renderCanvas() {
 
   project.sprinklers.forEach((sprinkler) => {
     const color = getZoneColor(sprinkler.zoneId);
-    const radiusPx = Math.max(10, (Number(sprinkler.radiusFt) || 0) * radiusScalePxPerFt);
+    const radiusPx = sprinklerRadiusPx(sprinkler);
+    const position = pointFromSprinkler(sprinkler);
     const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
     const orientation = Number(sprinkler.orientationDegrees) || 0;
 
     const coverage = document.createElement('div');
     coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
-    coverage.style.left = `${sprinkler.xPercent}%`;
-    coverage.style.top = `${sprinkler.yPercent}%`;
+    coverage.style.left = `${position.x}${position.unit}`;
+    coverage.style.top = `${position.y}${position.unit}`;
     coverage.style.width = `${radiusPx * 2}px`;
     coverage.style.height = `${radiusPx * 2}px`;
     coverage.style.color = color;
@@ -340,8 +526,8 @@ function renderCanvas() {
     const marker = document.createElement('button');
     marker.type = 'button';
     marker.className = `sprinkler-marker ${sprinkler.id === selectedSprinklerId ? 'selected' : ''}`;
-    marker.style.left = `${sprinkler.xPercent}%`;
-    marker.style.top = `${sprinkler.yPercent}%`;
+    marker.style.left = `${position.x}${position.unit}`;
+    marker.style.top = `${position.y}${position.unit}`;
     marker.style.backgroundColor = color;
     marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr)`;
     marker.setAttribute('aria-label', `Select sprinkler ${sprinkler.headModel || sprinkler.id}`);
@@ -423,10 +609,15 @@ function render() {
 
 function canvasPositionFromEvent(event) {
   const rect = mapCanvas.getBoundingClientRect();
-  return {
-    xPercent: Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100)),
-    yPercent: Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100)),
-  };
+  const xPercent = Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100));
+  const yPercent = Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100));
+
+  if (usesTileMap()) {
+    const latlng = leafletMap.containerPointToLatLng([event.clientX - rect.left, event.clientY - rect.top]);
+    return { lat: latlng.lat, lng: latlng.lng, xPercent, yPercent };
+  }
+
+  return { xPercent, yPercent };
 }
 
 function addSprinklerAt(position) {
@@ -480,25 +671,42 @@ catalogInput.addEventListener('change', async (event) => {
   if (!file) return;
 
   try {
-    const rows = parseCsv(await file.text());
-    const { models, warnings } = buildCatalog(rows);
-    if (models.length === 0) {
-      setCatalogStatus(`Catalog import failed. ${warnings.slice(0, 3).join(' | ') || 'No valid rows found.'}`);
-      return;
-    }
-
-    catalogState = { version: 1, models };
-    setOptions(manufacturerSelect, getManufacturers(), 'Select manufacturer');
-    setOptions(headSelect, [], 'Select head model');
-    setOptions(nozzleSelect, [], 'Select nozzle model');
-
-    const warningText = warnings.length ? ` Warnings: ${warnings.length}.` : '';
-    setCatalogStatus(`Imported ${models.length} model/nozzle combinations.${warningText}`);
+    loadCatalogFromText(await file.text(), file.name);
   } catch (error) {
     setCatalogStatus(`Failed to parse CSV: ${error.message}`);
   } finally {
     catalogInput.value = '';
   }
+});
+
+defaultCatalogs.forEach((catalog) => {
+  const row = document.createElement('div');
+  row.className = 'default-catalog-row';
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = `Import ${catalog.label}`;
+  button.addEventListener('click', async () => {
+    try {
+      setCatalogStatus(`Importing ${catalog.label}...`);
+      const response = await fetch(catalog.path);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      loadCatalogFromText(await response.text(), catalog.fileName);
+    } catch (error) {
+      setCatalogStatus(`Failed to import ${catalog.label}: ${error.message}`);
+    }
+  });
+
+  const downloadLink = document.createElement('a');
+  downloadLink.href = catalog.path;
+  downloadLink.download = catalog.fileName;
+  downloadLink.textContent = 'Download CSV';
+  downloadLink.setAttribute('aria-label', `Download ${catalog.label} CSV for manual import`);
+
+  row.append(button, downloadLink);
+  defaultCatalogList.appendChild(row);
 });
 
 lookupBtn.addEventListener('click', () => {
@@ -563,17 +771,28 @@ siteAddressInput.addEventListener('input', () => {
   project.site.address = siteAddressInput.value;
 });
 
+mapLayerSelect.addEventListener('change', () => {
+  setMapLayer(mapLayerSelect.value);
+});
+
+mapLayerButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    setMapLayer(button.dataset.mapLayer);
+  });
+});
+
 addZoneBtn.addEventListener('click', () => {
   project.zones.push({ id: crypto.randomUUID(), name: `Zone ${project.zones.length + 1}` });
   render();
 });
 
 mapCanvas.addEventListener('click', (event) => {
-  if (event.target.closest('.sprinkler-marker')) return;
+  if (event.target.closest('.sprinkler-marker, .leaflet-control')) return;
+  if (usesTileMap() && event.target.closest('.leaflet-container')) return;
   addSprinklerAt(canvasPositionFromEvent(event));
 });
 
-sprinklerLayer.addEventListener('pointermove', (event) => {
+window.addEventListener('pointermove', (event) => {
   if (!dragState) return;
   const sprinkler = project.sprinklers.find((candidate) => candidate.id === dragState.id);
   if (!sprinkler) return;
@@ -581,11 +800,11 @@ sprinklerLayer.addEventListener('pointermove', (event) => {
   renderCanvas();
 });
 
-sprinklerLayer.addEventListener('pointerup', () => {
+window.addEventListener('pointerup', () => {
   dragState = null;
 });
 
-sprinklerLayer.addEventListener('pointercancel', () => {
+window.addEventListener('pointercancel', () => {
   dragState = null;
 });
 
@@ -623,3 +842,4 @@ hydrateProject(emptyProject);
 setOptions(manufacturerSelect, [], 'Select manufacturer');
 setOptions(headSelect, [], 'Select head model');
 setOptions(nozzleSelect, [], 'Select nozzle model');
+initMap();

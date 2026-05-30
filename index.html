@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sprinklers Planner</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="src/styles.css" />
   </head>
   <body>
@@ -48,6 +49,11 @@
               Import CSV Catalog
               <input id="load-catalog" type="file" accept=".csv,text/csv" />
             </label>
+            <div class="default-catalogs" aria-label="Default CSV catalogs">
+              <span>Starter CSVs</span>
+              <p>Import a bundled CSV now, or download it and use the file importer above.</p>
+              <div id="default-catalog-list" class="default-catalog-list"></div>
+            </div>
             <p id="catalog-status" class="status-text">No catalog loaded.</p>
 
             <div class="field-group">
@@ -81,9 +87,25 @@
               <h2>Planning Canvas</h2>
               <p>Click the yard canvas to add sprinklers. Drag points to reposition them.</p>
             </div>
-            <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
+            <div class="canvas-controls">
+              <span class="canvas-controls-label">Map layer</span>
+              <div class="map-layer-buttons" role="group" aria-label="Map layer">
+                <button type="button" data-map-layer="satellite" aria-pressed="true">Satellite</button>
+                <button type="button" data-map-layer="simplified" aria-pressed="false">Simplified</button>
+                <button type="button" data-map-layer="sketch" aria-pressed="false">Sketch</button>
+              </div>
+              <label class="visually-hidden" for="map-layer-select">Map layer</label>
+              <select id="map-layer-select" class="visually-hidden" aria-hidden="true" tabindex="-1">
+                <option value="satellite">Satellite imagery</option>
+                <option value="simplified">Simplified map</option>
+                <option value="sketch">Sketch grid</option>
+              </select>
+              <div class="map-layer-help">Satellite is on by default. Use these buttons to switch imagery on/off.</div>
+              <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
+            </div>
           </div>
           <div id="map-canvas" class="map-canvas" role="application" aria-label="Editable sprinkler map">
+            <div id="leaflet-map" class="leaflet-map" aria-hidden="true"></div>
             <div class="canvas-grid" aria-hidden="true"></div>
             <div id="coverage-layer" class="coverage-layer" aria-hidden="true"></div>
             <div id="sprinkler-layer" class="sprinkler-layer"></div>
@@ -142,6 +164,7 @@
       </main>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module" src="src/main.js"></script>
   </body>
 </html>
