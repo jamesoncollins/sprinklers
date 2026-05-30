@@ -39,9 +39,27 @@
             <div class="field-group">
               <label for="canvas-background">Canvas background</label>
               <select id="canvas-background">
-                <option value="yard">Yard sketch grid</option>
+                <option value="yard">Blank sketch grid</option>
                 <option value="satellite">Satellite imagery</option>
+                <option value="image">Uploaded image</option>
               </select>
+            </div>
+            <div id="image-controls" class="satellite-controls hidden">
+              <label class="field-label file-btn full-width-file">
+                Upload Background Image
+                <input id="load-background-image" type="file" accept="image/*" />
+              </label>
+              <div class="field-group">
+                <label for="image-scale">Image scale</label>
+                <input id="image-scale" type="range" min="0.25" max="4" step="0.01" />
+                <span id="image-scale-value" class="range-value">1.00×</span>
+              </div>
+              <div class="field-group">
+                <label for="image-rotation">Image rotation</label>
+                <input id="image-rotation" type="range" min="-180" max="180" step="1" />
+                <span id="image-rotation-value" class="range-value">0°</span>
+              </div>
+              <p id="image-status" class="status-text">Upload an image to use it as the planning background.</p>
             </div>
             <div id="satellite-controls" class="satellite-controls">
               <div class="field-group two-col">
@@ -67,7 +85,12 @@
                 <input id="satellite-zoom" type="range" min="16" max="21" step="1" />
                 <span id="satellite-zoom-value" class="range-value">19</span>
               </div>
-              <button id="reset-map-view" type="button" class="full-width secondary-btn">Reset Pan / Zoom</button>
+              <div class="field-group">
+                <label for="background-rotation">Map rotation</label>
+                <input id="background-rotation" type="range" min="-180" max="180" step="1" />
+                <span id="background-rotation-value" class="range-value">0°</span>
+              </div>
+              <button id="reset-map-view" type="button" class="full-width secondary-btn">Reset Pan / Zoom / Rotation</button>
               <p id="satellite-status" class="status-text">Enter the property center coordinates to show live imagery tiles behind the planning grid. Winter/leaf-off availability depends on the imagery captured for that location; try Clarity or USGS when the default view is not useful.</p>
             </div>
           </section>
@@ -121,6 +144,7 @@
           </div>
           <div id="map-canvas" class="map-canvas" role="application" aria-label="Editable sprinkler map">
             <div id="satellite-layer" class="satellite-layer" aria-hidden="true"></div>
+            <div id="image-layer" class="image-layer" aria-hidden="true"></div>
             <div class="canvas-grid" aria-hidden="true"></div>
             <div id="coverage-layer" class="coverage-layer" aria-hidden="true"></div>
             <div id="sprinkler-layer" class="sprinkler-layer"></div>

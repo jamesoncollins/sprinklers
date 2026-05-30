@@ -1,5 +1,6 @@
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
 const radiusScalePxPerFt = 4;
+const earthRadiusFeet = 20925524.9;
 const mapViewMinScale = 0.5;
 const mapViewMaxScale = 4;
 
@@ -30,7 +31,8 @@ const emptyProject = {
     address: '',
     imageSource: 'yard',
     satellite: { latitude: null, longitude: null, zoom: 19, source: 'esri-world' },
-    mapView: { scale: 1, panX: 0, panY: 0 },
+    backgroundImage: { dataUrl: '', name: '', scale: 1, rotationDegrees: 0 },
+    mapView: { scale: 1, panX: 0, panY: 0, rotationDegrees: 0 },
   },
   zones: [],
   sprinklers: [],
@@ -58,11 +60,20 @@ const siteNameInput = document.getElementById('site-name');
 const siteAddressInput = document.getElementById('site-address');
 const canvasBackgroundSelect = document.getElementById('canvas-background');
 const satelliteControls = document.getElementById('satellite-controls');
+const imageControls = document.getElementById('image-controls');
+const backgroundImageInput = document.getElementById('load-background-image');
+const imageScaleInput = document.getElementById('image-scale');
+const imageScaleValue = document.getElementById('image-scale-value');
+const imageRotationInput = document.getElementById('image-rotation');
+const imageRotationValue = document.getElementById('image-rotation-value');
+const imageStatus = document.getElementById('image-status');
 const satelliteLatitudeInput = document.getElementById('satellite-latitude');
 const satelliteLongitudeInput = document.getElementById('satellite-longitude');
 const satelliteSourceSelect = document.getElementById('satellite-source');
 const satelliteZoomInput = document.getElementById('satellite-zoom');
 const satelliteZoomValue = document.getElementById('satellite-zoom-value');
+const backgroundRotationInput = document.getElementById('background-rotation');
+const backgroundRotationValue = document.getElementById('background-rotation-value');
 const addressLookupBtn = document.getElementById('lookup-address');
 const addressLookupStatus = document.getElementById('address-lookup-status');
 const satelliteStatus = document.getElementById('satellite-status');
@@ -71,6 +82,7 @@ const zonesList = document.getElementById('zones-list');
 const addZoneBtn = document.getElementById('add-zone');
 const mapCanvas = document.getElementById('map-canvas');
 const satelliteLayer = document.getElementById('satellite-layer');
+const imageLayer = document.getElementById('image-layer');
 const coverageLayer = document.getElementById('coverage-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
@@ -309,23 +321,40 @@ function normalizeMapViewSettings(settings = {}) {
   const scale = Number(settings.scale);
   const panX = Number(settings.panX);
   const panY = Number(settings.panY);
+  const rotationDegrees = Number(settings.rotationDegrees);
 
   return {
     scale: Number.isFinite(scale) ? Math.min(mapViewMaxScale, Math.max(mapViewMinScale, scale)) : 1,
     panX: Number.isFinite(panX) ? panX : 0,
     panY: Number.isFinite(panY) ? panY : 0,
+    rotationDegrees: Number.isFinite(rotationDegrees) ? Math.min(180, Math.max(-180, rotationDegrees)) : 0,
+  };
+}
+
+function normalizeBackgroundImageSettings(settings = {}) {
+  const scale = Number(settings.scale);
+  const rotationDegrees = Number(settings.rotationDegrees);
+  return {
+    dataUrl: typeof settings.dataUrl === 'string' ? settings.dataUrl : '',
+    name: typeof settings.name === 'string' ? settings.name : '',
+    scale: Number.isFinite(scale) ? Math.min(4, Math.max(0.25, scale)) : 1,
+    rotationDegrees: Number.isFinite(rotationDegrees) ? Math.min(180, Math.max(-180, rotationDegrees)) : 0,
   };
 }
 
 function mapViewTransform() {
-  const { scale, panX, panY } = normalizeMapViewSettings(project.site?.mapView);
-  return `translate(${panX}px, ${panY}px) scale(${scale})`;
+  const { scale, panX, panY, rotationDegrees } = normalizeMapViewSettings(project.site?.mapView);
+  return `translate(${panX}px, ${panY}px) rotate(${rotationDegrees}deg) scale(${scale})`;
 }
 
 function applyMapViewTransform() {
   const transform = mapViewTransform();
-  [satelliteLayer, coverageLayer, sprinklerLayer, mapCanvas.querySelector('.canvas-grid')].forEach((layer) => {
+  [satelliteLayer, imageLayer, coverageLayer, sprinklerLayer, mapCanvas.querySelector('.canvas-grid')].forEach((layer) => {
     if (layer) layer.style.transform = transform;
+  });
+  const { scale } = normalizeMapViewSettings(project.site?.mapView);
+  sprinklerLayer.querySelectorAll('.sprinkler-marker').forEach((marker) => {
+    marker.style.setProperty('--marker-scale', `${1 / scale}`);
   });
 }
 
@@ -345,8 +374,20 @@ function setSatelliteStatus(message) {
 function updateProjectInputs() {
   siteNameInput.value = project.site?.name || '';
   siteAddressInput.value = project.site?.address || '';
-  canvasBackgroundSelect.value = project.site?.imageSource === 'satellite' ? 'satellite' : 'yard';
-  satelliteControls.classList.toggle('hidden', canvasBackgroundSelect.value !== 'satellite');
+  const imageSource = ['yard', 'satellite', 'image'].includes(project.site?.imageSource) ? project.site.imageSource : 'yard';
+  canvasBackgroundSelect.value = imageSource;
+  satelliteControls.classList.toggle('hidden', imageSource !== 'satellite');
+  imageControls.classList.toggle('hidden', imageSource !== 'image');
+
+  const mapView = normalizeMapViewSettings(project.site?.mapView);
+  backgroundRotationInput.value = mapView.rotationDegrees;
+  backgroundRotationValue.textContent = `${Math.round(mapView.rotationDegrees)}°`;
+
+  const backgroundImage = normalizeBackgroundImageSettings(project.site?.backgroundImage);
+  imageScaleInput.value = backgroundImage.scale;
+  imageScaleValue.textContent = `${backgroundImage.scale.toFixed(2)}×`;
+  imageRotationInput.value = backgroundImage.rotationDegrees;
+  imageRotationValue.textContent = `${Math.round(backgroundImage.rotationDegrees)}°`;
 
   const satellite = normalizeSatelliteSettings(project.site?.satellite);
   satelliteLatitudeInput.value = Number.isFinite(satellite.latitude) ? satellite.latitude : '';
@@ -398,11 +439,20 @@ function renderSatelliteLayer() {
   const centerWorldY = tilePoint.y * tileSize;
   const scale = 2 ** zoom;
   const maxTileIndex = scale - 1;
-  const { scale: viewScale, panX, panY } = normalizeMapViewSettings(project.site.mapView);
-  const minLocalX = (0 - panX) / viewScale;
-  const maxLocalX = (width - panX) / viewScale;
-  const minLocalY = (0 - panY) / viewScale;
-  const maxLocalY = (height - panY) / viewScale;
+  const { scale: viewScale, rotationDegrees } = normalizeMapViewSettings(project.site.mapView);
+  const localCorners = [
+    screenPointToLocalPoint(0, 0),
+    screenPointToLocalPoint(width, 0),
+    screenPointToLocalPoint(0, height),
+    screenPointToLocalPoint(width, height),
+  ];
+  const xValues = localCorners.map((point) => point.x);
+  const yValues = localCorners.map((point) => point.y);
+  const padding = Math.max(width, height) * 0.15;
+  const minLocalX = Math.min(...xValues) - padding;
+  const maxLocalX = Math.max(...xValues) + padding;
+  const minLocalY = Math.min(...yValues) - padding;
+  const maxLocalY = Math.max(...yValues) + padding;
   const startX = Math.floor((centerWorldX + minLocalX - width / 2) / tileSize);
   const endX = Math.floor((centerWorldX + maxLocalX - width / 2) / tileSize);
   const startY = Math.floor((centerWorldY + minLocalY - height / 2) / tileSize);
@@ -421,7 +471,7 @@ function renderSatelliteLayer() {
       return;
     }
     if (tilesLoaded > 0) {
-      setSatelliteStatus(`Showing ${imagerySource.label} at ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (tile zoom ${zoom}, view ${viewScale.toFixed(2)}×). ${imagerySource.detail}`);
+      setSatelliteStatus(`Showing ${imagerySource.label} at ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (tile zoom ${zoom}, view ${viewScale.toFixed(2)}×, rotation ${Math.round(rotationDegrees)}°). ${imagerySource.detail}`);
       return;
     }
     setSatelliteStatus(`Loading ${tilesRequested} satellite tile${tilesRequested === 1 ? '' : 's'}...`);
@@ -451,6 +501,31 @@ function renderSatelliteLayer() {
     }
   }
   updateTileStatus();
+}
+
+
+function renderImageLayer() {
+  imageLayer.replaceChildren();
+  const wantsImage = project.site?.imageSource === 'image';
+  mapCanvas.classList.toggle('image-enabled', wantsImage);
+  if (!wantsImage) {
+    return;
+  }
+
+  const settings = normalizeBackgroundImageSettings(project.site.backgroundImage);
+  if (!settings.dataUrl) {
+    imageStatus.textContent = 'Upload an image to use it as the planning background.';
+    return;
+  }
+
+  const image = document.createElement('img');
+  image.className = 'background-image';
+  image.src = settings.dataUrl;
+  image.alt = '';
+  image.draggable = false;
+  image.style.transform = `translate(-50%, -50%) rotate(${settings.rotationDegrees}deg) scale(${settings.scale})`;
+  imageLayer.appendChild(image);
+  imageStatus.textContent = `Showing ${settings.name || 'uploaded image'} at ${settings.scale.toFixed(2)}× and ${Math.round(settings.rotationDegrees)}°.`;
 }
 
 async function geocodeAddress(address) {
@@ -529,6 +604,7 @@ function hydrateProject(loaded) {
       ...emptyProject.site,
       ...(loaded.site || {}),
       satellite: normalizeSatelliteSettings({ ...emptyProject.site.satellite, ...(loaded.site?.satellite || {}) }),
+      backgroundImage: normalizeBackgroundImageSettings({ ...emptyProject.site.backgroundImage, ...(loaded.site?.backgroundImage || {}) }),
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone) => ({ ...zone })) : [],
@@ -537,6 +613,7 @@ function hydrateProject(loaded) {
       : [],
   };
   ensureDefaultZone();
+  syncSprinklersFromGps();
   selectedSprinklerId = project.sprinklers[0]?.id || null;
   render();
 }
@@ -556,6 +633,92 @@ function sprinklerPr(sprinkler) {
   const area = sprinklerAreaSqft(sprinkler);
   if (area <= 0) return 0;
   return (96.3 * flow) / area;
+}
+
+
+function canvasCenter() {
+  const rect = mapCanvas.getBoundingClientRect();
+  return { width: rect.width || mapCanvas.clientWidth, height: rect.height || mapCanvas.clientHeight };
+}
+
+function localPointToScreenPoint(localX, localY) {
+  const { width, height } = canvasCenter();
+  const { scale, panX, panY, rotationDegrees } = normalizeMapViewSettings(project.site.mapView);
+  const angle = (rotationDegrees * Math.PI) / 180;
+  const dx = localX - width / 2;
+  const dy = localY - height / 2;
+  return {
+    x: width / 2 + panX + (dx * Math.cos(angle) - dy * Math.sin(angle)) * scale,
+    y: height / 2 + panY + (dx * Math.sin(angle) + dy * Math.cos(angle)) * scale,
+  };
+}
+
+function screenPointToLocalPoint(screenX, screenY) {
+  const { width, height } = canvasCenter();
+  const { scale, panX, panY, rotationDegrees } = normalizeMapViewSettings(project.site.mapView);
+  const angle = (-rotationDegrees * Math.PI) / 180;
+  const dx = (screenX - width / 2 - panX) / scale;
+  const dy = (screenY - height / 2 - panY) / scale;
+  return {
+    x: width / 2 + dx * Math.cos(angle) - dy * Math.sin(angle),
+    y: height / 2 + dx * Math.sin(angle) + dy * Math.cos(angle),
+  };
+}
+
+function canvasPositionToGps(position) {
+  if (!hasSatelliteCenter()) return {};
+  const { latitude, longitude } = normalizeSatelliteSettings(project.site.satellite);
+  const { width, height } = canvasCenter();
+  const x = (position.xPercent / 100) * width;
+  const y = (position.yPercent / 100) * height;
+  const feetPerPixel = satelliteFeetPerPixel(latitude, project.site.satellite.zoom);
+  const eastFeet = (x - width / 2) * feetPerPixel;
+  const northFeet = (height / 2 - y) * feetPerPixel;
+  return gpsOffset(latitude, longitude, eastFeet, northFeet);
+}
+
+function gpsToCanvasPosition(latitude, longitude) {
+  if (!hasSatelliteCenter() || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  const center = normalizeSatelliteSettings(project.site.satellite);
+  const { width, height } = canvasCenter();
+  if (!width || !height) return null;
+  const feetPerPixel = satelliteFeetPerPixel(center.latitude, center.zoom);
+  const deltaLatRad = ((latitude - center.latitude) * Math.PI) / 180;
+  const deltaLonRad = ((longitude - center.longitude) * Math.PI) / 180;
+  const northFeet = deltaLatRad * earthRadiusFeet;
+  const eastFeet = deltaLonRad * earthRadiusFeet * Math.cos((center.latitude * Math.PI) / 180);
+  return {
+    xPercent: Math.min(100, Math.max(0, ((width / 2 + eastFeet / feetPerPixel) / width) * 100)),
+    yPercent: Math.min(100, Math.max(0, ((height / 2 - northFeet / feetPerPixel) / height) * 100)),
+  };
+}
+
+function gpsOffset(latitude, longitude, eastFeet, northFeet) {
+  const latRad = (latitude * Math.PI) / 180;
+  const nextLat = latitude + (northFeet / earthRadiusFeet) * (180 / Math.PI);
+  const nextLon = longitude + (eastFeet / (earthRadiusFeet * Math.cos(latRad))) * (180 / Math.PI);
+  return { latitude: nextLat, longitude: nextLon };
+}
+
+function satelliteFeetPerPixel(latitude, zoom) {
+  const metersPerPixel = (156543.03392 * Math.cos((latitude * Math.PI) / 180)) / 2 ** zoom;
+  return metersPerPixel * 3.28084;
+}
+
+function syncSprinklerGps(sprinkler) {
+  const gps = canvasPositionToGps(sprinkler);
+  if (Number.isFinite(gps.latitude) && Number.isFinite(gps.longitude)) {
+    sprinkler.latitude = gps.latitude;
+    sprinkler.longitude = gps.longitude;
+  }
+}
+
+function syncSprinklersFromGps() {
+  if (!hasSatelliteCenter()) return;
+  project.sprinklers.forEach((sprinkler) => {
+    const position = gpsToCanvasPosition(Number(sprinkler.latitude), Number(sprinkler.longitude));
+    if (position) Object.assign(sprinkler, position);
+  });
 }
 
 function renderZones() {
@@ -626,6 +789,7 @@ function renderCanvas() {
     marker.style.left = `${sprinkler.xPercent}%`;
     marker.style.top = `${sprinkler.yPercent}%`;
     marker.style.backgroundColor = color;
+    marker.style.setProperty('--marker-scale', `${1 / normalizeMapViewSettings(project.site.mapView).scale}`);
     marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr)`;
     marker.setAttribute('aria-label', `Select sprinkler ${sprinkler.headModel || sprinkler.id}`);
     marker.addEventListener('pointerdown', (event) => {
@@ -703,6 +867,7 @@ function render() {
   renderZones();
   applyMapViewTransform();
   renderSatelliteLayer();
+  renderImageLayer();
   renderCanvas();
   renderInspector();
   renderAnalysis();
@@ -710,12 +875,11 @@ function render() {
 
 function canvasPositionFromEvent(event) {
   const rect = mapCanvas.getBoundingClientRect();
-  const { scale, panX, panY } = normalizeMapViewSettings(project.site.mapView);
-  const x = (event.clientX - rect.left - panX) / scale;
-  const y = (event.clientY - rect.top - panY) / scale;
+  const { width, height } = canvasCenter();
+  const local = screenPointToLocalPoint(event.clientX - rect.left, event.clientY - rect.top);
   return {
-    xPercent: Math.min(100, Math.max(0, (x / rect.width) * 100)),
-    yPercent: Math.min(100, Math.max(0, (y / rect.height) * 100)),
+    xPercent: Math.min(100, Math.max(0, (local.x / width) * 100)),
+    yPercent: Math.min(100, Math.max(0, (local.y / height) * 100)),
   };
 }
 
@@ -762,15 +926,19 @@ function zoomMapView(event) {
   const view = normalizeMapViewSettings(project.site.mapView);
   const pointerX = event.clientX - rect.left;
   const pointerY = event.clientY - rect.top;
+  const local = screenPointToLocalPoint(pointerX, pointerY);
   const zoomFactor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
   const nextScale = Math.min(mapViewMaxScale, Math.max(mapViewMinScale, view.scale * zoomFactor));
-  const worldX = (pointerX - view.panX) / view.scale;
-  const worldY = (pointerY - view.panY) / view.scale;
+  const { width, height } = canvasCenter();
+  const angle = (view.rotationDegrees * Math.PI) / 180;
+  const dx = local.x - width / 2;
+  const dy = local.y - height / 2;
 
   project.site.mapView = normalizeMapViewSettings({
+    ...view,
     scale: nextScale,
-    panX: pointerX - worldX * nextScale,
-    panY: pointerY - worldY * nextScale,
+    panX: pointerX - width / 2 - (dx * Math.cos(angle) - dy * Math.sin(angle)) * nextScale,
+    panY: pointerY - height / 2 - (dx * Math.sin(angle) + dy * Math.cos(angle)) * nextScale,
   });
   applyMapViewTransform();
   renderSatelliteLayer();
@@ -793,6 +961,7 @@ function addSprinklerAt(position) {
     radiusFt: performance?.radiusFt ?? 12,
     flowGpm: performance?.flowGpm ?? 1,
   };
+  syncSprinklerGps(sprinkler);
   project.sprinklers.push(sprinkler);
   selectedSprinklerId = sprinkler.id;
   render();
@@ -877,6 +1046,7 @@ newBtn.addEventListener('click', () => {
 });
 
 saveBtn.addEventListener('click', () => {
+  project.sprinklers.forEach(syncSprinklerGps);
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -923,6 +1093,7 @@ addressLookupBtn.addEventListener('click', async () => {
       latitude: result.latitude,
       longitude: result.longitude,
     });
+    syncSprinklersFromGps();
     setAddressLookupStatus(`Found via ${result.source}. Centered map at ${result.latitude.toFixed(6)}, ${result.longitude.toFixed(6)}.`);
     render();
   } catch (error) {
@@ -936,6 +1107,7 @@ canvasBackgroundSelect.addEventListener('change', () => {
   project.site.imageSource = canvasBackgroundSelect.value;
   updateProjectInputs();
   renderSatelliteLayer();
+  renderImageLayer();
 });
 
 function updateSatelliteSettingsFromInputs() {
@@ -946,12 +1118,67 @@ function updateSatelliteSettingsFromInputs() {
     zoom: Number(satelliteZoomInput.value),
   });
   satelliteZoomValue.textContent = project.site.satellite.zoom;
+  syncSprinklersFromGps();
   renderSatelliteLayer();
+  renderCanvas();
 }
 
 [satelliteLatitudeInput, satelliteLongitudeInput, satelliteSourceSelect, satelliteZoomInput].forEach((input) => {
   input.addEventListener('input', updateSatelliteSettingsFromInputs);
 });
+
+
+backgroundRotationInput.addEventListener('input', () => {
+  project.site.mapView = normalizeMapViewSettings({
+    ...project.site.mapView,
+    rotationDegrees: Number(backgroundRotationInput.value),
+  });
+  backgroundRotationValue.textContent = `${Math.round(project.site.mapView.rotationDegrees)}°`;
+  applyMapViewTransform();
+  renderSatelliteLayer();
+});
+
+backgroundImageInput.addEventListener('change', async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    project.site.backgroundImage = normalizeBackgroundImageSettings({
+      ...project.site.backgroundImage,
+      name: file.name,
+      dataUrl: await readFileAsDataUrl(file),
+    });
+    project.site.imageSource = 'image';
+    render();
+  } catch (error) {
+    imageStatus.textContent = `Failed to load image: ${error.message}`;
+  } finally {
+    backgroundImageInput.value = '';
+  }
+});
+
+function updateBackgroundImageSettingsFromInputs() {
+  project.site.backgroundImage = normalizeBackgroundImageSettings({
+    ...project.site.backgroundImage,
+    scale: Number(imageScaleInput.value),
+    rotationDegrees: Number(imageRotationInput.value),
+  });
+  imageScaleValue.textContent = `${project.site.backgroundImage.scale.toFixed(2)}×`;
+  imageRotationValue.textContent = `${Math.round(project.site.backgroundImage.rotationDegrees)}°`;
+  renderImageLayer();
+}
+
+[imageScaleInput, imageRotationInput].forEach((input) => {
+  input.addEventListener('input', updateBackgroundImageSettingsFromInputs);
+});
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => resolve(reader.result));
+    reader.addEventListener('error', () => reject(reader.error || new Error('Unable to read image file.')));
+    reader.readAsDataURL(file);
+  });
+}
 
 addZoneBtn.addEventListener('click', () => {
   project.zones.push({ id: crypto.randomUUID(), name: `Zone ${project.zones.length + 1}` });
@@ -980,6 +1207,7 @@ sprinklerLayer.addEventListener('pointermove', (event) => {
   const sprinkler = project.sprinklers.find((candidate) => candidate.id === dragState.id);
   if (!sprinkler) return;
   Object.assign(sprinkler, canvasPositionFromEvent(event));
+  syncSprinklerGps(sprinkler);
   dragState.marker.style.left = `${sprinkler.xPercent}%`;
   dragState.marker.style.top = `${sprinkler.yPercent}%`;
   dragState.coverage.style.left = `${sprinkler.xPercent}%`;
@@ -998,8 +1226,10 @@ sprinklerLayer.addEventListener('pointercancel', () => {
 
 resetMapViewBtn.addEventListener('click', () => {
   project.site.mapView = normalizeMapViewSettings();
+  updateProjectInputs();
   applyMapViewTransform();
   renderSatelliteLayer();
+  renderCanvas();
 });
 
 window.addEventListener('resize', renderSatelliteLayer);
