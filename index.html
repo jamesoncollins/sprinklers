@@ -48,6 +48,11 @@
               Import CSV Catalog
               <input id="load-catalog" type="file" accept=".csv,text/csv" />
             </label>
+            <div class="default-catalogs" aria-label="Default CSV catalogs">
+              <span>Starter CSVs</span>
+              <p>Import a bundled CSV now, or download it and use the file importer above.</p>
+              <div id="default-catalog-list" class="default-catalog-list"></div>
+            </div>
             <p id="catalog-status" class="status-text">No catalog loaded.</p>
 
             <div class="field-group">
@@ -79,11 +84,38 @@
           <div class="canvas-toolbar">
             <div>
               <h2>Planning Canvas</h2>
-              <p>Click the yard canvas to add sprinklers. Drag points to reposition them.</p>
+              <p>Turn on satellite imagery below, then click the map to add sprinklers. Drag points to reposition them.</p>
             </div>
             <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
           </div>
+          <div class="map-controls-panel" aria-label="Map imagery controls">
+            <div class="map-control-group">
+              <span class="canvas-controls-label">Map imagery</span>
+              <div class="map-layer-buttons" role="group" aria-label="Map layer">
+                <button type="button" data-map-layer="satellite" aria-pressed="true">Show satellite</button>
+                <button type="button" data-map-layer="simplified" aria-pressed="false">Show simple map</button>
+                <button type="button" data-map-layer="sketch" aria-pressed="false">Sketch grid only</button>
+              </div>
+              <label class="visually-hidden" for="map-layer-select">Map layer</label>
+              <select id="map-layer-select" class="visually-hidden" aria-hidden="true" tabindex="-1">
+                <option value="satellite">Satellite imagery</option>
+                <option value="simplified">Simplified map</option>
+                <option value="sketch">Sketch grid</option>
+              </select>
+            </div>
+            <div class="map-control-group">
+              <span class="canvas-controls-label">Find your yard</span>
+              <div class="map-actions" aria-label="Map navigation">
+                <button id="map-address" type="button">Find address</button>
+                <button id="map-locate" type="button">Use my location</button>
+                <button id="map-zoom-in" type="button">Zoom in</button>
+                <button id="map-zoom-out" type="button">Zoom out</button>
+              </div>
+            </div>
+            <div id="map-status" class="map-layer-help">Click <strong>Show satellite</strong>, then <strong>Find address</strong> or <strong>Use my location</strong> to load imagery for your yard.</div>
+          </div>
           <div id="map-canvas" class="map-canvas" role="application" aria-label="Editable sprinkler map">
+            <div id="map-tile-layer" class="map-tile-layer" aria-hidden="true"></div>
             <div class="canvas-grid" aria-hidden="true"></div>
             <div id="coverage-layer" class="coverage-layer" aria-hidden="true"></div>
             <div id="sprinkler-layer" class="sprinkler-layer"></div>
