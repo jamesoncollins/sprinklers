@@ -33,16 +33,8 @@ h3 { margin: 0 0 8px; font-size: 0.92rem; color: #27415f; }
 .full-width-file { display: flex; justify-content: center; margin-bottom: 8px; }
 .default-catalogs { display: grid; gap: 6px; margin: 10px 0; }
 .default-catalogs span { font-size: 0.78rem; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
-.default-catalogs p { margin: 0; color: var(--muted); font-size: 0.78rem; line-height: 1.3; }
-.default-catalog-list { display: grid; gap: 6px; }
-.default-catalog-row { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; }
-.default-catalog-row button { padding: 7px 8px; border-color: var(--border); font-size: 0.78rem; text-align: left; }
-.default-catalog-row a { color: var(--blue-700); font-size: 0.78rem; font-weight: 800; white-space: nowrap; }
-.project-map-tools { display: grid; gap: 7px; margin-top: 12px; padding: 10px; border: 2px solid #b8d4f4; border-radius: 10px; background: #eef6ff; }
-.project-map-tools span { color: var(--blue-900); font-size: 0.78rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
-.project-map-tools button { width: 100%; border-color: #a9c7ea; color: var(--blue-700); text-align: left; }
-.project-map-tools button.active,
-.project-map-tools button[aria-pressed="true"] { background: var(--blue-700); color: #fff; border-color: var(--blue-700); }
+.default-catalog-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.default-catalog-list button { padding: 7px 8px; border-color: var(--border); font-size: 0.78rem; }
 .hidden { display: none; }
 .danger { background: #fff1f0; color: var(--danger); border-color: #ffc9c5; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
