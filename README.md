@@ -42,6 +42,10 @@ Optional later backend (not required for MVP):
    - Save project JSON and import later.
 
 
+## Satellite canvas background
+
+The Planning Canvas can use either the offline yard sketch grid or live satellite tiles. Select **Satellite imagery** in the Project panel, then enter the property's center latitude/longitude and choose a zoom level. These settings are saved in exported project JSON under `site.satellite`, so imported projects restore the same imagery view.
+
 ## Default CSV catalogs
 
 The repository includes starter CSV catalogs under `data/default-catalogs/` for Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`).
