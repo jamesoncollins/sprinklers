@@ -1,3 +1,6 @@
+const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
+const radiusScalePxPerFt = 4;
+
 const emptyProject = {
   version: 1,
   site: { name: 'New Site', address: '', imageSource: 'satellite' },
@@ -7,6 +10,8 @@ const emptyProject = {
 
 let project = structuredClone(emptyProject);
 let catalogState = null;
+let selectedSprinklerId = null;
+let dragState = null;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
@@ -19,6 +24,28 @@ const nozzleSelect = document.getElementById('nozzle-select');
 const pressureInput = document.getElementById('pressure-input');
 const lookupBtn = document.getElementById('lookup-performance');
 const lookupResult = document.getElementById('lookup-result');
+const siteNameInput = document.getElementById('site-name');
+const siteAddressInput = document.getElementById('site-address');
+const zonesList = document.getElementById('zones-list');
+const addZoneBtn = document.getElementById('add-zone');
+const mapCanvas = document.getElementById('map-canvas');
+const coverageLayer = document.getElementById('coverage-layer');
+const sprinklerLayer = document.getElementById('sprinkler-layer');
+const emptyCanvasHint = document.getElementById('empty-canvas-hint');
+const sprinklerCount = document.getElementById('sprinkler-count');
+const analysisSummary = document.getElementById('analysis-summary');
+const noSelection = document.getElementById('no-selection');
+const sprinklerForm = document.getElementById('sprinkler-form');
+const selectedZone = document.getElementById('selected-zone');
+const selectedHead = document.getElementById('selected-head');
+const selectedNozzle = document.getElementById('selected-nozzle');
+const selectedPressure = document.getElementById('selected-pressure');
+const selectedFlow = document.getElementById('selected-flow');
+const selectedRadius = document.getElementById('selected-radius');
+const selectedArc = document.getElementById('selected-arc');
+const selectedOrientation = document.getElementById('selected-orientation');
+const applyCatalogToSelectedBtn = document.getElementById('apply-catalog-to-selected');
+const deleteSelectedBtn = document.getElementById('delete-selected');
 
 function setCatalogStatus(message) {
   catalogStatus.textContent = message;
@@ -57,9 +84,10 @@ function buildCatalog(rows) {
     const pressurePsi = Number(row.pressure_psi);
     const flowGpm = Number(row.flow_gpm);
     const radiusFt = Number(row.radius_ft);
+    const arcDegrees = Number(row.arc_degrees || 360);
 
-    if ([pressurePsi, flowGpm, radiusFt].some((v) => Number.isNaN(v))) {
-      warnings.push(`Row ${line}: pressure_psi, flow_gpm, and radius_ft must be numeric`);
+    if ([pressurePsi, flowGpm, radiusFt, arcDegrees].some((v) => Number.isNaN(v))) {
+      warnings.push(`Row ${line}: pressure_psi, flow_gpm, radius_ft, and arc_degrees must be numeric`);
       return;
     }
 
@@ -73,6 +101,7 @@ function buildCatalog(rows) {
         manufacturer,
         headModel,
         nozzleModel,
+        defaultArcDegrees: arcDegrees,
         points: [],
       });
     }
@@ -186,6 +215,257 @@ function findSelectedModel() {
   );
 }
 
+function getZoneColor(zoneId) {
+  const zoneIndex = Math.max(0, project.zones.findIndex((zone) => zone.id === zoneId));
+  return zoneColors[zoneIndex % zoneColors.length];
+}
+
+function ensureDefaultZone() {
+  if (project.zones.length > 0) return;
+  project.zones.push({ id: crypto.randomUUID(), name: 'Zone 1' });
+}
+
+function updateProjectInputs() {
+  siteNameInput.value = project.site?.name || '';
+  siteAddressInput.value = project.site?.address || '';
+}
+
+function selectedSprinkler() {
+  return project.sprinklers.find((sprinkler) => sprinkler.id === selectedSprinklerId) || null;
+}
+
+function normalizeSprinklerPosition(sprinkler, index) {
+  if (Number.isFinite(sprinkler.xPercent) && Number.isFinite(sprinkler.yPercent)) return sprinkler;
+
+  return {
+    ...sprinkler,
+    xPercent: Math.min(90, 35 + index * 12),
+    yPercent: Math.min(85, 40 + index * 10),
+  };
+}
+
+function hydrateProject(loaded) {
+  project = {
+    ...structuredClone(emptyProject),
+    ...loaded,
+    site: { ...emptyProject.site, ...(loaded.site || {}) },
+    zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone) => ({ ...zone })) : [],
+    sprinklers: Array.isArray(loaded.sprinklers)
+      ? loaded.sprinklers.map((sprinkler, index) => normalizeSprinklerPosition({ ...sprinkler }, index))
+      : [],
+  };
+  ensureDefaultZone();
+  selectedSprinklerId = project.sprinklers[0]?.id || null;
+  render();
+}
+
+function formatNumber(value, digits = 2) {
+  return Number.isFinite(value) ? value.toFixed(digits) : '0.00';
+}
+
+function sprinklerAreaSqft(sprinkler) {
+  const radius = Number(sprinkler.radiusFt) || 0;
+  const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
+  return (arc / 360) * Math.PI * radius * radius;
+}
+
+function sprinklerPr(sprinkler) {
+  const flow = Number(sprinkler.flowGpm) || 0;
+  const area = sprinklerAreaSqft(sprinkler);
+  if (area <= 0) return 0;
+  return (96.3 * flow) / area;
+}
+
+function renderZones() {
+  zonesList.replaceChildren();
+  project.zones.forEach((zone, index) => {
+    const row = document.createElement('div');
+    row.className = 'zone-row';
+
+    const swatch = document.createElement('span');
+    swatch.className = 'zone-swatch';
+    swatch.style.backgroundColor = zoneColors[index % zoneColors.length];
+
+    const input = document.createElement('input');
+    input.value = zone.name;
+    input.setAttribute('aria-label', `Zone ${index + 1} name`);
+    input.addEventListener('input', () => {
+      zone.name = input.value || `Zone ${index + 1}`;
+      renderInspector();
+      renderAnalysis();
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.textContent = '×';
+    deleteBtn.title = 'Delete zone';
+    deleteBtn.addEventListener('click', () => {
+      if (project.zones.length === 1) return;
+      const fallbackZoneId = project.zones.find((candidate) => candidate.id !== zone.id)?.id;
+      project.sprinklers.forEach((sprinkler) => {
+        if (sprinkler.zoneId === zone.id) sprinkler.zoneId = fallbackZoneId;
+      });
+      project.zones = project.zones.filter((candidate) => candidate.id !== zone.id);
+      render();
+    });
+
+    row.append(swatch, input, deleteBtn);
+    zonesList.appendChild(row);
+  });
+}
+
+function renderCanvas() {
+  coverageLayer.replaceChildren();
+  sprinklerLayer.replaceChildren();
+  emptyCanvasHint.classList.toggle('hidden', project.sprinklers.length > 0);
+  sprinklerCount.textContent = `${project.sprinklers.length} sprinkler${project.sprinklers.length === 1 ? '' : 's'}`;
+
+  project.sprinklers.forEach((sprinkler) => {
+    const color = getZoneColor(sprinkler.zoneId);
+    const radiusPx = Math.max(10, (Number(sprinkler.radiusFt) || 0) * radiusScalePxPerFt);
+    const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
+    const orientation = Number(sprinkler.orientationDegrees) || 0;
+
+    const coverage = document.createElement('div');
+    coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
+    coverage.style.left = `${sprinkler.xPercent}%`;
+    coverage.style.top = `${sprinkler.yPercent}%`;
+    coverage.style.width = `${radiusPx * 2}px`;
+    coverage.style.height = `${radiusPx * 2}px`;
+    coverage.style.color = color;
+    coverage.style.setProperty('--arc-angle', `${arc}deg`);
+    coverage.style.setProperty('--start-angle', `${orientation - arc / 2}deg`);
+    coverageLayer.appendChild(coverage);
+
+    const marker = document.createElement('button');
+    marker.type = 'button';
+    marker.className = `sprinkler-marker ${sprinkler.id === selectedSprinklerId ? 'selected' : ''}`;
+    marker.style.left = `${sprinkler.xPercent}%`;
+    marker.style.top = `${sprinkler.yPercent}%`;
+    marker.style.backgroundColor = color;
+    marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr)`;
+    marker.setAttribute('aria-label', `Select sprinkler ${sprinkler.headModel || sprinkler.id}`);
+    marker.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      selectedSprinklerId = sprinkler.id;
+      dragState = { id: sprinkler.id, pointerId: event.pointerId };
+      marker.setPointerCapture(event.pointerId);
+      renderInspector();
+      renderCanvas();
+    });
+    sprinklerLayer.appendChild(marker);
+  });
+}
+
+function renderInspector() {
+  clearSelect(selectedZone);
+  project.zones.forEach((zone) => {
+    const option = document.createElement('option');
+    option.value = zone.id;
+    option.textContent = zone.name;
+    selectedZone.appendChild(option);
+  });
+
+  const sprinkler = selectedSprinkler();
+  noSelection.classList.toggle('hidden', Boolean(sprinkler));
+  sprinklerForm.classList.toggle('hidden', !sprinkler);
+  if (!sprinkler) return;
+
+  selectedZone.value = sprinkler.zoneId;
+  selectedHead.value = sprinkler.headModel || '';
+  selectedNozzle.value = sprinkler.nozzleModel || '';
+  selectedPressure.value = sprinkler.pressurePsi ?? 45;
+  selectedFlow.value = sprinkler.flowGpm ?? 0;
+  selectedRadius.value = sprinkler.radiusFt ?? 0;
+  selectedArc.value = sprinkler.arcDegrees ?? 360;
+  selectedOrientation.value = sprinkler.orientationDegrees ?? 0;
+}
+
+function renderAnalysis() {
+  analysisSummary.replaceChildren();
+
+  const totalFlow = project.sprinklers.reduce((sum, sprinkler) => sum + (Number(sprinkler.flowGpm) || 0), 0);
+  const totalArea = project.sprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
+  const overallPr = totalArea > 0 ? (96.3 * totalFlow) / totalArea : 0;
+  const missingData = project.sprinklers.filter((sprinkler) => !sprinkler.flowGpm || !sprinkler.radiusFt).length;
+
+  addAnalysisCard('Total flow', `${formatNumber(totalFlow)} gpm`, `${project.sprinklers.length} sprinklers`);
+  addAnalysisCard('Throw area', `${formatNumber(totalArea, 0)} sq ft`, 'Sector-adjusted estimate');
+  addAnalysisCard('Overall PR', `${formatNumber(overallPr)} in/hr`, 'Based on total flow / throw area');
+
+  project.zones.forEach((zone) => {
+    const zoneSprinklers = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id);
+    const zoneFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + (Number(sprinkler.flowGpm) || 0), 0);
+    const zoneArea = zoneSprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
+    const zonePr = zoneArea > 0 ? (96.3 * zoneFlow) / zoneArea : 0;
+    addAnalysisCard(zone.name, `${formatNumber(zonePr)} in/hr`, `${formatNumber(zoneFlow)} gpm · ${zoneSprinklers.length} heads`);
+  });
+
+  if (missingData > 0) {
+    addAnalysisCard('Warning', `${missingData} incomplete`, 'Add flow and radius data before trusting PR.', true);
+  }
+}
+
+function addAnalysisCard(label, value, detail, warning = false) {
+  const card = document.createElement('div');
+  card.className = `analysis-card ${warning ? 'warning-card' : ''}`;
+  card.innerHTML = `<span>${label}</span><strong>${value}</strong><span>${detail}</span>`;
+  analysisSummary.appendChild(card);
+}
+
+function render() {
+  updateProjectInputs();
+  renderZones();
+  renderCanvas();
+  renderInspector();
+  renderAnalysis();
+}
+
+function canvasPositionFromEvent(event) {
+  const rect = mapCanvas.getBoundingClientRect();
+  return {
+    xPercent: Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100)),
+    yPercent: Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100)),
+  };
+}
+
+function addSprinklerAt(position) {
+  ensureDefaultZone();
+  const model = findSelectedModel();
+  const pressurePsi = Number(pressureInput.value) || 45;
+  const performance = model ? lookupPerformance(model, pressurePsi) : null;
+  const sprinkler = {
+    id: crypto.randomUUID(),
+    zoneId: project.zones[0].id,
+    ...position,
+    headModel: model?.headModel || 'Unspecified head',
+    nozzleModel: model?.nozzleModel || 'Unspecified nozzle',
+    pressurePsi,
+    arcDegrees: model?.defaultArcDegrees || 360,
+    orientationDegrees: 0,
+    radiusFt: performance?.radiusFt ?? 12,
+    flowGpm: performance?.flowGpm ?? 1,
+  };
+  project.sprinklers.push(sprinkler);
+  selectedSprinklerId = sprinkler.id;
+  render();
+}
+
+function updateSelectedSprinklerFromForm() {
+  const sprinkler = selectedSprinkler();
+  if (!sprinkler) return;
+  sprinkler.zoneId = selectedZone.value;
+  sprinkler.headModel = selectedHead.value;
+  sprinkler.nozzleModel = selectedNozzle.value;
+  sprinkler.pressurePsi = Number(selectedPressure.value) || 0;
+  sprinkler.flowGpm = Number(selectedFlow.value) || 0;
+  sprinkler.radiusFt = Number(selectedRadius.value) || 0;
+  sprinkler.arcDegrees = Math.min(360, Math.max(1, Number(selectedArc.value) || 360));
+  sprinkler.orientationDegrees = ((Number(selectedOrientation.value) || 0) % 360 + 360) % 360;
+  renderCanvas();
+  renderAnalysis();
+}
+
 manufacturerSelect.addEventListener('change', () => {
   setOptions(headSelect, getHeads(manufacturerSelect.value), 'Select head model');
   setOptions(nozzleSelect, [], 'Select nozzle model');
@@ -246,8 +526,7 @@ lookupBtn.addEventListener('click', () => {
 });
 
 newBtn.addEventListener('click', () => {
-  project = structuredClone(emptyProject);
-  alert('New project created.');
+  hydrateProject(structuredClone(emptyProject));
 });
 
 saveBtn.addEventListener('click', () => {
@@ -268,11 +547,79 @@ loadInput.addEventListener('change', async (event) => {
     if (typeof loaded !== 'object' || loaded === null || !('version' in loaded)) {
       throw new Error('Invalid project JSON');
     }
-    project = loaded;
-    alert('Project loaded successfully.');
+    hydrateProject(loaded);
   } catch (error) {
     alert(`Failed to load project: ${error.message}`);
   } finally {
     loadInput.value = '';
   }
 });
+
+siteNameInput.addEventListener('input', () => {
+  project.site.name = siteNameInput.value;
+});
+
+siteAddressInput.addEventListener('input', () => {
+  project.site.address = siteAddressInput.value;
+});
+
+addZoneBtn.addEventListener('click', () => {
+  project.zones.push({ id: crypto.randomUUID(), name: `Zone ${project.zones.length + 1}` });
+  render();
+});
+
+mapCanvas.addEventListener('click', (event) => {
+  if (event.target.closest('.sprinkler-marker')) return;
+  addSprinklerAt(canvasPositionFromEvent(event));
+});
+
+sprinklerLayer.addEventListener('pointermove', (event) => {
+  if (!dragState) return;
+  const sprinkler = project.sprinklers.find((candidate) => candidate.id === dragState.id);
+  if (!sprinkler) return;
+  Object.assign(sprinkler, canvasPositionFromEvent(event));
+  renderCanvas();
+});
+
+sprinklerLayer.addEventListener('pointerup', () => {
+  dragState = null;
+});
+
+sprinklerLayer.addEventListener('pointercancel', () => {
+  dragState = null;
+});
+
+[selectedZone, selectedHead, selectedNozzle, selectedPressure, selectedFlow, selectedRadius, selectedArc, selectedOrientation].forEach(
+  (input) => input.addEventListener('input', updateSelectedSprinklerFromForm),
+);
+
+applyCatalogToSelectedBtn.addEventListener('click', () => {
+  const sprinkler = selectedSprinkler();
+  const model = findSelectedModel();
+  const pressurePsi = Number(pressureInput.value);
+  if (!sprinkler || !model || Number.isNaN(pressurePsi) || pressurePsi <= 0) return;
+  const result = lookupPerformance(model, pressurePsi);
+  if (result.flowGpm == null || result.radiusFt == null) return;
+  Object.assign(sprinkler, {
+    headModel: model.headModel,
+    nozzleModel: model.nozzleModel,
+    pressurePsi,
+    flowGpm: result.flowGpm,
+    radiusFt: result.radiusFt,
+    arcDegrees: model.defaultArcDegrees || sprinkler.arcDegrees,
+  });
+  lookupResult.textContent = `Applied ${model.headModel} / ${model.nozzleModel} to selected sprinkler.`;
+  render();
+});
+
+deleteSelectedBtn.addEventListener('click', () => {
+  if (!selectedSprinklerId) return;
+  project.sprinklers = project.sprinklers.filter((sprinkler) => sprinkler.id !== selectedSprinklerId);
+  selectedSprinklerId = project.sprinklers[0]?.id || null;
+  render();
+});
+
+hydrateProject(emptyProject);
+setOptions(manufacturerSelect, [], 'Select manufacturer');
+setOptions(headSelect, [], 'Select head model');
+setOptions(nozzleSelect, [], 'Select nozzle model');

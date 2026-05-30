@@ -21,45 +21,123 @@
       </header>
 
       <main class="layout">
-        <aside class="panel">
+        <aside class="panel left-panel">
           <h2>Catalog / Project</h2>
-          <label class="field-label file-btn">
-            Import CSV Catalog
-            <input id="load-catalog" type="file" accept=".csv,text/csv" />
-          </label>
-          <p id="catalog-status" class="status-text">No catalog loaded.</p>
 
-          <div class="field-group">
-            <label for="manufacturer-select">Manufacturer</label>
-            <select id="manufacturer-select"></select>
-          </div>
+          <section class="section-card">
+            <h3>Project</h3>
+            <div class="field-group">
+              <label for="site-name">Site name</label>
+              <input id="site-name" type="text" placeholder="New Site" />
+            </div>
+            <div class="field-group">
+              <label for="site-address">Address / notes</label>
+              <input id="site-address" type="text" placeholder="Optional" />
+            </div>
+          </section>
 
-          <div class="field-group">
-            <label for="head-select">Head Model</label>
-            <select id="head-select"></select>
-          </div>
+          <section class="section-card">
+            <h3>Zones</h3>
+            <div id="zones-list" class="zones-list" aria-live="polite"></div>
+            <button id="add-zone" class="full-width">Add Zone</button>
+          </section>
 
-          <div class="field-group">
-            <label for="nozzle-select">Nozzle Model</label>
-            <select id="nozzle-select"></select>
-          </div>
+          <section class="section-card">
+            <h3>Catalog Lookup</h3>
+            <label class="field-label file-btn full-width-file">
+              Import CSV Catalog
+              <input id="load-catalog" type="file" accept=".csv,text/csv" />
+            </label>
+            <p id="catalog-status" class="status-text">No catalog loaded.</p>
 
-          <div class="field-group">
-            <label for="pressure-input">Pressure (PSI)</label>
-            <input id="pressure-input" type="number" min="1" step="0.1" value="45" />
-          </div>
+            <div class="field-group">
+              <label for="manufacturer-select">Manufacturer</label>
+              <select id="manufacturer-select"></select>
+            </div>
 
-          <button id="lookup-performance" class="full-width">Lookup Performance</button>
-          <p id="lookup-result" class="status-text">Awaiting lookup.</p>
+            <div class="field-group">
+              <label for="head-select">Head Model</label>
+              <select id="head-select"></select>
+            </div>
+
+            <div class="field-group">
+              <label for="nozzle-select">Nozzle Model</label>
+              <select id="nozzle-select"></select>
+            </div>
+
+            <div class="field-group">
+              <label for="pressure-input">Pressure (PSI)</label>
+              <input id="pressure-input" type="number" min="1" step="0.1" value="45" />
+            </div>
+
+            <button id="lookup-performance" class="full-width">Lookup Performance</button>
+            <p id="lookup-result" class="status-text">Awaiting lookup.</p>
+          </section>
         </aside>
 
-        <section class="canvas" aria-label="Map canvas">
-          <div class="canvas-placeholder">Map canvas placeholder (Phase 2)</div>
+        <section class="canvas-panel" aria-label="Map canvas">
+          <div class="canvas-toolbar">
+            <div>
+              <h2>Planning Canvas</h2>
+              <p>Click the yard canvas to add sprinklers. Drag points to reposition them.</p>
+            </div>
+            <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
+          </div>
+          <div id="map-canvas" class="map-canvas" role="application" aria-label="Editable sprinkler map">
+            <div class="canvas-grid" aria-hidden="true"></div>
+            <div id="coverage-layer" class="coverage-layer" aria-hidden="true"></div>
+            <div id="sprinkler-layer" class="sprinkler-layer"></div>
+            <div id="empty-canvas-hint" class="empty-canvas-hint">Click anywhere to place your first sprinkler.</div>
+          </div>
+          <section class="analysis-panel">
+            <h3>Analysis Summary</h3>
+            <div id="analysis-summary" class="analysis-grid"></div>
+          </section>
         </section>
 
-        <aside class="panel">
+        <aside class="panel inspector-panel">
           <h2>Selected Sprinkler</h2>
-          <p>Select a sprinkler on the map to edit details.</p>
+          <div id="no-selection" class="status-text">Select a sprinkler on the canvas to edit details.</div>
+          <form id="sprinkler-form" class="hidden">
+            <div class="field-group">
+              <label for="selected-zone">Zone</label>
+              <select id="selected-zone"></select>
+            </div>
+            <div class="field-group">
+              <label for="selected-head">Head model</label>
+              <input id="selected-head" type="text" />
+            </div>
+            <div class="field-group">
+              <label for="selected-nozzle">Nozzle model</label>
+              <input id="selected-nozzle" type="text" />
+            </div>
+            <div class="field-group two-col">
+              <div>
+                <label for="selected-pressure">Pressure</label>
+                <input id="selected-pressure" type="number" min="1" step="0.1" />
+              </div>
+              <div>
+                <label for="selected-flow">Flow GPM</label>
+                <input id="selected-flow" type="number" min="0" step="0.01" />
+              </div>
+            </div>
+            <div class="field-group two-col">
+              <div>
+                <label for="selected-radius">Radius ft</label>
+                <input id="selected-radius" type="number" min="0" step="0.1" />
+              </div>
+              <div>
+                <label for="selected-arc">Arc °</label>
+                <input id="selected-arc" type="number" min="1" max="360" step="1" />
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="selected-orientation">Orientation °</label>
+              <input id="selected-orientation" type="number" min="0" max="359" step="1" />
+            </div>
+            <button id="apply-catalog-to-selected" type="button" class="full-width">Apply Catalog Lookup</button>
+            <button id="delete-selected" type="button" class="danger full-width">Delete Sprinkler</button>
+          </form>
         </aside>
       </main>
     </div>
