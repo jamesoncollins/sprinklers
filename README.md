@@ -41,6 +41,31 @@ Optional later backend (not required for MVP):
 5. **Persistence**
    - Save project JSON and import later.
 
+
+
+## Map layers
+
+The planning canvas can display real web map tiles in addition to the original simplified sketch surface:
+
+- **Satellite imagery** uses Esri World Imagery tiles for aerial context.
+- **Simplified map** uses OpenStreetMap tiles when a lighter basemap is preferred.
+- **Sketch grid** keeps the offline-friendly schematic yard canvas for rough layouts or when map tiles are unavailable.
+
+Sprinklers placed on satellite or simplified map layers are stored with latitude/longitude plus fallback canvas percentages, so saved project JSON keeps the map view and sprinkler locations portable.
+
+## Default CSV catalogs
+
+The repository includes starter CSV catalogs under `data/default-catalogs/` for Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`).
+
+Available starter files:
+
+- `data/default-catalogs/hunter_pgp_adj_all.csv` — all included PGP-ADJ blue, red, and grey low-angle nozzle rows.
+- `data/default-catalogs/hunter_pgp_adj_blue.csv` — PGP-ADJ blue nozzles.
+- `data/default-catalogs/hunter_pgp_adj_red.csv` — PGP-ADJ red nozzles.
+- `data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv` — PGP-ADJ grey low-angle nozzles.
+
+The web app exposes these starter catalogs in the Catalog Lookup panel with both an **Import** button for immediate use and a **Download CSV** link so the same files can be saved locally and imported through the standard CSV file picker. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
+
 ## Data Strategy
 
 Start with **imported CSV catalogs** so the tool works offline and users can bring their preferred manufacturer data.
