@@ -20,7 +20,6 @@ const saveBtn = document.getElementById('save-project');
 const loadInput = document.getElementById('load-project');
 const catalogInput = document.getElementById('load-catalog');
 const catalogStatus = document.getElementById('catalog-status');
-const defaultCatalogList = document.getElementById('default-catalog-list');
 const manufacturerSelect = document.getElementById('manufacturer-select');
 const headSelect = document.getElementById('head-select');
 const nozzleSelect = document.getElementById('nozzle-select');
@@ -719,12 +718,6 @@ async function loadDefaultCatalog() {
     setCatalogStatus(`Failed to load ${defaultCatalog.label}: ${error.message}. You can still import a CSV catalog.`);
   }
 }
-
-const defaultCatalogButton = document.createElement('button');
-defaultCatalogButton.type = 'button';
-defaultCatalogButton.textContent = `Load ${defaultCatalog.label}`;
-defaultCatalogButton.addEventListener('click', loadDefaultCatalog);
-defaultCatalogList.appendChild(defaultCatalogButton);
 
 lookupBtn.addEventListener('click', () => {
   const model = findSelectedModel();
