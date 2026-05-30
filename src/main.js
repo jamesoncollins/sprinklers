@@ -9,16 +9,19 @@ const imagerySources = {
     label: 'Esri World Imagery',
     url: ({ zoom, y, x }) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}`,
     detail: 'Best global no-key default.',
+    maxNativeZoom: 19,
   },
   'esri-clarity': {
     label: 'Esri World Imagery Clarity',
     url: ({ zoom, y, x }) => `https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}`,
     detail: 'Archive-style Esri imagery that can be clearer or leaf-off in some areas.',
+    maxNativeZoom: 19,
   },
   'usgs-imagery': {
     label: 'USGS Imagery Only',
     url: ({ zoom, y, x }) => `https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/${zoom}/${y}/${x}`,
     detail: 'U.S.-only public imagery; useful as an alternate source.',
+    maxNativeZoom: 19,
   },
 };
 
@@ -371,6 +374,15 @@ function setSatelliteStatus(message) {
   satelliteStatus.textContent = message;
 }
 
+function hasUploadedBackgroundImage() {
+  return Boolean(normalizeBackgroundImageSettings(project.site?.backgroundImage).dataUrl);
+}
+
+function promptForBackgroundImage() {
+  imageStatus.textContent = 'Choose an image file to use as the planning background.';
+  backgroundImageInput.click();
+}
+
 function updateProjectInputs() {
   siteNameInput.value = project.site?.name || '';
   siteAddressInput.value = project.site?.address || '';
@@ -433,12 +445,15 @@ function renderSatelliteLayer() {
     return;
   }
 
-  const tileSize = 256;
+  const nativeTileSize = 256;
+  const sourceZoom = Math.min(zoom, imagerySource.maxNativeZoom || zoom);
+  const tileScale = 2 ** (zoom - sourceZoom);
+  const displayTileSize = nativeTileSize * tileScale;
   const tilePoint = lonLatToTilePoint(longitude, latitude, zoom);
-  const centerWorldX = tilePoint.x * tileSize;
-  const centerWorldY = tilePoint.y * tileSize;
-  const scale = 2 ** zoom;
-  const maxTileIndex = scale - 1;
+  const centerWorldX = tilePoint.x * nativeTileSize;
+  const centerWorldY = tilePoint.y * nativeTileSize;
+  const sourceScale = 2 ** sourceZoom;
+  const maxTileIndex = sourceScale - 1;
   const { scale: viewScale, rotationDegrees } = normalizeMapViewSettings(project.site.mapView);
   const localCorners = [
     screenPointToLocalPoint(0, 0),
@@ -453,10 +468,10 @@ function renderSatelliteLayer() {
   const maxLocalX = Math.max(...xValues) + padding;
   const minLocalY = Math.min(...yValues) - padding;
   const maxLocalY = Math.max(...yValues) + padding;
-  const startX = Math.floor((centerWorldX + minLocalX - width / 2) / tileSize);
-  const endX = Math.floor((centerWorldX + maxLocalX - width / 2) / tileSize);
-  const startY = Math.floor((centerWorldY + minLocalY - height / 2) / tileSize);
-  const endY = Math.floor((centerWorldY + maxLocalY - height / 2) / tileSize);
+  const startX = Math.floor((centerWorldX + minLocalX - width / 2) / displayTileSize);
+  const endX = Math.floor((centerWorldX + maxLocalX - width / 2) / displayTileSize);
+  const startY = Math.floor((centerWorldY + minLocalY - height / 2) / displayTileSize);
+  const endY = Math.floor((centerWorldY + maxLocalY - height / 2) / displayTileSize);
 
   let tilesRequested = 0;
   let tilesLoaded = 0;
@@ -471,7 +486,8 @@ function renderSatelliteLayer() {
       return;
     }
     if (tilesLoaded > 0) {
-      setSatelliteStatus(`Showing ${imagerySource.label} at ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (tile zoom ${zoom}, view ${viewScale.toFixed(2)}×, rotation ${Math.round(rotationDegrees)}°). ${imagerySource.detail}`);
+      const zoomDetail = sourceZoom === zoom ? `tile zoom ${zoom}` : `tile zoom ${zoom} using zoom ${sourceZoom} imagery`;
+      setSatelliteStatus(`Showing ${imagerySource.label} at ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (${zoomDetail}, view ${viewScale.toFixed(2)}×, rotation ${Math.round(rotationDegrees)}°). ${imagerySource.detail}`);
       return;
     }
     setSatelliteStatus(`Loading ${tilesRequested} satellite tile${tilesRequested === 1 ? '' : 's'}...`);
@@ -480,11 +496,13 @@ function renderSatelliteLayer() {
   for (let x = startX; x <= endX; x += 1) {
     for (let y = startY; y <= endY; y += 1) {
       if (y < 0 || y > maxTileIndex) continue;
-      const wrappedX = ((x % scale) + scale) % scale;
+      const wrappedX = ((x % sourceScale) + sourceScale) % sourceScale;
       const tile = document.createElement('img');
       tile.className = 'satellite-tile';
       tile.alt = '';
       tile.draggable = false;
+      tile.style.width = `${displayTileSize}px`;
+      tile.style.height = `${displayTileSize}px`;
       tile.addEventListener('load', () => {
         tilesLoaded += 1;
         updateTileStatus();
@@ -494,9 +512,9 @@ function renderSatelliteLayer() {
         updateTileStatus();
       });
       tilesRequested += 1;
-      tile.src = imagerySource.url({ zoom, y, x: wrappedX });
-      tile.style.left = `${width / 2 + x * tileSize - centerWorldX}px`;
-      tile.style.top = `${height / 2 + y * tileSize - centerWorldY}px`;
+      tile.src = imagerySource.url({ zoom: sourceZoom, y, x: wrappedX });
+      tile.style.left = `${width / 2 + x * displayTileSize - centerWorldX}px`;
+      tile.style.top = `${height / 2 + y * displayTileSize - centerWorldY}px`;
       satelliteLayer.appendChild(tile);
     }
   }
@@ -1108,6 +1126,9 @@ canvasBackgroundSelect.addEventListener('change', () => {
   updateProjectInputs();
   renderSatelliteLayer();
   renderImageLayer();
+  if (project.site.imageSource === 'image' && !hasUploadedBackgroundImage()) {
+    promptForBackgroundImage();
+  }
 });
 
 function updateSatelliteSettingsFromInputs() {
