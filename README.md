@@ -42,17 +42,6 @@ Optional later backend (not required for MVP):
    - Save project JSON and import later.
 
 
-
-## Map layers
-
-The planning canvas can display real web map tiles in addition to the original simplified sketch surface. Use the **Map layer** buttons above the canvas to switch between:
-
-- **Satellite** — turns on Esri World Imagery tiles for aerial context.
-- **Simplified** — turns on OpenStreetMap tiles when a lighter basemap is preferred.
-- **Sketch** — turns imagery off and keeps the offline-friendly schematic yard canvas for rough layouts or when map tiles are unavailable.
-
-Satellite is selected by default for new projects. Use **Use my location** to center the satellite view on your yard, **Zoom in/out** to adjust detail, drag the imagery to pan, and click to add sprinklers. Sprinklers placed on satellite or simplified map layers are stored with latitude/longitude plus fallback canvas percentages, so saved project JSON keeps the map view and sprinkler locations portable.
-
 ## Default CSV catalogs
 
 The repository includes starter CSV catalogs under `data/default-catalogs/` for Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`).
@@ -64,7 +53,7 @@ Available starter files:
 - `data/default-catalogs/hunter_pgp_adj_red.csv` — PGP-ADJ red nozzles.
 - `data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv` — PGP-ADJ grey low-angle nozzles.
 
-The web app exposes these starter catalogs in the Catalog Lookup panel with both an **Import** button for immediate use and a **Download CSV** link so the same files can be saved locally and imported through the standard CSV file picker. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
+The web app also exposes these starter catalogs as one-click load buttons in the Catalog Lookup panel. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
 
 ## Data Strategy
 
