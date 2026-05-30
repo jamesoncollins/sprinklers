@@ -1,6 +1,13 @@
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
 const radiusScalePxPerFt = 4;
 
+const defaultCatalogs = [
+  { label: 'Hunter PGP-ADJ all', path: 'data/default-catalogs/hunter_pgp_adj_all.csv' },
+  { label: 'Blue nozzles', path: 'data/default-catalogs/hunter_pgp_adj_blue.csv' },
+  { label: 'Red nozzles', path: 'data/default-catalogs/hunter_pgp_adj_red.csv' },
+  { label: 'Grey low angle', path: 'data/default-catalogs/hunter_pgp_adj_grey_low_angle.csv' },
+];
+
 const emptyProject = {
   version: 1,
   site: { name: 'New Site', address: '', imageSource: 'satellite' },
@@ -18,6 +25,7 @@ const saveBtn = document.getElementById('save-project');
 const loadInput = document.getElementById('load-project');
 const catalogInput = document.getElementById('load-catalog');
 const catalogStatus = document.getElementById('catalog-status');
+const defaultCatalogList = document.getElementById('default-catalog-list');
 const manufacturerSelect = document.getElementById('manufacturer-select');
 const headSelect = document.getElementById('head-select');
 const nozzleSelect = document.getElementById('nozzle-select');
@@ -66,6 +74,24 @@ function parseCsv(text) {
       });
       return row;
     });
+}
+
+function loadCatalogFromText(text, sourceLabel) {
+  const rows = parseCsv(text);
+  const { models, warnings } = buildCatalog(rows);
+  if (models.length === 0) {
+    setCatalogStatus(`Catalog import failed. ${warnings.slice(0, 3).join(' | ') || 'No valid rows found.'}`);
+    return false;
+  }
+
+  catalogState = { version: 1, models };
+  setOptions(manufacturerSelect, getManufacturers(), 'Select manufacturer');
+  setOptions(headSelect, [], 'Select head model');
+  setOptions(nozzleSelect, [], 'Select nozzle model');
+
+  const warningText = warnings.length ? ` Warnings: ${warnings.length}.` : '';
+  setCatalogStatus(`Loaded ${sourceLabel}: ${models.length} model/nozzle combinations.${warningText}`);
+  return true;
 }
 
 function buildCatalog(rows) {
@@ -480,25 +506,31 @@ catalogInput.addEventListener('change', async (event) => {
   if (!file) return;
 
   try {
-    const rows = parseCsv(await file.text());
-    const { models, warnings } = buildCatalog(rows);
-    if (models.length === 0) {
-      setCatalogStatus(`Catalog import failed. ${warnings.slice(0, 3).join(' | ') || 'No valid rows found.'}`);
-      return;
-    }
-
-    catalogState = { version: 1, models };
-    setOptions(manufacturerSelect, getManufacturers(), 'Select manufacturer');
-    setOptions(headSelect, [], 'Select head model');
-    setOptions(nozzleSelect, [], 'Select nozzle model');
-
-    const warningText = warnings.length ? ` Warnings: ${warnings.length}.` : '';
-    setCatalogStatus(`Imported ${models.length} model/nozzle combinations.${warningText}`);
+    loadCatalogFromText(await file.text(), file.name);
   } catch (error) {
     setCatalogStatus(`Failed to parse CSV: ${error.message}`);
   } finally {
     catalogInput.value = '';
   }
+});
+
+defaultCatalogs.forEach((catalog) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = catalog.label;
+  button.addEventListener('click', async () => {
+    try {
+      setCatalogStatus(`Loading ${catalog.label}...`);
+      const response = await fetch(catalog.path);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      loadCatalogFromText(await response.text(), catalog.label);
+    } catch (error) {
+      setCatalogStatus(`Failed to load ${catalog.label}: ${error.message}`);
+    }
+  });
+  defaultCatalogList.appendChild(button);
 });
 
 lookupBtn.addEventListener('click', () => {
