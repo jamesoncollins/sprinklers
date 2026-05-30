@@ -1,11 +1,37 @@
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
 const radiusScalePxPerFt = 4;
+const mapViewMinScale = 0.5;
+const mapViewMaxScale = 4;
+
+const imagerySources = {
+  'esri-world': {
+    label: 'Esri World Imagery',
+    url: ({ zoom, y, x }) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}`,
+    detail: 'Best global no-key default.',
+  },
+  'esri-clarity': {
+    label: 'Esri World Imagery Clarity',
+    url: ({ zoom, y, x }) => `https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}`,
+    detail: 'Archive-style Esri imagery that can be clearer or leaf-off in some areas.',
+  },
+  'usgs-imagery': {
+    label: 'USGS Imagery Only',
+    url: ({ zoom, y, x }) => `https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/${zoom}/${y}/${x}`,
+    detail: 'U.S.-only public imagery; useful as an alternate source.',
+  },
+};
 
 const defaultCatalog = { label: 'Built-in sprinkler catalog', path: 'data/default-catalogs/default_sprinkler_catalog.csv' };
 
 const emptyProject = {
   version: 1,
-  site: { name: 'New Site', address: '', imageSource: 'yard', satellite: { latitude: null, longitude: null, zoom: 19 } },
+  site: {
+    name: 'New Site',
+    address: '',
+    imageSource: 'yard',
+    satellite: { latitude: null, longitude: null, zoom: 19, source: 'esri-world' },
+    mapView: { scale: 1, panX: 0, panY: 0 },
+  },
   zones: [],
   sprinklers: [],
 };
@@ -14,6 +40,8 @@ let project = structuredClone(emptyProject);
 let catalogState = null;
 let selectedSprinklerId = null;
 let dragState = null;
+let panState = null;
+let suppressNextCanvasClick = false;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
@@ -32,11 +60,13 @@ const canvasBackgroundSelect = document.getElementById('canvas-background');
 const satelliteControls = document.getElementById('satellite-controls');
 const satelliteLatitudeInput = document.getElementById('satellite-latitude');
 const satelliteLongitudeInput = document.getElementById('satellite-longitude');
+const satelliteSourceSelect = document.getElementById('satellite-source');
 const satelliteZoomInput = document.getElementById('satellite-zoom');
 const satelliteZoomValue = document.getElementById('satellite-zoom-value');
 const addressLookupBtn = document.getElementById('lookup-address');
 const addressLookupStatus = document.getElementById('address-lookup-status');
 const satelliteStatus = document.getElementById('satellite-status');
+const resetMapViewBtn = document.getElementById('reset-map-view');
 const zonesList = document.getElementById('zones-list');
 const addZoneBtn = document.getElementById('add-zone');
 const mapCanvas = document.getElementById('map-canvas');
@@ -265,12 +295,38 @@ function normalizeSatelliteSettings(settings = {}) {
   const latitude = optionalNumber(settings.latitude);
   const longitude = optionalNumber(settings.longitude);
   const zoom = Number(settings.zoom);
+  const source = imagerySources[settings.source] ? settings.source : 'esri-world';
 
   return {
     latitude: latitude === null ? null : Math.min(85, Math.max(-85, latitude)),
     longitude: longitude === null ? null : Math.min(180, Math.max(-180, longitude)),
     zoom: Number.isFinite(zoom) ? Math.min(21, Math.max(16, Math.round(zoom))) : 19,
+    source,
   };
+}
+
+function normalizeMapViewSettings(settings = {}) {
+  const scale = Number(settings.scale);
+  const panX = Number(settings.panX);
+  const panY = Number(settings.panY);
+
+  return {
+    scale: Number.isFinite(scale) ? Math.min(mapViewMaxScale, Math.max(mapViewMinScale, scale)) : 1,
+    panX: Number.isFinite(panX) ? panX : 0,
+    panY: Number.isFinite(panY) ? panY : 0,
+  };
+}
+
+function mapViewTransform() {
+  const { scale, panX, panY } = normalizeMapViewSettings(project.site?.mapView);
+  return `translate(${panX}px, ${panY}px) scale(${scale})`;
+}
+
+function applyMapViewTransform() {
+  const transform = mapViewTransform();
+  [satelliteLayer, coverageLayer, sprinklerLayer, mapCanvas.querySelector('.canvas-grid')].forEach((layer) => {
+    if (layer) layer.style.transform = transform;
+  });
 }
 
 function hasSatelliteCenter() {
@@ -295,6 +351,7 @@ function updateProjectInputs() {
   const satellite = normalizeSatelliteSettings(project.site?.satellite);
   satelliteLatitudeInput.value = Number.isFinite(satellite.latitude) ? satellite.latitude : '';
   satelliteLongitudeInput.value = Number.isFinite(satellite.longitude) ? satellite.longitude : '';
+  satelliteSourceSelect.value = satellite.source;
   satelliteZoomInput.value = satellite.zoom;
   satelliteZoomValue.textContent = satellite.zoom;
 }
@@ -310,6 +367,7 @@ function lonLatToTilePoint(longitude, latitude, zoom) {
 
 function renderSatelliteLayer() {
   satelliteLayer.replaceChildren();
+  applyMapViewTransform();
   const wantsSatellite = project.site?.imageSource === 'satellite';
   const showSatellite = wantsSatellite && hasSatelliteCenter();
   mapCanvas.classList.toggle('satellite-enabled', wantsSatellite);
@@ -324,7 +382,8 @@ function renderSatelliteLayer() {
     return;
   }
 
-  const { latitude, longitude, zoom } = normalizeSatelliteSettings(project.site.satellite);
+  const { latitude, longitude, zoom, source } = normalizeSatelliteSettings(project.site.satellite);
+  const imagerySource = imagerySources[source] || imagerySources['esri-world'];
   const rect = mapCanvas.getBoundingClientRect();
   const width = rect.width || mapCanvas.clientWidth;
   const height = rect.height || mapCanvas.clientHeight;
@@ -339,10 +398,15 @@ function renderSatelliteLayer() {
   const centerWorldY = tilePoint.y * tileSize;
   const scale = 2 ** zoom;
   const maxTileIndex = scale - 1;
-  const startX = Math.floor((centerWorldX - width / 2) / tileSize);
-  const endX = Math.floor((centerWorldX + width / 2) / tileSize);
-  const startY = Math.floor((centerWorldY - height / 2) / tileSize);
-  const endY = Math.floor((centerWorldY + height / 2) / tileSize);
+  const { scale: viewScale, panX, panY } = normalizeMapViewSettings(project.site.mapView);
+  const minLocalX = (0 - panX) / viewScale;
+  const maxLocalX = (width - panX) / viewScale;
+  const minLocalY = (0 - panY) / viewScale;
+  const maxLocalY = (height - panY) / viewScale;
+  const startX = Math.floor((centerWorldX + minLocalX - width / 2) / tileSize);
+  const endX = Math.floor((centerWorldX + maxLocalX - width / 2) / tileSize);
+  const startY = Math.floor((centerWorldY + minLocalY - height / 2) / tileSize);
+  const endY = Math.floor((centerWorldY + maxLocalY - height / 2) / tileSize);
 
   let tilesRequested = 0;
   let tilesLoaded = 0;
@@ -357,7 +421,7 @@ function renderSatelliteLayer() {
       return;
     }
     if (tilesLoaded > 0) {
-      setSatelliteStatus(`Showing satellite imagery at ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (zoom ${zoom}).`);
+      setSatelliteStatus(`Showing ${imagerySource.label} at ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (tile zoom ${zoom}, view ${viewScale.toFixed(2)}×). ${imagerySource.detail}`);
       return;
     }
     setSatelliteStatus(`Loading ${tilesRequested} satellite tile${tilesRequested === 1 ? '' : 's'}...`);
@@ -380,7 +444,7 @@ function renderSatelliteLayer() {
         updateTileStatus();
       });
       tilesRequested += 1;
-      tile.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${wrappedX}`;
+      tile.src = imagerySource.url({ zoom, y, x: wrappedX });
       tile.style.left = `${width / 2 + x * tileSize - centerWorldX}px`;
       tile.style.top = `${height / 2 + y * tileSize - centerWorldY}px`;
       satelliteLayer.appendChild(tile);
@@ -465,6 +529,7 @@ function hydrateProject(loaded) {
       ...emptyProject.site,
       ...(loaded.site || {}),
       satellite: normalizeSatelliteSettings({ ...emptyProject.site.satellite, ...(loaded.site?.satellite || {}) }),
+      mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone) => ({ ...zone })) : [],
     sprinklers: Array.isArray(loaded.sprinklers)
@@ -532,6 +597,7 @@ function renderZones() {
 }
 
 function renderCanvas() {
+  applyMapViewTransform();
   coverageLayer.replaceChildren();
   sprinklerLayer.replaceChildren();
   emptyCanvasHint.classList.toggle('hidden', project.sprinklers.length > 0);
@@ -563,12 +629,14 @@ function renderCanvas() {
     marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr)`;
     marker.setAttribute('aria-label', `Select sprinkler ${sprinkler.headModel || sprinkler.id}`);
     marker.addEventListener('pointerdown', (event) => {
+      if (event.ctrlKey) return;
       event.stopPropagation();
       selectedSprinklerId = sprinkler.id;
-      dragState = { id: sprinkler.id, pointerId: event.pointerId };
+      dragState = { id: sprinkler.id, pointerId: event.pointerId, marker, coverage };
       marker.setPointerCapture(event.pointerId);
+      sprinklerLayer.querySelectorAll('.sprinkler-marker.selected').forEach((element) => element.classList.remove('selected'));
+      marker.classList.add('selected');
       renderInspector();
-      renderCanvas();
     });
     sprinklerLayer.appendChild(marker);
   });
@@ -633,6 +701,7 @@ function addAnalysisCard(label, value, detail, warning = false) {
 function render() {
   updateProjectInputs();
   renderZones();
+  applyMapViewTransform();
   renderSatelliteLayer();
   renderCanvas();
   renderInspector();
@@ -641,10 +710,70 @@ function render() {
 
 function canvasPositionFromEvent(event) {
   const rect = mapCanvas.getBoundingClientRect();
+  const { scale, panX, panY } = normalizeMapViewSettings(project.site.mapView);
+  const x = (event.clientX - rect.left - panX) / scale;
+  const y = (event.clientY - rect.top - panY) / scale;
   return {
-    xPercent: Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100)),
-    yPercent: Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100)),
+    xPercent: Math.min(100, Math.max(0, (x / rect.width) * 100)),
+    yPercent: Math.min(100, Math.max(0, (y / rect.height) * 100)),
   };
+}
+
+function startMapPan(event) {
+  if (!event.ctrlKey) return false;
+  event.preventDefault();
+  panState = {
+    pointerId: event.pointerId,
+    startClientX: event.clientX,
+    startClientY: event.clientY,
+    startPanX: project.site.mapView.panX,
+    startPanY: project.site.mapView.panY,
+    moved: false,
+  };
+  mapCanvas.classList.add('panning');
+  mapCanvas.setPointerCapture(event.pointerId);
+  suppressNextCanvasClick = true;
+  return true;
+}
+
+function updateMapPan(event) {
+  if (!panState || event.pointerId !== panState.pointerId) return;
+  const deltaX = event.clientX - panState.startClientX;
+  const deltaY = event.clientY - panState.startClientY;
+  panState.moved ||= Math.hypot(deltaX, deltaY) > 2;
+  project.site.mapView = normalizeMapViewSettings({
+    ...project.site.mapView,
+    panX: panState.startPanX + deltaX,
+    panY: panState.startPanY + deltaY,
+  });
+  applyMapViewTransform();
+}
+
+function endMapPan(event) {
+  if (!panState || event.pointerId !== panState.pointerId) return;
+  mapCanvas.classList.remove('panning');
+  if (panState.moved) renderSatelliteLayer();
+  panState = null;
+}
+
+function zoomMapView(event) {
+  event.preventDefault();
+  const rect = mapCanvas.getBoundingClientRect();
+  const view = normalizeMapViewSettings(project.site.mapView);
+  const pointerX = event.clientX - rect.left;
+  const pointerY = event.clientY - rect.top;
+  const zoomFactor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const nextScale = Math.min(mapViewMaxScale, Math.max(mapViewMinScale, view.scale * zoomFactor));
+  const worldX = (pointerX - view.panX) / view.scale;
+  const worldY = (pointerY - view.panY) / view.scale;
+
+  project.site.mapView = normalizeMapViewSettings({
+    scale: nextScale,
+    panX: pointerX - worldX * nextScale,
+    panY: pointerY - worldY * nextScale,
+  });
+  applyMapViewTransform();
+  renderSatelliteLayer();
 }
 
 function addSprinklerAt(position) {
@@ -813,13 +942,14 @@ function updateSatelliteSettingsFromInputs() {
   project.site.satellite = normalizeSatelliteSettings({
     latitude: satelliteLatitudeInput.value === '' ? null : Number(satelliteLatitudeInput.value),
     longitude: satelliteLongitudeInput.value === '' ? null : Number(satelliteLongitudeInput.value),
+    source: satelliteSourceSelect.value,
     zoom: Number(satelliteZoomInput.value),
   });
   satelliteZoomValue.textContent = project.site.satellite.zoom;
   renderSatelliteLayer();
 }
 
-[satelliteLatitudeInput, satelliteLongitudeInput, satelliteZoomInput].forEach((input) => {
+[satelliteLatitudeInput, satelliteLongitudeInput, satelliteSourceSelect, satelliteZoomInput].forEach((input) => {
   input.addEventListener('input', updateSatelliteSettingsFromInputs);
 });
 
@@ -828,7 +958,19 @@ addZoneBtn.addEventListener('click', () => {
   render();
 });
 
+mapCanvas.addEventListener('pointerdown', startMapPan);
+mapCanvas.addEventListener('pointermove', updateMapPan);
+mapCanvas.addEventListener('pointerup', endMapPan);
+mapCanvas.addEventListener('pointercancel', endMapPan);
+mapCanvas.addEventListener('wheel', zoomMapView, { passive: false });
+mapCanvas.addEventListener('contextmenu', (event) => {
+  if (event.ctrlKey || panState) event.preventDefault();
+});
 mapCanvas.addEventListener('click', (event) => {
+  if (suppressNextCanvasClick || event.ctrlKey) {
+    suppressNextCanvasClick = false;
+    return;
+  }
   if (event.target.closest('.sprinkler-marker')) return;
   addSprinklerAt(canvasPositionFromEvent(event));
 });
@@ -838,15 +980,26 @@ sprinklerLayer.addEventListener('pointermove', (event) => {
   const sprinkler = project.sprinklers.find((candidate) => candidate.id === dragState.id);
   if (!sprinkler) return;
   Object.assign(sprinkler, canvasPositionFromEvent(event));
-  renderCanvas();
+  dragState.marker.style.left = `${sprinkler.xPercent}%`;
+  dragState.marker.style.top = `${sprinkler.yPercent}%`;
+  dragState.coverage.style.left = `${sprinkler.xPercent}%`;
+  dragState.coverage.style.top = `${sprinkler.yPercent}%`;
 });
 
 sprinklerLayer.addEventListener('pointerup', () => {
   dragState = null;
+  renderCanvas();
 });
 
 sprinklerLayer.addEventListener('pointercancel', () => {
   dragState = null;
+  renderCanvas();
+});
+
+resetMapViewBtn.addEventListener('click', () => {
+  project.site.mapView = normalizeMapViewSettings();
+  applyMapViewTransform();
+  renderSatelliteLayer();
 });
 
 window.addEventListener('resize', renderSatelliteLayer);

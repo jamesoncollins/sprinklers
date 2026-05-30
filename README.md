@@ -44,7 +44,9 @@ Optional later backend (not required for MVP):
 
 ## Satellite canvas background
 
-The Planning Canvas can use either the offline yard sketch grid or live satellite tiles. Enter a property address and click **Look Up Address** to geocode it and automatically switch to satellite imagery, or manually select **Satellite imagery** and enter the property's center latitude/longitude. These settings are saved in exported project JSON under `site.satellite`, so imported projects restore the same imagery view.
+The Planning Canvas can use either the offline yard sketch grid or live imagery tiles. Enter a property address and click **Look Up Address** to geocode it and automatically switch to imagery, or manually select **Satellite imagery** and enter the property's center latitude/longitude. The imagery source selector currently offers Esri World Imagery as the global default, Esri World Imagery Clarity as an alternate archive-style source, and USGS Imagery Only for U.S. properties. Winter/leaf-off imagery is not guaranteed by any no-key public layer; try the alternate source list when the default capture is too leafy or low-detail.
+
+Use **Ctrl+drag** on the canvas to pan the planning view, use the mouse **scroll wheel** over the canvas to zoom around the pointer, and click **Reset Pan / Zoom** to return to the original centered view. These settings are saved in exported project JSON under `site.satellite` and `site.mapView`, so imported projects restore the same imagery source and map view.
 
 ## Default CSV catalogs
 
