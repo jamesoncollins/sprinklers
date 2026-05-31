@@ -664,9 +664,17 @@ function formatNumber(value, digits = 2) {
   return Number.isFinite(value) ? value.toFixed(digits) : '0.00';
 }
 
+function normalizeArcDegrees(value) {
+  return Math.min(360, Math.max(1, Number(value) || 360));
+}
+
+function normalizeOrientationDegrees(value) {
+  return ((Number(value) || 0) % 360 + 360) % 360;
+}
+
 function sprinklerAreaSqft(sprinkler) {
   const radius = Number(sprinkler.radiusFt) || 0;
-  const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
+  const arc = normalizeArcDegrees(sprinkler.arcDegrees);
   return (arc / 360) * Math.PI * radius * radius;
 }
 
@@ -963,8 +971,8 @@ function renderCanvas() {
   project.sprinklers.forEach((sprinkler) => {
     const color = getZoneColor(sprinkler.zoneId);
     const radiusPx = Math.max(10, (Number(sprinkler.radiusFt) || 0) / currentFeetPerPixel());
-    const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
-    const orientation = Number(sprinkler.orientationDegrees) || 0;
+    const arc = normalizeArcDegrees(sprinkler.arcDegrees);
+    const leftHandLock = normalizeOrientationDegrees(sprinkler.orientationDegrees);
 
     const coverage = document.createElement('div');
     coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
@@ -974,7 +982,7 @@ function renderCanvas() {
     coverage.style.height = `${radiusPx * 2}px`;
     coverage.style.color = color;
     coverage.style.setProperty('--arc-angle', `${arc}deg`);
-    coverage.style.setProperty('--start-angle', `${orientation - arc / 2}deg`);
+    coverage.style.setProperty('--start-angle', `${leftHandLock}deg`);
     coverageLayer.appendChild(coverage);
 
     const marker = document.createElement('button');
@@ -1171,8 +1179,8 @@ function updateSelectedSprinklerFromForm() {
   sprinkler.pressurePsi = Number(selectedPressure.value) || 0;
   sprinkler.flowGpm = Number(selectedFlow.value) || 0;
   sprinkler.radiusFt = Number(selectedRadius.value) || 0;
-  sprinkler.arcDegrees = Math.min(360, Math.max(1, Number(selectedArc.value) || 360));
-  sprinkler.orientationDegrees = ((Number(selectedOrientation.value) || 0) % 360 + 360) % 360;
+  sprinkler.arcDegrees = normalizeArcDegrees(selectedArc.value);
+  sprinkler.orientationDegrees = normalizeOrientationDegrees(selectedOrientation.value);
   renderCanvas();
   renderAnalysis();
 }
