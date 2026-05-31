@@ -26,7 +26,7 @@ input::placeholder { color: #6f839d; }
 button,.file-btn { cursor:pointer; color: #eef6ff; background: #244365; }
 button:hover,.file-btn:hover { filter: brightness(1.12); }
 .file-btn input { display:none; }
-.layout { display:grid; grid-template-columns: 330px minmax(420px, 1fr) 300px; gap:12px; padding:12px; min-height: calc(100vh - 56px); }
+.layout { display:grid; grid-template-columns: 330px minmax(420px, 1fr) 300px; gap:12px; align-items: start; padding:12px; min-height: calc(100vh - 56px); }
 .panel,.canvas-panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; box-shadow: 0 12px 30px rgba(0,0,0,0.22); }
 h2 { margin: 0 0 10px; font-size: 1rem; }
 h3 { margin: 0 0 8px; font-size: 0.92rem; color: var(--blue-900); }
@@ -69,7 +69,7 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .zone-row input { padding: 6px 8px; }
 .zone-row button { padding: 5px 8px; color: var(--danger); border-color: #7f3030; background: #301922; }
 
-.canvas-panel { display: flex; flex-direction: column; gap: 12px; }
+.canvas-panel { display: flex; flex-direction: column; gap: 12px; min-height: calc(100vh - 80px); }
 .canvas-toolbar { display:flex; justify-content:space-between; gap: 16px; align-items: flex-start; }
 .canvas-toolbar p { margin: 0; color: var(--muted); font-size: 0.88rem; }
 .metric-pill { background: var(--blue-100); color: var(--blue-900); border-radius: 999px; padding: 7px 12px; font-weight: 800; white-space: nowrap; }
