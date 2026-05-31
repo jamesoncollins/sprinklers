@@ -32,11 +32,11 @@ Optional later backend (not required for MVP):
 2. **Map-based planning canvas**
    - Background satellite image layer.
    - Add/edit sprinkler points.
-   - Assign head model, nozzle model, pressure, arc, and zone.
+   - Assign head model, nozzle model, rated pressure, pressure-regulation behavior, arc, and zone-level operating pressure / measured supply flow.
 3. **Coverage visualization**
    - Draw throw arcs/circles from nozzle radius and arc angle. The orientation control sets the left-hand lock angle, so editing arc size extends or retracts only the right-hand side of the spray pattern.
 4. **Precipitation analysis**
-   - Per-sprinkler precipitation estimate.
+   - Per-sprinkler precipitation estimate using zone-pressure-adjusted flow and throw for non-pressure-regulating heads.
    - Zone aggregate precipitation estimate.
 5. **Persistence**
    - Save project JSON and import later.
@@ -54,7 +54,7 @@ For uploaded images or blank sketches, use **Calibrate by Two Points** in the Di
 
 The repository keeps one growing built-in CSV catalog at `data/default-catalogs/default_sprinkler_catalog.csv`. It currently contains Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`), including the blue, red, and grey low-angle nozzle rows that used to live in separate starter files.
 
-The web app auto-loads this built-in catalog on startup. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, with optional precipitation columns preserved from the manufacturer table.
+The web app auto-loads this built-in catalog on startup. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, including `pressure_regulating` (`true`/`false`) so pressure-regulated models hold rated flow/throw while non-regulating models scale by zone pressure. Optional precipitation columns are preserved from the manufacturer table.
 
 ## Data Strategy
 
@@ -84,12 +84,15 @@ Why this split works:
 
 For rotor/spray style design, precipitation (in/hr) at area scale:
 
-`PR = (96.3 * total_flow_gpm) / irrigated_area_sqft`
+`PR = (96.3 * effective_total_flow_gpm) / effective_irrigated_area_sqft`
 
 Per-head contribution can be estimated by sector-adjusted area:
 
-- `throw_area_sqft = (arc_degrees / 360) * π * radius_ft^2`
-- `head_pr_in_hr = (96.3 * flow_gpm) / throw_area_sqft`
+- `pressure_scale = 1` for pressure-regulating heads, otherwise `sqrt(zone_pressure_psi / rated_pressure_psi)`
+- `effective_flow_gpm = rated_flow_gpm * pressure_scale`
+- `effective_radius_ft = rated_radius_ft * pressure_scale`
+- `throw_area_sqft = (arc_degrees / 360) * π * effective_radius_ft^2`
+- `head_pr_in_hr = (96.3 * effective_flow_gpm) / throw_area_sqft`
 
 > Note: Real-world DU (distribution uniformity), overlap, wind, and soil intake rates should be accounted for in future releases.
 

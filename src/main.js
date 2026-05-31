@@ -107,6 +107,7 @@ const selectedFlow = document.getElementById('selected-flow');
 const selectedRadius = document.getElementById('selected-radius');
 const selectedArc = document.getElementById('selected-arc');
 const selectedOrientation = document.getElementById('selected-orientation');
+const selectedPressureRegulating = document.getElementById('selected-pressure-regulating');
 const applyCatalogToSelectedBtn = document.getElementById('apply-catalog-to-selected');
 const deleteSelectedBtn = document.getElementById('delete-selected');
 
@@ -149,6 +150,11 @@ function loadCatalogFromText(text, sourceLabel) {
   return true;
 }
 
+function parseBoolean(value, defaultValue = false) {
+  if (value === undefined || value === null || value === '') return defaultValue;
+  return ['true', 'yes', 'y', '1'].includes(String(value).trim().toLowerCase());
+}
+
 function buildCatalog(rows) {
   const required = ['manufacturer', 'head_model', 'nozzle_model', 'pressure_psi', 'flow_gpm', 'radius_ft'];
   const warnings = [];
@@ -175,6 +181,7 @@ function buildCatalog(rows) {
     const manufacturer = row.manufacturer;
     const headModel = row.head_model;
     const nozzleModel = row.nozzle_model;
+    const pressureRegulating = parseBoolean(row.pressure_regulating, false);
     const key = `${manufacturer}|${headModel}|${nozzleModel}`;
 
     if (!groups.has(key)) {
@@ -183,6 +190,7 @@ function buildCatalog(rows) {
         headModel,
         nozzleModel,
         defaultArcDegrees: arcDegrees,
+        pressureRegulating,
         points: [],
       });
     }
@@ -301,9 +309,20 @@ function getZoneColor(zoneId) {
   return zoneColors[zoneIndex % zoneColors.length];
 }
 
+function normalizeZone(zone = {}, index = 0) {
+  const pressurePsi = optionalNumber(zone.pressurePsi);
+  const measuredFlowGpm = optionalNumber(zone.measuredFlowGpm);
+  return {
+    id: zone.id || crypto.randomUUID(),
+    name: zone.name || `Zone ${index + 1}`,
+    pressurePsi: pressurePsi && pressurePsi > 0 ? pressurePsi : 45,
+    measuredFlowGpm: measuredFlowGpm && measuredFlowGpm > 0 ? measuredFlowGpm : null,
+  };
+}
+
 function ensureDefaultZone() {
   if (project.zones.length > 0) return;
-  project.zones.push({ id: crypto.randomUUID(), name: 'Zone 1' });
+  project.zones.push(normalizeZone({ name: 'Zone 1' }));
 }
 
 function optionalNumber(value) {
@@ -628,10 +647,20 @@ function selectedSprinkler() {
 }
 
 function normalizeSprinklerPosition(sprinkler, index) {
-  if (Number.isFinite(sprinkler.xPercent) && Number.isFinite(sprinkler.yPercent)) return sprinkler;
+  const normalized = {
+    ...sprinkler,
+    ratedPressurePsi: optionalNumber(sprinkler.ratedPressurePsi ?? sprinkler.pressurePsi) || 45,
+    pressureRegulating: Boolean(sprinkler.pressureRegulating),
+    baseFlowGpm: optionalNumber(sprinkler.baseFlowGpm ?? sprinkler.flowGpm) || 0,
+    baseRadiusFt: optionalNumber(sprinkler.baseRadiusFt ?? sprinkler.radiusFt) || 0,
+  };
+  normalized.pressurePsi = normalized.ratedPressurePsi;
+  normalized.flowGpm = normalized.baseFlowGpm;
+  normalized.radiusFt = normalized.baseRadiusFt;
+  if (Number.isFinite(normalized.xPercent) && Number.isFinite(normalized.yPercent)) return normalized;
 
   return {
-    ...sprinkler,
+    ...normalized,
     xPercent: Math.min(90, 35 + index * 12),
     yPercent: Math.min(85, 40 + index * 10),
   };
@@ -649,7 +678,7 @@ function hydrateProject(loaded) {
       distanceScale: normalizeDistanceScaleSettings({ ...emptyProject.site.distanceScale, ...(loaded.site?.distanceScale || {}) }),
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
     },
-    zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone) => ({ ...zone })) : [],
+    zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone, index) => normalizeZone(zone, index)) : [],
     sprinklers: Array.isArray(loaded.sprinklers)
       ? loaded.sprinklers.map((sprinkler, index) => normalizeSprinklerPosition({ ...sprinkler }, index))
       : [],
@@ -664,22 +693,34 @@ function formatNumber(value, digits = 2) {
   return Number.isFinite(value) ? value.toFixed(digits) : '0.00';
 }
 
-function normalizeArcDegrees(value) {
-  return Math.min(360, Math.max(1, Number(value) || 360));
+function zoneForSprinkler(sprinkler) {
+  return project.zones.find((zone) => zone.id === sprinkler.zoneId) || project.zones[0] || normalizeZone();
 }
 
-function normalizeOrientationDegrees(value) {
-  return ((Number(value) || 0) % 360 + 360) % 360;
+function pressureScaleFactor(sprinkler) {
+  if (sprinkler.pressureRegulating) return 1;
+  const ratedPressure = Number(sprinkler.ratedPressurePsi ?? sprinkler.pressurePsi) || 0;
+  const zonePressure = Number(zoneForSprinkler(sprinkler)?.pressurePsi) || ratedPressure;
+  if (ratedPressure <= 0 || zonePressure <= 0) return 1;
+  return Math.sqrt(zonePressure / ratedPressure);
+}
+
+function effectiveFlowGpm(sprinkler) {
+  return (Number(sprinkler.baseFlowGpm ?? sprinkler.flowGpm) || 0) * pressureScaleFactor(sprinkler);
+}
+
+function effectiveRadiusFt(sprinkler) {
+  return (Number(sprinkler.baseRadiusFt ?? sprinkler.radiusFt) || 0) * pressureScaleFactor(sprinkler);
 }
 
 function sprinklerAreaSqft(sprinkler) {
-  const radius = Number(sprinkler.radiusFt) || 0;
-  const arc = normalizeArcDegrees(sprinkler.arcDegrees);
+  const radius = effectiveRadiusFt(sprinkler);
+  const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
   return (arc / 360) * Math.PI * radius * radius;
 }
 
 function sprinklerPr(sprinkler) {
-  const flow = Number(sprinkler.flowGpm) || 0;
+  const flow = effectiveFlowGpm(sprinkler);
   const area = sprinklerAreaSqft(sprinkler);
   if (area <= 0) return 0;
   return (96.3 * flow) / area;
@@ -790,6 +831,44 @@ function renderZones() {
       renderAnalysis();
     });
 
+    const pressureField = document.createElement('div');
+    const pressureLabel = document.createElement('label');
+    pressureLabel.textContent = 'Zone pressure PSI';
+    const pressureInputEl = document.createElement('input');
+    pressureInputEl.type = 'number';
+    pressureInputEl.min = '1';
+    pressureInputEl.step = '0.1';
+    pressureInputEl.value = zone.pressurePsi ?? 45;
+    pressureInputEl.setAttribute('aria-label', `${zone.name} system pressure PSI`);
+    pressureInputEl.addEventListener('input', () => {
+      const pressure = Number(pressureInputEl.value);
+      zone.pressurePsi = Number.isFinite(pressure) && pressure > 0 ? pressure : 45;
+      renderCanvas();
+      renderAnalysis();
+    });
+    pressureField.append(pressureLabel, pressureInputEl);
+
+    const flowField = document.createElement('div');
+    const flowLabel = document.createElement('label');
+    flowLabel.textContent = 'Measured supply GPM';
+    const flowInputEl = document.createElement('input');
+    flowInputEl.type = 'number';
+    flowInputEl.min = '0';
+    flowInputEl.step = '0.01';
+    flowInputEl.value = zone.measuredFlowGpm ?? '';
+    flowInputEl.placeholder = 'Unknown';
+    flowInputEl.setAttribute('aria-label', `${zone.name} measured supply flow GPM`);
+    flowInputEl.addEventListener('input', () => {
+      const flow = Number(flowInputEl.value);
+      zone.measuredFlowGpm = Number.isFinite(flow) && flow > 0 ? flow : null;
+      renderAnalysis();
+    });
+    flowField.append(flowLabel, flowInputEl);
+
+    const settings = document.createElement('div');
+    settings.className = 'zone-settings';
+    settings.append(pressureField, flowField);
+
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.textContent = '×';
@@ -804,7 +883,7 @@ function renderZones() {
       render();
     });
 
-    row.append(swatch, input, deleteBtn);
+    row.append(swatch, input, deleteBtn, settings);
     zonesList.appendChild(row);
   });
 }
@@ -970,9 +1049,9 @@ function renderCanvas() {
 
   project.sprinklers.forEach((sprinkler) => {
     const color = getZoneColor(sprinkler.zoneId);
-    const radiusPx = Math.max(10, (Number(sprinkler.radiusFt) || 0) / currentFeetPerPixel());
-    const arc = normalizeArcDegrees(sprinkler.arcDegrees);
-    const leftHandLock = normalizeOrientationDegrees(sprinkler.orientationDegrees);
+    const radiusPx = Math.max(10, effectiveRadiusFt(sprinkler) / currentFeetPerPixel());
+    const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
+    const orientation = Number(sprinkler.orientationDegrees) || 0;
 
     const coverage = document.createElement('div');
     coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
@@ -992,7 +1071,7 @@ function renderCanvas() {
     marker.style.top = `${sprinkler.yPercent}%`;
     marker.style.backgroundColor = color;
     marker.style.setProperty('--marker-scale', `${1 / normalizeMapViewSettings(project.site.mapView).scale}`);
-    marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr)`;
+    marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr, ${formatNumber(effectiveFlowGpm(sprinkler))} gpm effective)`;
     marker.setAttribute('aria-label', `Select sprinkler ${sprinkler.headModel || sprinkler.id}`);
     marker.addEventListener('pointerdown', (event) => {
       if (event.ctrlKey) return;
@@ -1025,20 +1104,21 @@ function renderInspector() {
   selectedZone.value = sprinkler.zoneId;
   selectedHead.value = sprinkler.headModel || '';
   selectedNozzle.value = sprinkler.nozzleModel || '';
-  selectedPressure.value = sprinkler.pressurePsi ?? 45;
-  selectedFlow.value = sprinkler.flowGpm ?? 0;
-  selectedRadius.value = sprinkler.radiusFt ?? 0;
+  selectedPressure.value = sprinkler.ratedPressurePsi ?? sprinkler.pressurePsi ?? 45;
+  selectedFlow.value = sprinkler.baseFlowGpm ?? sprinkler.flowGpm ?? 0;
+  selectedRadius.value = sprinkler.baseRadiusFt ?? sprinkler.radiusFt ?? 0;
   selectedArc.value = sprinkler.arcDegrees ?? 360;
   selectedOrientation.value = sprinkler.orientationDegrees ?? 0;
+  selectedPressureRegulating.checked = Boolean(sprinkler.pressureRegulating);
 }
 
 function renderAnalysis() {
   analysisSummary.replaceChildren();
 
-  const totalFlow = project.sprinklers.reduce((sum, sprinkler) => sum + (Number(sprinkler.flowGpm) || 0), 0);
+  const totalFlow = project.sprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
   const totalArea = project.sprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
   const overallPr = totalArea > 0 ? (96.3 * totalFlow) / totalArea : 0;
-  const missingData = project.sprinklers.filter((sprinkler) => !sprinkler.flowGpm || !sprinkler.radiusFt).length;
+  const missingData = project.sprinklers.filter((sprinkler) => !effectiveFlowGpm(sprinkler) || !effectiveRadiusFt(sprinkler)).length;
 
   addAnalysisCard('Total flow', `${formatNumber(totalFlow)} gpm`, `${project.sprinklers.length} sprinklers`);
   addAnalysisCard('Throw area', `${formatNumber(totalArea, 0)} sq ft`, 'Sector-adjusted estimate');
@@ -1046,10 +1126,24 @@ function renderAnalysis() {
 
   project.zones.forEach((zone) => {
     const zoneSprinklers = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id);
-    const zoneFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + (Number(sprinkler.flowGpm) || 0), 0);
+    const zoneFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
     const zoneArea = zoneSprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
     const zonePr = zoneArea > 0 ? (96.3 * zoneFlow) / zoneArea : 0;
-    addAnalysisCard(zone.name, `${formatNumber(zonePr)} in/hr`, `${formatNumber(zoneFlow)} gpm · ${zoneSprinklers.length} heads`);
+    const supply = Number(zone.measuredFlowGpm) || 0;
+    const warning = supply > 0 && zoneFlow > supply;
+    const nearLimit = supply > 0 && zoneFlow <= supply && zoneFlow >= supply * 0.9;
+    const supplyDetail = supply > 0 ? ` of ${formatNumber(supply)} gpm measured` : ' measured supply unknown';
+    addAnalysisCard(
+      zone.name,
+      `${formatNumber(zonePr)} in/hr`,
+      `${formatNumber(zoneFlow)} gpm${supplyDetail} · ${zoneSprinklers.length} heads · ${formatNumber(zone.pressurePsi ?? 45, 1)} PSI`,
+      warning || nearLimit,
+    );
+    if (warning) {
+      addAnalysisCard('Supply warning', `${zone.name} overrun`, `Estimated head demand exceeds measured supply by ${formatNumber(zoneFlow - supply)} gpm. Actual pressure may drop as flow rises.`, true);
+    } else if (nearLimit) {
+      addAnalysisCard('Supply caution', `${zone.name} near limit`, 'Estimated demand is within 10% of measured supply; field pressure may sag under load.', true);
+    }
   });
 
   if (missingData > 0) {
@@ -1159,10 +1253,14 @@ function addSprinklerAt(position) {
     headModel: model?.headModel || 'Unspecified head',
     nozzleModel: model?.nozzleModel || 'Unspecified nozzle',
     pressurePsi,
+    ratedPressurePsi: pressurePsi,
+    pressureRegulating: Boolean(model?.pressureRegulating),
     arcDegrees: model?.defaultArcDegrees || 360,
     orientationDegrees: 0,
     radiusFt: performance?.radiusFt ?? 12,
     flowGpm: performance?.flowGpm ?? 1,
+    baseRadiusFt: performance?.radiusFt ?? 12,
+    baseFlowGpm: performance?.flowGpm ?? 1,
   };
   syncSprinklerGps(sprinkler);
   project.sprinklers.push(sprinkler);
@@ -1176,11 +1274,15 @@ function updateSelectedSprinklerFromForm() {
   sprinkler.zoneId = selectedZone.value;
   sprinkler.headModel = selectedHead.value;
   sprinkler.nozzleModel = selectedNozzle.value;
-  sprinkler.pressurePsi = Number(selectedPressure.value) || 0;
-  sprinkler.flowGpm = Number(selectedFlow.value) || 0;
-  sprinkler.radiusFt = Number(selectedRadius.value) || 0;
-  sprinkler.arcDegrees = normalizeArcDegrees(selectedArc.value);
-  sprinkler.orientationDegrees = normalizeOrientationDegrees(selectedOrientation.value);
+  sprinkler.ratedPressurePsi = Number(selectedPressure.value) || 0;
+  sprinkler.pressurePsi = sprinkler.ratedPressurePsi;
+  sprinkler.baseFlowGpm = Number(selectedFlow.value) || 0;
+  sprinkler.flowGpm = sprinkler.baseFlowGpm;
+  sprinkler.baseRadiusFt = Number(selectedRadius.value) || 0;
+  sprinkler.radiusFt = sprinkler.baseRadiusFt;
+  sprinkler.pressureRegulating = selectedPressureRegulating.checked;
+  sprinkler.arcDegrees = Math.min(360, Math.max(1, Number(selectedArc.value) || 360));
+  sprinkler.orientationDegrees = ((Number(selectedOrientation.value) || 0) % 360 + 360) % 360;
   renderCanvas();
   renderAnalysis();
 }
@@ -1241,7 +1343,8 @@ lookupBtn.addEventListener('click', () => {
   }
 
   const warningText = result.warning ? ` Warning: ${result.warning}` : '';
-  lookupResult.textContent = `Flow: ${result.flowGpm.toFixed(2)} gpm | Radius: ${result.radiusFt.toFixed(2)} ft (${result.mode}).${warningText}`;
+  const regulationText = model.pressureRegulating ? 'pressure regulating' : 'not pressure regulating; zone pressure will scale placed heads';
+  lookupResult.textContent = `Rated flow: ${result.flowGpm.toFixed(2)} gpm | Rated radius: ${result.radiusFt.toFixed(2)} ft (${result.mode}, ${regulationText}).${warningText}`;
 });
 
 newBtn.addEventListener('click', () => {
@@ -1392,7 +1495,7 @@ function readFileAsDataUrl(file) {
 }
 
 addZoneBtn.addEventListener('click', () => {
-  project.zones.push({ id: crypto.randomUUID(), name: `Zone ${project.zones.length + 1}` });
+  project.zones.push(normalizeZone({ name: `Zone ${project.zones.length + 1}` }, project.zones.length));
   render();
 });
 
@@ -1449,7 +1552,7 @@ resetMapViewBtn.addEventListener('click', () => {
 
 window.addEventListener('resize', renderSatelliteLayer);
 
-[selectedZone, selectedHead, selectedNozzle, selectedPressure, selectedFlow, selectedRadius, selectedArc, selectedOrientation].forEach(
+[selectedZone, selectedHead, selectedNozzle, selectedPressure, selectedFlow, selectedRadius, selectedArc, selectedOrientation, selectedPressureRegulating].forEach(
   (input) => input.addEventListener('input', updateSelectedSprinklerFromForm),
 );
 
@@ -1464,11 +1567,15 @@ applyCatalogToSelectedBtn.addEventListener('click', () => {
     headModel: model.headModel,
     nozzleModel: model.nozzleModel,
     pressurePsi,
+    ratedPressurePsi: pressurePsi,
+    pressureRegulating: Boolean(model.pressureRegulating),
     flowGpm: result.flowGpm,
     radiusFt: result.radiusFt,
+    baseFlowGpm: result.flowGpm,
+    baseRadiusFt: result.radiusFt,
     arcDegrees: model.defaultArcDegrees || sprinkler.arcDegrees,
   });
-  lookupResult.textContent = `Applied ${model.headModel} / ${model.nozzleModel} to selected sprinkler.`;
+  lookupResult.textContent = `Applied ${model.headModel} / ${model.nozzleModel} to selected sprinkler (${model.pressureRegulating ? 'pressure regulating' : 'not pressure regulating'}).`;
   render();
 });
 
