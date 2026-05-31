@@ -713,9 +713,17 @@ function effectiveRadiusFt(sprinkler) {
   return (Number(sprinkler.baseRadiusFt ?? sprinkler.radiusFt) || 0) * pressureScaleFactor(sprinkler);
 }
 
+function clampArcDegrees(value) {
+  return Math.min(360, Math.max(1, Number(value) || 360));
+}
+
+function normalizeDegrees(value) {
+  return ((Number(value) || 0) % 360 + 360) % 360;
+}
+
 function sprinklerAreaSqft(sprinkler) {
   const radius = effectiveRadiusFt(sprinkler);
-  const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
+  const arc = clampArcDegrees(sprinkler.arcDegrees);
   return (arc / 360) * Math.PI * radius * radius;
 }
 
@@ -1050,8 +1058,8 @@ function renderCanvas() {
   project.sprinklers.forEach((sprinkler) => {
     const color = getZoneColor(sprinkler.zoneId);
     const radiusPx = Math.max(10, effectiveRadiusFt(sprinkler) / currentFeetPerPixel());
-    const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
-    const orientation = Number(sprinkler.orientationDegrees) || 0;
+    const arc = clampArcDegrees(sprinkler.arcDegrees);
+    const leftHandLock = normalizeDegrees(sprinkler.orientationDegrees);
 
     const coverage = document.createElement('div');
     coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
@@ -1060,6 +1068,7 @@ function renderCanvas() {
     coverage.style.width = `${radiusPx * 2}px`;
     coverage.style.height = `${radiusPx * 2}px`;
     coverage.style.color = color;
+    // Keep the left-hand lock fixed; arc changes should only sweep the right edge.
     coverage.style.setProperty('--arc-angle', `${arc}deg`);
     coverage.style.setProperty('--start-angle', `${leftHandLock}deg`);
     coverageLayer.appendChild(coverage);
@@ -1281,8 +1290,8 @@ function updateSelectedSprinklerFromForm() {
   sprinkler.baseRadiusFt = Number(selectedRadius.value) || 0;
   sprinkler.radiusFt = sprinkler.baseRadiusFt;
   sprinkler.pressureRegulating = selectedPressureRegulating.checked;
-  sprinkler.arcDegrees = Math.min(360, Math.max(1, Number(selectedArc.value) || 360));
-  sprinkler.orientationDegrees = ((Number(selectedOrientation.value) || 0) % 360 + 360) % 360;
+  sprinkler.arcDegrees = clampArcDegrees(selectedArc.value);
+  sprinkler.orientationDegrees = normalizeDegrees(selectedOrientation.value);
   renderCanvas();
   renderAnalysis();
 }
