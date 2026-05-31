@@ -1418,13 +1418,41 @@ newBtn.addEventListener('click', () => {
   hydrateProject(structuredClone(emptyProject));
 });
 
-saveBtn.addEventListener('click', () => {
+saveBtn.addEventListener('click', async () => {
   project.sprinklers.forEach(syncSprinklerGps);
-  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+
+  const suggestedName = 'sprinklers-project.json';
+  const jsonText = JSON.stringify(project, null, 2);
+  const blob = new Blob([jsonText], { type: 'application/json' });
+
+  if ('showSaveFilePicker' in window) {
+    try {
+      const fileHandle = await window.showSaveFilePicker({
+        suggestedName,
+        types: [
+          {
+            description: 'JSON files',
+            accept: { 'application/json': ['.json'] },
+          },
+        ],
+      });
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return;
+      }
+      alert(`Failed to save project: ${error.message}`);
+      return;
+    }
+  }
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'sprinklers-project.json';
+  a.download = suggestedName;
   a.click();
   URL.revokeObjectURL(url);
 });
