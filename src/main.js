@@ -1504,7 +1504,7 @@ saveBtn.addEventListener('click', async () => {
         suggestedName,
         types: [
           {
-            description: 'JSON files',
+            description: 'Project files',
             accept: { 'application/json': ['.json'] },
           },
         ],
@@ -1536,7 +1536,7 @@ loadInput.addEventListener('change', async (event) => {
   try {
     const loaded = JSON.parse(await file.text());
     if (typeof loaded !== 'object' || loaded === null || !('version' in loaded)) {
-      throw new Error('Invalid project JSON');
+      throw new Error('Invalid project file');
     }
     hydrateProject(loaded);
   } catch (error) {
