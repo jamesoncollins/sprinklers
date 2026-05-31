@@ -51,6 +51,7 @@ let panState = null;
 let calibrationState = null;
 let suppressNextCanvasClick = false;
 let backgroundImageNaturalSize = null;
+let backgroundImageBaseSize = null;
 let backgroundImageNaturalDataUrl = '';
 
 const newBtn = document.getElementById('new-project');
@@ -578,6 +579,7 @@ function renderImageLayer() {
   const settings = normalizeBackgroundImageSettings(project.site.backgroundImage);
   if (settings.dataUrl !== backgroundImageNaturalDataUrl) {
     backgroundImageNaturalSize = null;
+    backgroundImageBaseSize = null;
     backgroundImageNaturalDataUrl = settings.dataUrl;
   }
   if (!settings.dataUrl) {
@@ -779,16 +781,27 @@ function canvasCoordinateBox() {
   return { left: 0, top: 0, width, height };
 }
 
-function imageCoordinateBox(includeImageScale = true) {
+function fittedBackgroundImageSize() {
   const canvas = canvasCoordinateBox();
   const naturalWidth = backgroundImageNaturalSize?.width;
   const naturalHeight = backgroundImageNaturalSize?.height;
-  if (!naturalWidth || !naturalHeight || !canvas.width || !canvas.height) return canvas;
+  if (!naturalWidth || !naturalHeight || !canvas.width || !canvas.height) return null;
 
   const fitScale = Math.min(1, canvas.width / naturalWidth, canvas.height / naturalHeight);
+  return {
+    width: naturalWidth * fitScale,
+    height: naturalHeight * fitScale,
+  };
+}
+
+function imageCoordinateBox(includeImageScale = true) {
+  const canvas = canvasCoordinateBox();
+  const baseSize = backgroundImageBaseSize || fittedBackgroundImageSize();
+  if (!baseSize) return canvas;
+
   const imageScale = includeImageScale ? normalizeBackgroundImageSettings(project.site?.backgroundImage).scale : 1;
-  const width = naturalWidth * fitScale * imageScale;
-  const height = naturalHeight * fitScale * imageScale;
+  const width = baseSize.width * imageScale;
+  const height = baseSize.height * imageScale;
   return {
     left: (canvas.width - width) / 2,
     top: (canvas.height - height) / 2,
@@ -817,6 +830,10 @@ function setPositionFromPercent(element, point) {
 }
 
 function sizeBackgroundImage(image) {
+  if (!backgroundImageBaseSize) {
+    backgroundImageBaseSize = fittedBackgroundImageSize();
+  }
+
   const box = imageCoordinateBox(false);
   image.style.width = `${box.width}px`;
   image.style.height = `${box.height}px`;
