@@ -1589,43 +1589,6 @@ applyCatalogToSelectedBtn.addEventListener('click', () => {
 });
 
 
-function initializeCollapsibleMenus() {
-  document.querySelectorAll('.section-card, .analysis-panel, .inspector-panel').forEach((menu, index) => {
-    const heading = menu.querySelector(':scope > h2, :scope > h3');
-    if (!heading) return;
-
-    const content = document.createElement('div');
-    content.className = 'collapsible-content';
-    content.id = `collapsible-menu-${index + 1}`;
-
-    while (heading.nextSibling) {
-      content.appendChild(heading.nextSibling);
-    }
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'collapsible-toggle';
-    toggle.setAttribute('aria-expanded', 'true');
-    toggle.setAttribute('aria-controls', content.id);
-    toggle.innerHTML = `<span>${heading.textContent}</span><span class="collapse-indicator" aria-hidden="true">▾</span>`;
-
-    const headingLevel = heading.tagName.toLowerCase();
-    const header = document.createElement(headingLevel);
-    header.className = 'collapsible-heading';
-    header.appendChild(toggle);
-
-    heading.replaceWith(header);
-    menu.appendChild(content);
-
-    toggle.addEventListener('click', () => {
-      const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', String(!isExpanded));
-      content.hidden = isExpanded;
-      menu.classList.toggle('is-collapsed', isExpanded);
-    });
-  });
-}
-
 deleteSelectedBtn.addEventListener('click', () => {
   if (!selectedSprinklerId) return;
   project.sprinklers = project.sprinklers.filter((sprinkler) => sprinkler.id !== selectedSprinklerId);
@@ -1633,7 +1596,6 @@ deleteSelectedBtn.addEventListener('click', () => {
   render();
 });
 
-initializeCollapsibleMenus();
 hydrateProject(emptyProject);
 loadDefaultCatalog();
 setOptions(manufacturerSelect, [], 'Select manufacturer');
