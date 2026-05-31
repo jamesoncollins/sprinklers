@@ -1427,14 +1427,44 @@ function updateSelectedSprinklerFromForm() {
   renderAnalysis();
 }
 
+function updateLookupResult() {
+  const model = findSelectedModel();
+  const pressurePsi = Number(pressureInput.value);
+
+  if (!model) {
+    lookupResult.textContent = 'Please select manufacturer, head model, and nozzle model first.';
+    return;
+  }
+
+  if (Number.isNaN(pressurePsi) || pressurePsi <= 0) {
+    lookupResult.textContent = 'Please enter a valid pressure PSI value.';
+    return;
+  }
+
+  const result = lookupPerformance(model, pressurePsi);
+  if (result.flowGpm == null || result.radiusFt == null) {
+    lookupResult.textContent = result.warning || 'Lookup failed.';
+    return;
+  }
+
+  const warningText = result.warning ? ` Warning: ${result.warning}` : '';
+  const regulationText = model.pressureRegulating ? 'pressure regulating' : 'not pressure regulating; zone pressure will scale placed heads';
+  lookupResult.textContent = `Rated flow: ${result.flowGpm.toFixed(2)} gpm | Rated radius: ${result.radiusFt.toFixed(2)} ft (${result.mode}, ${regulationText}).${warningText}`;
+}
+
 manufacturerSelect.addEventListener('change', () => {
   setOptions(headSelect, getHeads(manufacturerSelect.value), 'Select head model');
   setOptions(nozzleSelect, [], 'Select nozzle model');
+  updateLookupResult();
 });
 
 headSelect.addEventListener('change', () => {
   setOptions(nozzleSelect, getNozzles(manufacturerSelect.value, headSelect.value), 'Select nozzle model');
+  updateLookupResult();
 });
+
+nozzleSelect.addEventListener('change', updateLookupResult);
+pressureInput.addEventListener('input', updateLookupResult);
 
 catalogInput.addEventListener('change', async (event) => {
   const file = event.target.files?.[0];
@@ -1462,30 +1492,7 @@ async function loadDefaultCatalog() {
   }
 }
 
-lookupBtn.addEventListener('click', () => {
-  const model = findSelectedModel();
-  const pressurePsi = Number(pressureInput.value);
-
-  if (!model) {
-    lookupResult.textContent = 'Please select manufacturer, head model, and nozzle model first.';
-    return;
-  }
-
-  if (Number.isNaN(pressurePsi) || pressurePsi <= 0) {
-    lookupResult.textContent = 'Please enter a valid pressure PSI value.';
-    return;
-  }
-
-  const result = lookupPerformance(model, pressurePsi);
-  if (result.flowGpm == null || result.radiusFt == null) {
-    lookupResult.textContent = result.warning || 'Lookup failed.';
-    return;
-  }
-
-  const warningText = result.warning ? ` Warning: ${result.warning}` : '';
-  const regulationText = model.pressureRegulating ? 'pressure regulating' : 'not pressure regulating; zone pressure will scale placed heads';
-  lookupResult.textContent = `Rated flow: ${result.flowGpm.toFixed(2)} gpm | Rated radius: ${result.radiusFt.toFixed(2)} ft (${result.mode}, ${regulationText}).${warningText}`;
-});
+lookupBtn.addEventListener('click', updateLookupResult);
 
 newBtn.addEventListener('click', () => {
   hydrateProject(structuredClone(emptyProject));
