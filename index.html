@@ -22,10 +22,10 @@
 
       <main class="layout">
         <aside class="panel left-panel">
-          <details class="panel-menu" open>
+          <details class="panel-menu">
             <summary class="panel-summary">Catalog / Project</summary>
 
-            <details class="section-card collapsible-menu" open>
+            <details class="section-card collapsible-menu">
               <summary>Project</summary>
             <div class="field-group">
               <label for="site-name">Site name</label>
@@ -102,13 +102,8 @@
             </div>
             </details>
 
-            <details class="section-card collapsible-menu" open>
-              <summary>Zones</summary>
-            <div id="zones-list" class="zones-list" aria-live="polite"></div>
-            <button id="add-zone" class="full-width">Add Zone</button>
-            </details>
 
-            <details class="section-card collapsible-menu" open>
+            <details class="section-card collapsible-menu">
               <summary>Catalog Lookup</summary>
             <label class="field-label file-btn full-width-file">
               Import CSV Catalog
@@ -160,14 +155,28 @@
             <div id="sprinkler-layer" class="sprinkler-layer"></div>
             <div id="empty-canvas-hint" class="empty-canvas-hint">Click anywhere to place your first sprinkler.</div>
           </div>
-          <details class="analysis-panel collapsible-menu" open>
+          <details class="analysis-panel collapsible-menu">
             <summary>Analysis Summary</summary>
             <div id="analysis-summary" class="analysis-grid"></div>
           </details>
         </section>
 
         <aside class="panel inspector-panel">
-          <details class="panel-menu" open>
+          <details class="panel-menu">
+            <summary class="panel-summary">Zones</summary>
+            <div class="field-group">
+              <label for="zone-inspector-select">Zone</label>
+              <select id="zone-inspector-select"></select>
+            </div>
+            <div class="field-group">
+              <label for="zone-sprinkler-select">Sprinklers in zone</label>
+              <select id="zone-sprinkler-select"></select>
+            </div>
+            <div id="zones-list" class="zones-list" aria-live="polite"></div>
+            <button id="add-zone" class="full-width">Add Zone</button>
+          </details>
+
+          <details class="panel-menu">
             <summary class="panel-summary">Selected Sprinkler</summary>
             <div id="no-selection" class="status-text">Select a sprinkler on the canvas to edit details.</div>
             <form id="sprinkler-form" class="hidden">
