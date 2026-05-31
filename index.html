@@ -131,12 +131,13 @@
             </div>
 
             <div class="field-group">
-              <label for="pressure-input">Pressure (PSI)</label>
+              <label for="pressure-input">Rated pressure (PSI)</label>
               <input id="pressure-input" type="number" min="1" step="0.1" value="45" />
             </div>
 
             <button id="lookup-performance" class="full-width">Lookup Performance</button>
             <p id="lookup-result" class="status-text">Awaiting lookup.</p>
+            <p class="status-text">Non-pressure-regulating heads are scaled by each zone's actual pressure. Pressure-regulating heads keep their rated flow and throw.</p>
           </section>
         </aside>
 
@@ -181,7 +182,7 @@
             </div>
             <div class="field-group two-col">
               <div>
-                <label for="selected-pressure">Pressure</label>
+                <label for="selected-pressure">Rated pressure</label>
                 <input id="selected-pressure" type="number" min="1" step="0.1" />
               </div>
               <div>
@@ -203,6 +204,10 @@
               <label for="selected-orientation">Orientation °</label>
               <input id="selected-orientation" type="number" min="0" max="359" step="1" />
             </div>
+            <label class="checkbox-field">
+              <input id="selected-pressure-regulating" type="checkbox" />
+              Pressure regulating head
+            </label>
             <button id="apply-catalog-to-selected" type="button" class="full-width">Apply Catalog Lookup</button>
             <button id="delete-selected" type="button" class="danger full-width">Delete Sprinkler</button>
           </form>
