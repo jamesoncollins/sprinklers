@@ -34,7 +34,7 @@ Optional later backend (not required for MVP):
    - Add/edit sprinkler points.
    - Assign head model, nozzle model, rated pressure, pressure-regulation behavior, arc, and zone-level operating pressure / measured supply flow.
 3. **Coverage visualization**
-   - Draw throw arcs/circles from nozzle radius and arc angle.
+   - Draw throw arcs/circles from nozzle radius and arc angle. The orientation control sets the left-hand lock angle, so editing arc size extends or retracts only the right-hand side of the spray pattern.
 4. **Precipitation analysis**
    - Per-sprinkler precipitation estimate using zone-pressure-adjusted flow and throw for non-pressure-regulating heads.
    - Zone aggregate precipitation estimate.

@@ -1061,7 +1061,7 @@ function renderCanvas() {
     coverage.style.height = `${radiusPx * 2}px`;
     coverage.style.color = color;
     coverage.style.setProperty('--arc-angle', `${arc}deg`);
-    coverage.style.setProperty('--start-angle', `${orientation - arc / 2}deg`);
+    coverage.style.setProperty('--start-angle', `${leftHandLock}deg`);
     coverageLayer.appendChild(coverage);
 
     const marker = document.createElement('button');

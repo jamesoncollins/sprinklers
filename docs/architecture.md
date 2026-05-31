@@ -62,6 +62,8 @@
 }
 ```
 
+`orientationDegrees` stores the sprinkler's left-hand lock angle. `arcDegrees` extends clockwise from that fixed left edge, so increasing or decreasing an arc changes only the right-hand side of the spray pattern.
+
 ## Catalog CSV schema (v1)
 
 - `manufacturer`
