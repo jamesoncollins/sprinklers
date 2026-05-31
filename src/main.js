@@ -50,6 +50,8 @@ let dragState = null;
 let panState = null;
 let calibrationState = null;
 let suppressNextCanvasClick = false;
+let backgroundImageNaturalSize = null;
+let backgroundImageNaturalDataUrl = '';
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
@@ -576,6 +578,10 @@ function renderImageLayer() {
   }
 
   const settings = normalizeBackgroundImageSettings(project.site.backgroundImage);
+  if (settings.dataUrl !== backgroundImageNaturalDataUrl) {
+    backgroundImageNaturalSize = null;
+    backgroundImageNaturalDataUrl = settings.dataUrl;
+  }
   if (!settings.dataUrl) {
     imageStatus.textContent = 'Upload an image to use it as the planning background.';
     return;
@@ -587,6 +593,17 @@ function renderImageLayer() {
   image.alt = '';
   image.draggable = false;
   image.style.transform = `translate(-50%, -50%) rotate(${settings.rotationDegrees}deg) scale(${settings.scale})`;
+  image.addEventListener('load', () => {
+    backgroundImageNaturalSize = {
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+    };
+    sizeBackgroundImage(image);
+    renderCanvas();
+    renderAnalysis();
+    updateScaleCalibrationStatus();
+  }, { once: true });
+  sizeBackgroundImage(image);
   imageLayer.appendChild(image);
   imageStatus.textContent = `Showing ${settings.name || 'uploaded image'} at ${settings.scale.toFixed(2)}× and ${Math.round(settings.rotationDegrees)}°.`;
 }
@@ -757,6 +774,54 @@ function sprinklerPr(sprinkler) {
 function canvasCenter() {
   const rect = mapCanvas.getBoundingClientRect();
   return { width: rect.width || mapCanvas.clientWidth, height: rect.height || mapCanvas.clientHeight };
+}
+
+function canvasCoordinateBox() {
+  const { width, height } = canvasCenter();
+  return { left: 0, top: 0, width, height };
+}
+
+function imageCoordinateBox(includeImageScale = true) {
+  const canvas = canvasCoordinateBox();
+  const naturalWidth = backgroundImageNaturalSize?.width;
+  const naturalHeight = backgroundImageNaturalSize?.height;
+  if (!naturalWidth || !naturalHeight || !canvas.width || !canvas.height) return canvas;
+
+  const fitScale = Math.min(1, canvas.width / naturalWidth, canvas.height / naturalHeight);
+  const imageScale = includeImageScale ? normalizeBackgroundImageSettings(project.site?.backgroundImage).scale : 1;
+  const width = naturalWidth * fitScale * imageScale;
+  const height = naturalHeight * fitScale * imageScale;
+  return {
+    left: (canvas.width - width) / 2,
+    top: (canvas.height - height) / 2,
+    width,
+    height,
+  };
+}
+
+function activeCoordinateBox() {
+  if (project.site?.imageSource === 'image' && hasUploadedBackgroundImage()) return imageCoordinateBox();
+  return canvasCoordinateBox();
+}
+
+function localPointFromPercent(point) {
+  const box = activeCoordinateBox();
+  return {
+    x: box.left + (point.xPercent / 100) * box.width,
+    y: box.top + (point.yPercent / 100) * box.height,
+  };
+}
+
+function setPositionFromPercent(element, point) {
+  const local = localPointFromPercent(point);
+  element.style.left = `${local.x}px`;
+  element.style.top = `${local.y}px`;
+}
+
+function sizeBackgroundImage(image) {
+  const box = imageCoordinateBox(false);
+  image.style.width = `${box.width}px`;
+  image.style.height = `${box.height}px`;
 }
 
 function localPointToScreenPoint(localX, localY) {
@@ -949,14 +1014,6 @@ function renderZones() {
 }
 
 
-function localPointFromPercent(point) {
-  const { width, height } = canvasCenter();
-  return {
-    x: (point.xPercent / 100) * width,
-    y: (point.yPercent / 100) * height,
-  };
-}
-
 function distanceBetweenScalePoints(points) {
   if (points.length < 2) return 0;
   const first = localPointFromPercent(points[0]);
@@ -969,7 +1026,10 @@ function currentFeetPerPixel() {
     const satellite = normalizeSatelliteSettings(project.site.satellite);
     return satelliteFeetPerPixel(satellite.latitude, satellite.zoom);
   }
-  return normalizeDistanceScaleSettings(project.site?.distanceScale).feetPerPixel;
+  const scale = normalizeDistanceScaleSettings(project.site?.distanceScale);
+  const calibratedPixels = distanceBetweenScalePoints(scale.points);
+  if (scale.measuredFeet && calibratedPixels > 0) return scale.measuredFeet / calibratedPixels;
+  return scale.feetPerPixel;
 }
 
 function updateScaleCalibrationStatus(message) {
@@ -996,7 +1056,7 @@ function updateScaleCalibrationStatus(message) {
   const scale = normalizeDistanceScaleSettings(project.site?.distanceScale);
   if (scale.points.length === 2 && scale.measuredFeet) {
     const pixels = distanceBetweenScalePoints(scale.points);
-    scaleCalibrationStatus.textContent = `Manual scale: ${scale.measuredFeet.toFixed(2)} ft over ${pixels.toFixed(1)} px (${scale.feetPerPixel.toFixed(3)} ft/px).`;
+    scaleCalibrationStatus.textContent = `Manual scale: ${scale.measuredFeet.toFixed(2)} ft over ${pixels.toFixed(1)} px (${currentFeetPerPixel().toFixed(3)} ft/px).`;
     return;
   }
 
@@ -1012,8 +1072,7 @@ function renderCalibrationLayer() {
   points.forEach((point, index) => {
     const marker = document.createElement('div');
     marker.className = 'calibration-point';
-    marker.style.left = `${point.xPercent}%`;
-    marker.style.top = `${point.yPercent}%`;
+    setPositionFromPercent(marker, point);
     marker.textContent = `${index + 1}`;
     calibrationLayer.appendChild(marker);
   });
@@ -1027,16 +1086,17 @@ function renderCalibrationLayer() {
 
   const line = document.createElement('div');
   line.className = 'calibration-line';
-  line.style.left = `${points[0].xPercent}%`;
-  line.style.top = `${points[0].yPercent}%`;
+  setPositionFromPercent(line, points[0]);
   line.style.width = `${length}px`;
   line.style.transform = `rotate(${angle}deg)`;
   calibrationLayer.appendChild(line);
 
   const lineLabel = document.createElement('div');
   lineLabel.className = 'calibration-label';
-  lineLabel.style.left = `${(points[0].xPercent + points[1].xPercent) / 2}%`;
-  lineLabel.style.top = `${(points[0].yPercent + points[1].yPercent) / 2}%`;
+  setPositionFromPercent(lineLabel, {
+    xPercent: (points[0].xPercent + points[1].xPercent) / 2,
+    yPercent: (points[0].yPercent + points[1].yPercent) / 2,
+  });
   lineLabel.textContent = label;
   calibrationLayer.appendChild(lineLabel);
 }
@@ -1115,8 +1175,7 @@ function renderCanvas() {
 
     const coverage = document.createElement('div');
     coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
-    coverage.style.left = `${sprinkler.xPercent}%`;
-    coverage.style.top = `${sprinkler.yPercent}%`;
+    setPositionFromPercent(coverage, sprinkler);
     coverage.style.width = `${radiusPx * 2}px`;
     coverage.style.height = `${radiusPx * 2}px`;
     coverage.style.color = color;
@@ -1128,8 +1187,7 @@ function renderCanvas() {
     const marker = document.createElement('button');
     marker.type = 'button';
     marker.className = `sprinkler-marker ${sprinkler.id === selectedSprinklerId ? 'selected' : ''}`;
-    marker.style.left = `${sprinkler.xPercent}%`;
-    marker.style.top = `${sprinkler.yPercent}%`;
+    setPositionFromPercent(marker, sprinkler);
     marker.style.backgroundColor = color;
     marker.style.setProperty('--marker-scale', `${1 / normalizeMapViewSettings(project.site.mapView).scale}`);
     marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr, ${formatNumber(effectiveFlowGpm(sprinkler))} gpm effective)`;
@@ -1235,11 +1293,11 @@ function render() {
 
 function canvasPositionFromEvent(event) {
   const rect = mapCanvas.getBoundingClientRect();
-  const { width, height } = canvasCenter();
+  const box = activeCoordinateBox();
   const local = screenPointToLocalPoint(event.clientX - rect.left, event.clientY - rect.top);
   return {
-    xPercent: Math.min(100, Math.max(0, (local.x / width) * 100)),
-    yPercent: Math.min(100, Math.max(0, (local.y / height) * 100)),
+    xPercent: Math.min(100, Math.max(0, ((local.x - box.left) / box.width) * 100)),
+    yPercent: Math.min(100, Math.max(0, ((local.y - box.top) / box.height) * 100)),
   };
 }
 
@@ -1509,6 +1567,9 @@ canvasBackgroundSelect.addEventListener('change', () => {
   updateProjectInputs();
   renderSatelliteLayer();
   renderImageLayer();
+  renderCanvas();
+  renderAnalysis();
+  updateScaleCalibrationStatus();
   if (project.site.imageSource === 'image' && !hasUploadedBackgroundImage()) {
     promptForBackgroundImage();
   }
@@ -1570,6 +1631,8 @@ function updateBackgroundImageSettingsFromInputs() {
   imageScaleValue.textContent = `${project.site.backgroundImage.scale.toFixed(2)}×`;
   imageRotationValue.textContent = `${Math.round(project.site.backgroundImage.rotationDegrees)}°`;
   renderImageLayer();
+  renderCanvas();
+  renderAnalysis();
   updateScaleCalibrationStatus();
 }
 
@@ -1635,10 +1698,8 @@ sprinklerLayer.addEventListener('pointermove', (event) => {
   if (!sprinkler) return;
   Object.assign(sprinkler, canvasPositionFromEvent(event));
   syncSprinklerGps(sprinkler);
-  dragState.marker.style.left = `${sprinkler.xPercent}%`;
-  dragState.marker.style.top = `${sprinkler.yPercent}%`;
-  dragState.coverage.style.left = `${sprinkler.xPercent}%`;
-  dragState.coverage.style.top = `${sprinkler.yPercent}%`;
+  setPositionFromPercent(dragState.marker, sprinkler);
+  setPositionFromPercent(dragState.coverage, sprinkler);
 });
 
 sprinklerLayer.addEventListener('pointerup', () => {
@@ -1659,7 +1720,16 @@ resetMapViewBtn.addEventListener('click', () => {
   renderCanvas();
 });
 
-window.addEventListener('resize', renderSatelliteLayer);
+function handleCanvasResize() {
+  syncSprinklersFromGps();
+  renderSatelliteLayer();
+  renderImageLayer();
+  renderCanvas();
+  renderAnalysis();
+  updateScaleCalibrationStatus();
+}
+
+window.addEventListener('resize', handleCanvasResize);
 
 [selectedZone, selectedHead, selectedNozzle, selectedPressure, selectedFlow, selectedRadius, selectedArc, selectedOrientation, selectedPressureRegulating].forEach(
   (input) => input.addEventListener('input', updateSelectedSprinklerFromForm),
