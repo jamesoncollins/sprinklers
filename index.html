@@ -44,6 +44,12 @@
                 <option value="image">Uploaded image</option>
               </select>
             </div>
+            <div class="scale-calibration-controls">
+              <h4>Distance scale</h4>
+              <p id="scale-calibration-status" class="status-text">Use satellite imagery or calibrate a known distance on your uploaded image.</p>
+              <button id="start-scale-calibration" type="button" class="full-width secondary-btn">Calibrate by Two Points</button>
+              <button id="clear-scale-calibration" type="button" class="full-width secondary-btn">Clear Manual Calibration</button>
+            </div>
             <div id="image-controls" class="satellite-controls hidden">
               <label class="field-label file-btn full-width-file">
                 Upload Background Image
@@ -147,6 +153,7 @@
             <div id="image-layer" class="image-layer" aria-hidden="true"></div>
             <div class="canvas-grid" aria-hidden="true"></div>
             <div id="coverage-layer" class="coverage-layer" aria-hidden="true"></div>
+            <div id="calibration-layer" class="calibration-layer" aria-hidden="true"></div>
             <div id="sprinkler-layer" class="sprinkler-layer"></div>
             <div id="empty-canvas-hint" class="empty-canvas-hint">Click anywhere to place your first sprinkler.</div>
           </div>
