@@ -79,15 +79,16 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .map-canvas.satellite-enabled { background: #0e1722; }
 .map-canvas.image-enabled { background: #101923; }
 .map-canvas.satellite-enabled::before { content: 'Satellite imagery needs an address or coordinates'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; color: #d8e7f7; font-weight: 800; text-align: center; pointer-events: none; z-index: 0; }
-.satellite-layer,.image-layer { position: absolute; inset: 0; display: none; pointer-events: none; overflow: visible; z-index: 1; transform-origin: 50% 50%; }
+.map-world { position: absolute; inset: 0; z-index: 1; transform-origin: 50% 50%; }
+.satellite-layer,.image-layer { position: absolute; inset: 0; display: none; pointer-events: none; overflow: visible; z-index: 1; }
 .satellite-layer { background: #0e1722; }
 .image-layer { background: #101923; }
 .map-canvas.satellite-enabled .satellite-layer,.map-canvas.image-enabled .image-layer { display: block; }
 .background-image { position: absolute; left: 50%; top: 50%; max-width: 100%; max-height: 100%; user-select: none; transform-origin: 50% 50%; }
 .satellite-tile { position: absolute; width: 256px; height: 256px; user-select: none; }
-.canvas-grid { position: absolute; inset: 0; z-index: 2; opacity: 0.5; background-image: linear-gradient(rgba(139,169,205,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(139,169,205,0.28) 1px, transparent 1px); background-size: 48px 48px; transform-origin: 50% 50%; }
+.canvas-grid { position: absolute; inset: 0; z-index: 2; opacity: 0.5; background-image: linear-gradient(rgba(139,169,205,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(139,169,205,0.28) 1px, transparent 1px); background-size: 48px 48px; }
 .map-canvas.satellite-enabled .canvas-grid { opacity: 0.18; background-image: linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px); }
-.coverage-layer,.calibration-layer,.sprinkler-layer { position:absolute; inset:0; z-index: 3; transform-origin: 50% 50%; }
+.coverage-layer,.calibration-layer,.sprinkler-layer { position:absolute; inset:0; z-index: 3; }
 .calibration-layer { z-index: 4; pointer-events: none; }
 .sprinkler-layer { z-index: 5; }
 .calibration-point { position:absolute; width:24px; height:24px; border-radius:50%; transform:translate(-50%, -50%); display:flex; align-items:center; justify-content:center; background:#ffbf47; color:#18202a; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.35); font-size:0.75rem; font-weight:900; }

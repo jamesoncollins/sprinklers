@@ -94,6 +94,7 @@ const zoneInspectorSelect = document.getElementById('zone-inspector-select');
 const zoneSprinklerSelect = document.getElementById('zone-sprinkler-select');
 const addZoneBtn = document.getElementById('add-zone');
 const mapCanvas = document.getElementById('map-canvas');
+const mapWorld = document.getElementById('map-world');
 const satelliteLayer = document.getElementById('satellite-layer');
 const imageLayer = document.getElementById('image-layer');
 const coverageLayer = document.getElementById('coverage-layer');
@@ -398,10 +399,7 @@ function mapViewTransform() {
 }
 
 function applyMapViewTransform() {
-  const transform = mapViewTransform();
-  [satelliteLayer, imageLayer, coverageLayer, calibrationLayer, sprinklerLayer, mapCanvas.querySelector('.canvas-grid')].forEach((layer) => {
-    if (layer) layer.style.transform = transform;
-  });
+  mapWorld.style.transform = mapViewTransform();
   const { scale } = normalizeMapViewSettings(project.site?.mapView);
   sprinklerLayer.querySelectorAll('.sprinkler-marker').forEach((marker) => {
     marker.style.setProperty('--marker-scale', `${1 / scale}`);
