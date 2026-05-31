@@ -43,15 +43,16 @@ input[type='range'] { padding: 0; accent-color: var(--blue-700); }
 .checkbox-field { display: flex; align-items: center; gap: 8px; color: var(--blue-700); font-weight: 800; }
 .checkbox-field input { width: auto; }
 
-.collapsible-heading { margin: 0 0 8px; }
-.collapsible-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 4px 0; border: 0; background: transparent; color: #27415f; font: inherit; text-align: left; }
-.collapsible-toggle:hover { filter: none; color: var(--blue-700); }
-.collapsible-toggle:focus-visible { outline: 2px solid var(--blue-700); outline-offset: 3px; }
-.collapse-indicator { color: var(--muted); font-size: 0.8rem; transition: transform 0.16s ease; }
-.collapsible-toggle[aria-expanded='false'] .collapse-indicator { transform: rotate(-90deg); }
-.collapsible-content { display: block; }
-.collapsible-content[hidden] { display: none; }
-.section-card.is-collapsed,.analysis-panel.is-collapsed,.inspector-panel.is-collapsed { padding-bottom: 10px; }
+.panel-menu,.collapsible-menu { display: block; }
+.panel-menu > summary,.collapsible-menu > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; list-style: none; color: #27415f; font-weight: 800; }
+.panel-menu > summary::-webkit-details-marker,.collapsible-menu > summary::-webkit-details-marker { display: none; }
+.panel-menu > summary::after,.collapsible-menu > summary::after { content: '▾'; color: var(--muted); font-size: 0.8rem; transition: transform 0.16s ease; }
+.panel-menu:not([open]) > summary::after,.collapsible-menu:not([open]) > summary::after { transform: rotate(-90deg); }
+.panel-menu > summary:hover,.collapsible-menu > summary:hover { color: var(--blue-700); }
+.panel-menu > summary:focus-visible,.collapsible-menu > summary:focus-visible { outline: 2px solid var(--blue-700); outline-offset: 3px; border-radius: 4px; }
+.panel-summary { margin: 0 0 10px; font-size: 1rem; }
+.collapsible-menu > summary { margin: 0 0 8px; font-size: 0.92rem; }
+.panel-menu:not([open]),.collapsible-menu:not([open]) { padding-bottom: 10px; }
 
 .zones-list { display: grid; gap: 8px; }
 .zone-row { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; padding: 8px; border: 1px solid #edf1f5; border-radius: 8px; }

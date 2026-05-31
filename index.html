@@ -22,10 +22,11 @@
 
       <main class="layout">
         <aside class="panel left-panel">
-          <h2>Catalog / Project</h2>
+          <details class="panel-menu" open>
+            <summary class="panel-summary">Catalog / Project</summary>
 
-          <section class="section-card">
-            <h3>Project</h3>
+            <details class="section-card collapsible-menu" open>
+              <summary>Project</summary>
             <div class="field-group">
               <label for="site-name">Site name</label>
               <input id="site-name" type="text" placeholder="New Site" />
@@ -99,16 +100,16 @@
               <button id="reset-map-view" type="button" class="full-width secondary-btn">Reset Pan / Zoom / Rotation</button>
               <p id="satellite-status" class="status-text">Enter the property center coordinates to show live imagery tiles behind the planning grid. Winter/leaf-off availability depends on the imagery captured for that location; try Clarity or USGS when the default view is not useful.</p>
             </div>
-          </section>
+            </details>
 
-          <section class="section-card">
-            <h3>Zones</h3>
+            <details class="section-card collapsible-menu" open>
+              <summary>Zones</summary>
             <div id="zones-list" class="zones-list" aria-live="polite"></div>
             <button id="add-zone" class="full-width">Add Zone</button>
-          </section>
+            </details>
 
-          <section class="section-card">
-            <h3>Catalog Lookup</h3>
+            <details class="section-card collapsible-menu" open>
+              <summary>Catalog Lookup</summary>
             <label class="field-label file-btn full-width-file">
               Import CSV Catalog
               <input id="load-catalog" type="file" accept=".csv,text/csv" />
@@ -138,7 +139,8 @@
             <button id="lookup-performance" class="full-width">Lookup Performance</button>
             <p id="lookup-result" class="status-text">Awaiting lookup.</p>
             <p class="status-text">Non-pressure-regulating heads are scaled by each zone's actual pressure. Pressure-regulating heads keep their rated flow and throw.</p>
-          </section>
+            </details>
+          </details>
         </aside>
 
         <section class="canvas-panel" aria-label="Map canvas">
@@ -158,16 +160,17 @@
             <div id="sprinkler-layer" class="sprinkler-layer"></div>
             <div id="empty-canvas-hint" class="empty-canvas-hint">Click anywhere to place your first sprinkler.</div>
           </div>
-          <section class="analysis-panel">
-            <h3>Analysis Summary</h3>
+          <details class="analysis-panel collapsible-menu" open>
+            <summary>Analysis Summary</summary>
             <div id="analysis-summary" class="analysis-grid"></div>
-          </section>
+          </details>
         </section>
 
         <aside class="panel inspector-panel">
-          <h2>Selected Sprinkler</h2>
-          <div id="no-selection" class="status-text">Select a sprinkler on the canvas to edit details.</div>
-          <form id="sprinkler-form" class="hidden">
+          <details class="panel-menu" open>
+            <summary class="panel-summary">Selected Sprinkler</summary>
+            <div id="no-selection" class="status-text">Select a sprinkler on the canvas to edit details.</div>
+            <form id="sprinkler-form" class="hidden">
             <div class="field-group">
               <label for="selected-zone">Zone</label>
               <select id="selected-zone"></select>
@@ -210,7 +213,8 @@
             </label>
             <button id="apply-catalog-to-selected" type="button" class="full-width">Apply Catalog Lookup</button>
             <button id="delete-selected" type="button" class="danger full-width">Delete Sprinkler</button>
-          </form>
+            </form>
+          </details>
         </aside>
       </main>
     </div>
