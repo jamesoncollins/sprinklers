@@ -48,6 +48,8 @@ The Planning Canvas can use either the offline yard sketch grid or live imagery 
 
 Use **Ctrl+drag** on the canvas to pan the planning view, use the mouse **scroll wheel** over the canvas to zoom around the pointer, and click **Reset Pan / Zoom** to return to the original centered view. These settings are saved in exported project JSON under `site.satellite` and `site.mapView`, so imported projects restore the same imagery source and map view.
 
+For uploaded images or blank sketches, use **Calibrate by Two Points** in the Distance scale controls: click two known points on the canvas and enter their real-world separation in feet. Sprinkler throw overlays then use that manual feet-per-pixel scale, while satellite imagery automatically derives its scale from the imagery latitude and zoom. Manual calibration data is saved in exported project JSON under `site.distanceScale`.
+
 ## Default CSV catalogs
 
 The repository keeps one growing built-in CSV catalog at `data/default-catalogs/default_sprinkler_catalog.csv`. It currently contains Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`), including the blue, red, and grey low-angle nozzle rows that used to live in separate starter files.

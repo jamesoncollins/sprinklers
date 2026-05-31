@@ -1,5 +1,5 @@
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
-const radiusScalePxPerFt = 4;
+const defaultFeetPerPixel = 0.25;
 const earthRadiusFeet = 20925524.9;
 const mapViewMinScale = 0.5;
 const mapViewMaxScale = 4;
@@ -35,6 +35,7 @@ const emptyProject = {
     imageSource: 'yard',
     satellite: { latitude: null, longitude: null, zoom: 19, source: 'esri-world' },
     backgroundImage: { dataUrl: '', name: '', scale: 1, rotationDegrees: 0 },
+    distanceScale: { feetPerPixel: defaultFeetPerPixel, points: [], measuredFeet: null },
     mapView: { scale: 1, panX: 0, panY: 0, rotationDegrees: 0 },
   },
   zones: [],
@@ -46,6 +47,7 @@ let catalogState = null;
 let selectedSprinklerId = null;
 let dragState = null;
 let panState = null;
+let calibrationState = null;
 let suppressNextCanvasClick = false;
 
 const newBtn = document.getElementById('new-project');
@@ -70,6 +72,9 @@ const imageScaleValue = document.getElementById('image-scale-value');
 const imageRotationInput = document.getElementById('image-rotation');
 const imageRotationValue = document.getElementById('image-rotation-value');
 const imageStatus = document.getElementById('image-status');
+const startScaleCalibrationBtn = document.getElementById('start-scale-calibration');
+const clearScaleCalibrationBtn = document.getElementById('clear-scale-calibration');
+const scaleCalibrationStatus = document.getElementById('scale-calibration-status');
 const satelliteLatitudeInput = document.getElementById('satellite-latitude');
 const satelliteLongitudeInput = document.getElementById('satellite-longitude');
 const satelliteSourceSelect = document.getElementById('satellite-source');
@@ -87,6 +92,7 @@ const mapCanvas = document.getElementById('map-canvas');
 const satelliteLayer = document.getElementById('satellite-layer');
 const imageLayer = document.getElementById('image-layer');
 const coverageLayer = document.getElementById('coverage-layer');
+const calibrationLayer = document.getElementById('calibration-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
 const sprinklerCount = document.getElementById('sprinkler-count');
@@ -345,6 +351,23 @@ function normalizeBackgroundImageSettings(settings = {}) {
   };
 }
 
+function normalizeDistanceScaleSettings(settings = {}) {
+  const feetPerPixel = Number(settings.feetPerPixel);
+  const measuredFeet = Number(settings.measuredFeet);
+  const points = Array.isArray(settings.points)
+    ? settings.points
+        .map((point) => ({ xPercent: Number(point.xPercent), yPercent: Number(point.yPercent) }))
+        .filter((point) => Number.isFinite(point.xPercent) && Number.isFinite(point.yPercent))
+        .slice(0, 2)
+    : [];
+
+  return {
+    feetPerPixel: Number.isFinite(feetPerPixel) && feetPerPixel > 0 ? feetPerPixel : defaultFeetPerPixel,
+    points,
+    measuredFeet: Number.isFinite(measuredFeet) && measuredFeet > 0 ? measuredFeet : null,
+  };
+}
+
 function mapViewTransform() {
   const { scale, panX, panY, rotationDegrees } = normalizeMapViewSettings(project.site?.mapView);
   return `translate(${panX}px, ${panY}px) rotate(${rotationDegrees}deg) scale(${scale})`;
@@ -352,7 +375,7 @@ function mapViewTransform() {
 
 function applyMapViewTransform() {
   const transform = mapViewTransform();
-  [satelliteLayer, imageLayer, coverageLayer, sprinklerLayer, mapCanvas.querySelector('.canvas-grid')].forEach((layer) => {
+  [satelliteLayer, imageLayer, coverageLayer, calibrationLayer, sprinklerLayer, mapCanvas.querySelector('.canvas-grid')].forEach((layer) => {
     if (layer) layer.style.transform = transform;
   });
   const { scale } = normalizeMapViewSettings(project.site?.mapView);
@@ -623,6 +646,7 @@ function hydrateProject(loaded) {
       ...(loaded.site || {}),
       satellite: normalizeSatelliteSettings({ ...emptyProject.site.satellite, ...(loaded.site?.satellite || {}) }),
       backgroundImage: normalizeBackgroundImageSettings({ ...emptyProject.site.backgroundImage, ...(loaded.site?.backgroundImage || {}) }),
+      distanceScale: normalizeDistanceScaleSettings({ ...emptyProject.site.distanceScale, ...(loaded.site?.distanceScale || {}) }),
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone) => ({ ...zone })) : [],
@@ -777,16 +801,168 @@ function renderZones() {
   });
 }
 
+
+function localPointFromPercent(point) {
+  const { width, height } = canvasCenter();
+  return {
+    x: (point.xPercent / 100) * width,
+    y: (point.yPercent / 100) * height,
+  };
+}
+
+function distanceBetweenScalePoints(points) {
+  if (points.length < 2) return 0;
+  const first = localPointFromPercent(points[0]);
+  const second = localPointFromPercent(points[1]);
+  return Math.hypot(second.x - first.x, second.y - first.y);
+}
+
+function currentFeetPerPixel() {
+  if (project.site?.imageSource === 'satellite' && hasSatelliteCenter()) {
+    const satellite = normalizeSatelliteSettings(project.site.satellite);
+    return satelliteFeetPerPixel(satellite.latitude, satellite.zoom);
+  }
+  return normalizeDistanceScaleSettings(project.site?.distanceScale).feetPerPixel;
+}
+
+function updateScaleCalibrationStatus(message) {
+  if (message) {
+    scaleCalibrationStatus.textContent = message;
+    return;
+  }
+
+  if (calibrationState) {
+    const clicksRemaining = 2 - calibrationState.points.length;
+    scaleCalibrationStatus.textContent = clicksRemaining === 2
+      ? 'Calibration active: click the first endpoint of a known distance on the canvas.'
+      : 'Calibration active: click the second endpoint of the known distance.';
+    return;
+  }
+
+  if (project.site?.imageSource === 'satellite' && hasSatelliteCenter()) {
+    const satellite = normalizeSatelliteSettings(project.site.satellite);
+    const feetPerPixel = satelliteFeetPerPixel(satellite.latitude, satellite.zoom);
+    scaleCalibrationStatus.textContent = `Using satellite scale: ${feetPerPixel.toFixed(3)} ft per canvas pixel at zoom ${satellite.zoom}.`;
+    return;
+  }
+
+  const scale = normalizeDistanceScaleSettings(project.site?.distanceScale);
+  if (scale.points.length === 2 && scale.measuredFeet) {
+    const pixels = distanceBetweenScalePoints(scale.points);
+    scaleCalibrationStatus.textContent = `Manual scale: ${scale.measuredFeet.toFixed(2)} ft over ${pixels.toFixed(1)} px (${scale.feetPerPixel.toFixed(3)} ft/px).`;
+    return;
+  }
+
+  scaleCalibrationStatus.textContent = `Using default sketch scale: ${(1 / scale.feetPerPixel).toFixed(2)} px per ft. Calibrate two points for uploaded images.`;
+}
+
+function renderCalibrationLayer() {
+  calibrationLayer.replaceChildren();
+  const savedScale = normalizeDistanceScaleSettings(project.site?.distanceScale);
+  const points = calibrationState?.points || savedScale.points;
+  if (points.length === 0) return;
+
+  points.forEach((point, index) => {
+    const marker = document.createElement('div');
+    marker.className = 'calibration-point';
+    marker.style.left = `${point.xPercent}%`;
+    marker.style.top = `${point.yPercent}%`;
+    marker.textContent = `${index + 1}`;
+    calibrationLayer.appendChild(marker);
+  });
+
+  if (points.length < 2) return;
+  const first = localPointFromPercent(points[0]);
+  const second = localPointFromPercent(points[1]);
+  const length = Math.hypot(second.x - first.x, second.y - first.y);
+  const angle = (Math.atan2(second.y - first.y, second.x - first.x) * 180) / Math.PI;
+  const label = savedScale.measuredFeet ? `${savedScale.measuredFeet.toFixed(2)} ft` : 'Known distance';
+
+  const line = document.createElement('div');
+  line.className = 'calibration-line';
+  line.style.left = `${points[0].xPercent}%`;
+  line.style.top = `${points[0].yPercent}%`;
+  line.style.width = `${length}px`;
+  line.style.transform = `rotate(${angle}deg)`;
+  calibrationLayer.appendChild(line);
+
+  const lineLabel = document.createElement('div');
+  lineLabel.className = 'calibration-label';
+  lineLabel.style.left = `${(points[0].xPercent + points[1].xPercent) / 2}%`;
+  lineLabel.style.top = `${(points[0].yPercent + points[1].yPercent) / 2}%`;
+  lineLabel.textContent = label;
+  calibrationLayer.appendChild(lineLabel);
+}
+
+function startScaleCalibration() {
+  calibrationState = { points: [] };
+  mapCanvas.classList.add('calibrating');
+  emptyCanvasHint.classList.add('hidden');
+  renderCalibrationLayer();
+  updateScaleCalibrationStatus();
+}
+
+function finishScaleCalibration(points) {
+  const pixelDistance = distanceBetweenScalePoints(points);
+  if (pixelDistance <= 0) {
+    calibrationState = null;
+    mapCanvas.classList.remove('calibrating');
+    renderCalibrationLayer();
+    updateScaleCalibrationStatus('Calibration failed: the two points must be different.');
+    return;
+  }
+
+  const distanceText = window.prompt('How many feet apart are these two points?');
+  const measuredFeet = Number(distanceText);
+  if (!Number.isFinite(measuredFeet) || measuredFeet <= 0) {
+    calibrationState = null;
+    mapCanvas.classList.remove('calibrating');
+    renderCalibrationLayer();
+    updateScaleCalibrationStatus('Calibration canceled. Enter a positive distance in feet after selecting two points.');
+    return;
+  }
+
+  project.site.distanceScale = normalizeDistanceScaleSettings({
+    feetPerPixel: measuredFeet / pixelDistance,
+    measuredFeet,
+    points,
+  });
+  calibrationState = null;
+  mapCanvas.classList.remove('calibrating');
+  renderCanvas();
+  renderAnalysis();
+  updateScaleCalibrationStatus();
+}
+
+function addCalibrationPoint(position) {
+  if (!calibrationState) return;
+  calibrationState.points.push(position);
+  renderCalibrationLayer();
+  updateScaleCalibrationStatus();
+  if (calibrationState.points.length >= 2) {
+    finishScaleCalibration(calibrationState.points.slice(0, 2));
+  }
+}
+
+function clearScaleCalibration() {
+  project.site.distanceScale = normalizeDistanceScaleSettings();
+  calibrationState = null;
+  mapCanvas.classList.remove('calibrating');
+  renderCanvas();
+  updateScaleCalibrationStatus();
+}
+
 function renderCanvas() {
   applyMapViewTransform();
   coverageLayer.replaceChildren();
   sprinklerLayer.replaceChildren();
-  emptyCanvasHint.classList.toggle('hidden', project.sprinklers.length > 0);
+  renderCalibrationLayer();
+  emptyCanvasHint.classList.toggle('hidden', project.sprinklers.length > 0 || Boolean(calibrationState));
   sprinklerCount.textContent = `${project.sprinklers.length} sprinkler${project.sprinklers.length === 1 ? '' : 's'}`;
 
   project.sprinklers.forEach((sprinkler) => {
     const color = getZoneColor(sprinkler.zoneId);
-    const radiusPx = Math.max(10, (Number(sprinkler.radiusFt) || 0) * radiusScalePxPerFt);
+    const radiusPx = Math.max(10, (Number(sprinkler.radiusFt) || 0) / currentFeetPerPixel());
     const arc = Math.min(360, Math.max(1, Number(sprinkler.arcDegrees) || 360));
     const orientation = Number(sprinkler.orientationDegrees) || 0;
 
@@ -882,6 +1058,7 @@ function addAnalysisCard(label, value, detail, warning = false) {
 
 function render() {
   updateProjectInputs();
+  updateScaleCalibrationStatus();
   renderZones();
   applyMapViewTransform();
   renderSatelliteLayer();
@@ -1142,6 +1319,7 @@ function updateSatelliteSettingsFromInputs() {
   syncSprinklersFromGps();
   renderSatelliteLayer();
   renderCanvas();
+  updateScaleCalibrationStatus();
 }
 
 [satelliteLatitudeInput, satelliteLongitudeInput, satelliteSourceSelect, satelliteZoomInput].forEach((input) => {
@@ -1186,11 +1364,15 @@ function updateBackgroundImageSettingsFromInputs() {
   imageScaleValue.textContent = `${project.site.backgroundImage.scale.toFixed(2)}×`;
   imageRotationValue.textContent = `${Math.round(project.site.backgroundImage.rotationDegrees)}°`;
   renderImageLayer();
+  updateScaleCalibrationStatus();
 }
 
 [imageScaleInput, imageRotationInput].forEach((input) => {
   input.addEventListener('input', updateBackgroundImageSettingsFromInputs);
 });
+
+startScaleCalibrationBtn.addEventListener('click', startScaleCalibration);
+clearScaleCalibrationBtn.addEventListener('click', clearScaleCalibration);
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -1217,6 +1399,10 @@ mapCanvas.addEventListener('contextmenu', (event) => {
 mapCanvas.addEventListener('click', (event) => {
   if (suppressNextCanvasClick || event.ctrlKey) {
     suppressNextCanvasClick = false;
+    return;
+  }
+  if (calibrationState) {
+    addCalibrationPoint(canvasPositionFromEvent(event));
     return;
   }
   if (event.target.closest('.sprinkler-marker')) return;
