@@ -23,10 +23,7 @@
       <main class="layout">
         <aside class="panel left-panel">
           <details class="panel-menu">
-            <summary class="panel-summary">Catalog / Project</summary>
-
-            <details class="section-card collapsible-menu">
-              <summary>Project</summary>
+            <summary class="panel-summary">Project</summary>
             <div class="field-group">
               <label for="site-name">Site name</label>
               <input id="site-name" type="text" placeholder="New Site" />
@@ -100,11 +97,10 @@
               <button id="reset-map-view" type="button" class="full-width secondary-btn">Reset Pan / Zoom / Rotation</button>
               <p id="satellite-status" class="status-text">Enter the property center coordinates to show live imagery tiles behind the planning grid. Winter/leaf-off availability depends on the imagery captured for that location; try Clarity or USGS when the default view is not useful.</p>
             </div>
-            </details>
+          </details>
 
-
-            <details class="section-card collapsible-menu">
-              <summary>Catalog Lookup</summary>
+          <details class="panel-menu">
+            <summary class="panel-summary">Catalog Lookup</summary>
             <label class="field-label file-btn full-width-file">
               Import CSV Catalog
               <input id="load-catalog" type="file" accept=".csv,text/csv" />
@@ -134,7 +130,6 @@
             <button id="lookup-performance" class="full-width">Lookup Performance</button>
             <p id="lookup-result" class="status-text">Awaiting lookup.</p>
             <p class="status-text">Non-pressure-regulating heads are scaled by each zone's actual pressure. Pressure-regulating heads keep their rated flow and throw.</p>
-            </details>
           </details>
         </aside>
 

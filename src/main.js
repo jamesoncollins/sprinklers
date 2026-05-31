@@ -1718,7 +1718,14 @@ resetMapViewBtn.addEventListener('click', () => {
   renderCanvas();
 });
 
+let canvasResizeFrame = null;
+let lastCanvasSize = canvasCenter();
+
 function handleCanvasResize() {
+  const nextSize = canvasCenter();
+  if (nextSize.width === lastCanvasSize.width && nextSize.height === lastCanvasSize.height) return;
+  lastCanvasSize = nextSize;
+
   syncSprinklersFromGps();
   renderSatelliteLayer();
   renderImageLayer();
@@ -1727,7 +1734,18 @@ function handleCanvasResize() {
   updateScaleCalibrationStatus();
 }
 
-window.addEventListener('resize', handleCanvasResize);
+function scheduleCanvasResize() {
+  if (canvasResizeFrame) return;
+  canvasResizeFrame = window.requestAnimationFrame(() => {
+    canvasResizeFrame = null;
+    handleCanvasResize();
+  });
+}
+
+window.addEventListener('resize', scheduleCanvasResize);
+if ('ResizeObserver' in window) {
+  new ResizeObserver(scheduleCanvasResize).observe(mapCanvas);
+}
 
 [selectedZone, selectedHead, selectedNozzle, selectedPressure, selectedFlow, selectedRadius, selectedArc, selectedOrientation, selectedPressureRegulating].forEach(
   (input) => input.addEventListener('input', updateSelectedSprinklerFromForm),
