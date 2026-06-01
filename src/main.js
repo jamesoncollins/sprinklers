@@ -106,6 +106,7 @@ const sprinklerCount = document.getElementById('sprinkler-count');
 const analysisSummary = document.getElementById('analysis-summary');
 const noSelection = document.getElementById('no-selection');
 const sprinklerForm = document.getElementById('sprinkler-form');
+const selectedSprinklerFields = document.getElementById('selected-sprinkler-fields');
 const selectedZone = document.getElementById('selected-zone');
 const selectedHead = document.getElementById('selected-head');
 const selectedNozzle = document.getElementById('selected-nozzle');
@@ -1234,7 +1235,7 @@ function renderInspector() {
 
   const sprinkler = selectedSprinkler();
   noSelection.classList.toggle('hidden', Boolean(sprinkler));
-  sprinklerForm.classList.toggle('hidden', !sprinkler);
+  selectedSprinklerFields.classList.toggle('hidden', !sprinkler);
   if (!sprinkler) return;
 
   selectedZone.value = sprinkler.zoneId;
@@ -1673,6 +1674,10 @@ function readFileAsDataUrl(file) {
     reader.readAsDataURL(file);
   });
 }
+
+sprinklerForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+});
 
 zoneInspectorSelect.addEventListener('change', () => {
   inspectedZoneId = zoneInspectorSelect.value;
