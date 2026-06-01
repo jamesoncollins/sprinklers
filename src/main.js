@@ -920,22 +920,22 @@ function syncSprinklersFromGps() {
   });
 }
 
-function renderZoneSprinklerSelect(zoneId) {
+function renderSprinklerSelect() {
   clearSelect(zoneSprinklerSelect);
-  const zoneSprinklers = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zoneId);
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = zoneSprinklers.length ? 'Select sprinkler in zone' : 'No sprinklers in this zone';
+  placeholder.textContent = project.sprinklers.length ? 'Select sprinkler to edit' : 'No sprinklers to edit';
   zoneSprinklerSelect.appendChild(placeholder);
 
-  zoneSprinklers.forEach((sprinkler) => {
+  project.sprinklers.forEach((sprinkler) => {
     const option = document.createElement('option');
+    const zone = project.zones.find((candidate) => candidate.id === sprinkler.zoneId);
     option.value = sprinkler.id;
-    option.textContent = sprinklerLabel(sprinkler);
+    option.textContent = `${sprinklerLabel(sprinkler)} · ${zone?.name || 'No zone'}`;
     zoneSprinklerSelect.appendChild(option);
   });
 
-  zoneSprinklerSelect.value = zoneSprinklers.some((sprinkler) => sprinkler.id === selectedSprinklerId) ? selectedSprinklerId : '';
+  zoneSprinklerSelect.value = project.sprinklers.some((sprinkler) => sprinkler.id === selectedSprinklerId) ? selectedSprinklerId : '';
 }
 
 function renderZoneInspectorControls() {
@@ -948,7 +948,6 @@ function renderZoneInspectorControls() {
     zoneInspectorSelect.appendChild(option);
   });
   zoneInspectorSelect.value = zoneId;
-  renderZoneSprinklerSelect(zoneId);
 }
 
 function renderZones() {
@@ -1225,6 +1224,7 @@ function renderCanvas() {
 }
 
 function renderInspector() {
+  renderSprinklerSelect();
   clearSelect(selectedZone);
   project.zones.forEach((zone) => {
     const option = document.createElement('option');
@@ -1425,6 +1425,7 @@ function updateSelectedSprinklerFromForm() {
   sprinkler.orientationDegrees = normalizeDegrees(selectedOrientation.value);
   renderCanvas();
   if (zoneChanged) renderZoneInspectorControls();
+  renderSprinklerSelect();
   renderAnalysis();
 }
 
@@ -1681,7 +1682,7 @@ sprinklerForm.addEventListener('submit', (event) => {
 
 zoneInspectorSelect.addEventListener('change', () => {
   inspectedZoneId = zoneInspectorSelect.value;
-  renderZoneSprinklerSelect(inspectedZoneId);
+  renderZoneInspectorControls();
 });
 
 zoneSprinklerSelect.addEventListener('change', () => {
