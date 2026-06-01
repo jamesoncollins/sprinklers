@@ -105,6 +105,7 @@ const emptyCanvasHint = document.getElementById('empty-canvas-hint');
 const sprinklerCount = document.getElementById('sprinkler-count');
 const analysisSummary = document.getElementById('analysis-summary');
 const noSelection = document.getElementById('no-selection');
+const sprinklerPanel = document.getElementById('sprinklers-panel');
 const sprinklerForm = document.getElementById('sprinkler-form');
 const selectedSprinklerFields = document.getElementById('selected-sprinkler-fields');
 const selectedZone = document.getElementById('selected-zone');
@@ -1237,6 +1238,8 @@ function renderInspector() {
   noSelection.classList.toggle('hidden', Boolean(sprinkler));
   selectedSprinklerFields.classList.toggle('hidden', !sprinkler);
   if (!sprinkler) return;
+
+  sprinklerPanel.open = true;
 
   selectedZone.value = sprinkler.zoneId;
   selectedHead.value = sprinkler.headModel || '';
