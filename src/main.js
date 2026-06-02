@@ -54,6 +54,7 @@ let contextMenuSprinklerId = null;
 let backgroundImageNaturalSize = null;
 let backgroundImageBaseSize = null;
 let backgroundImageNaturalDataUrl = '';
+let suppressEmptyCanvasHint = false;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
@@ -706,7 +707,7 @@ function normalizeSprinklerPosition(sprinkler, index) {
   };
 }
 
-function hydrateProject(loaded) {
+function hydrateProject(loaded, options = {}) {
   project = {
     ...structuredClone(emptyProject),
     ...loaded,
@@ -727,6 +728,7 @@ function hydrateProject(loaded) {
   syncSprinklersFromGps();
   selectedSprinklerId = project.sprinklers[0]?.id || null;
   inspectedZoneId = selectedSprinkler()?.zoneId || project.zones[0]?.id || null;
+  suppressEmptyCanvasHint = Boolean(options.suppressEmptyCanvasHint);
   render();
 }
 
@@ -1183,7 +1185,7 @@ function renderCanvas() {
   coverageLayer.replaceChildren();
   sprinklerLayer.replaceChildren();
   renderCalibrationLayer();
-  emptyCanvasHint.classList.toggle('hidden', project.sprinklers.length > 0 || Boolean(calibrationState));
+  emptyCanvasHint.classList.toggle('hidden', suppressEmptyCanvasHint || project.sprinklers.length > 0 || Boolean(calibrationState));
   sprinklerCount.textContent = `${project.sprinklers.length} sprinkler${project.sprinklers.length === 1 ? '' : 's'}`;
 
   project.sprinklers.forEach((sprinkler) => {
@@ -1541,7 +1543,7 @@ async function loadDefaultCatalog() {
 lookupBtn.addEventListener('click', updateLookupResult);
 
 newBtn.addEventListener('click', () => {
-  hydrateProject(structuredClone(emptyProject));
+  hydrateProject(structuredClone(emptyProject), { suppressEmptyCanvasHint: false });
 });
 
 saveBtn.addEventListener('click', async () => {
@@ -1591,7 +1593,7 @@ loadInput.addEventListener('change', async (event) => {
     if (typeof loaded !== 'object' || loaded === null || !('version' in loaded)) {
       throw new Error('Invalid project file');
     }
-    hydrateProject(loaded);
+    hydrateProject(loaded, { suppressEmptyCanvasHint: true });
   } catch (error) {
     alert(`Failed to load project: ${error.message}`);
   } finally {
