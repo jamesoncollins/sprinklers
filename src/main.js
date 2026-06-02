@@ -1446,12 +1446,16 @@ function closeSprinklerContextMenu() {
 
 function renderSprinklerContextMenuZones(sprinkler) {
   clearSelect(contextZoneSelect);
+  ensureDefaultZone();
+
   project.zones.forEach((zone) => {
     const option = document.createElement('option');
     option.value = zone.id;
     option.textContent = zone.name;
     contextZoneSelect.appendChild(option);
   });
+
+  contextZoneSelect.disabled = project.zones.length === 0;
   contextZoneSelect.value = sprinkler?.zoneId || project.zones[0]?.id || '';
 }
 
@@ -1461,7 +1465,12 @@ function openSprinklerContextMenu(event, sprinkler) {
   selectedSprinklerId = sprinkler.id;
   inspectedZoneId = sprinkler.zoneId;
   contextMenuSprinklerId = sprinkler.id;
-  renderSprinklerContextMenuZones(sprinkler);
+  renderCanvas();
+  renderInspector();
+  renderZoneInspectorControls();
+
+  const currentSprinkler = selectedSprinkler() || sprinkler;
+  renderSprinklerContextMenuZones(currentSprinkler);
 
   const canvasRect = mapCanvas.getBoundingClientRect();
   sprinklerContextMenu.classList.remove('hidden');
@@ -1473,9 +1482,6 @@ function openSprinklerContextMenu(event, sprinkler) {
 
   sprinklerContextMenu.style.left = `${left}px`;
   sprinklerContextMenu.style.top = `${top}px`;
-  renderCanvas();
-  renderInspector();
-  renderZoneInspectorControls();
 }
 
 function deleteSprinklerById(sprinklerId) {
