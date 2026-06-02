@@ -102,6 +102,9 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .sprinkler-marker::after { content:''; width:3px; height:3px; border-radius:50%; background:#fff; }
 .sprinkler-marker.selected { outline:3px solid #ffbf47; outline-offset:2px; z-index:3; }
 .sprinkler-marker:active { cursor: grabbing; }
+.context-menu { position: absolute; z-index: 10; min-width: 160px; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); box-shadow: 0 12px 30px rgba(0,0,0,0.36); }
+.context-menu-item { display: block; width: 100%; margin: 0; text-align: left; }
+.context-menu-item + .context-menu-item { margin-top: 4px; }
 .analysis-panel { border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--surface-2); }
 .analysis-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .analysis-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--surface-3); }

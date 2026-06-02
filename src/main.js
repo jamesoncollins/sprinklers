@@ -50,6 +50,7 @@ let dragState = null;
 let panState = null;
 let calibrationState = null;
 let suppressNextCanvasClick = false;
+let contextMenuSprinklerId = null;
 let backgroundImageNaturalSize = null;
 let backgroundImageBaseSize = null;
 let backgroundImageNaturalDataUrl = '';
@@ -119,6 +120,8 @@ const selectedOrientation = document.getElementById('selected-orientation');
 const selectedPressureRegulating = document.getElementById('selected-pressure-regulating');
 const applyCatalogToSelectedBtn = document.getElementById('apply-catalog-to-selected');
 const deleteSelectedBtn = document.getElementById('delete-selected');
+const sprinklerContextMenu = document.getElementById('sprinkler-context-menu');
+const contextDeleteSprinklerBtn = document.getElementById('context-delete-sprinkler');
 
 function setCatalogStatus(message) {
   catalogStatus.textContent = message;
@@ -1209,7 +1212,8 @@ function renderCanvas() {
     marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr, ${formatNumber(effectiveFlowGpm(sprinkler))} gpm effective)`;
     marker.setAttribute('aria-label', `Select sprinkler ${sprinkler.headModel || sprinkler.id}`);
     marker.addEventListener('pointerdown', (event) => {
-      if (event.ctrlKey) return;
+      if (event.ctrlKey || event.button !== 0) return;
+      closeSprinklerContextMenu();
       event.stopPropagation();
       selectedSprinklerId = sprinkler.id;
       inspectedZoneId = sprinkler.zoneId;
@@ -1220,6 +1224,7 @@ function renderCanvas() {
       renderInspector();
       renderZoneInspectorControls();
     });
+    marker.addEventListener('contextmenu', (event) => openSprinklerContextMenu(event, sprinkler));
     sprinklerLayer.appendChild(marker);
   });
 }
@@ -1406,6 +1411,42 @@ function addSprinklerAt(position) {
   project.sprinklers.push(sprinkler);
   selectedSprinklerId = sprinkler.id;
   inspectedZoneId = sprinkler.zoneId;
+  render();
+}
+
+function closeSprinklerContextMenu() {
+  contextMenuSprinklerId = null;
+  sprinklerContextMenu.classList.add('hidden');
+}
+
+function openSprinklerContextMenu(event, sprinkler) {
+  event.preventDefault();
+  event.stopPropagation();
+  selectedSprinklerId = sprinkler.id;
+  inspectedZoneId = sprinkler.zoneId;
+  contextMenuSprinklerId = sprinkler.id;
+
+  const canvasRect = mapCanvas.getBoundingClientRect();
+  sprinklerContextMenu.classList.remove('hidden');
+  const menuRect = sprinklerContextMenu.getBoundingClientRect();
+  const maxLeft = Math.max(0, canvasRect.width - menuRect.width - 6);
+  const maxTop = Math.max(0, canvasRect.height - menuRect.height - 6);
+  const left = Math.min(Math.max(6, event.clientX - canvasRect.left), maxLeft);
+  const top = Math.min(Math.max(6, event.clientY - canvasRect.top), maxTop);
+
+  sprinklerContextMenu.style.left = `${left}px`;
+  sprinklerContextMenu.style.top = `${top}px`;
+  renderCanvas();
+  renderInspector();
+  renderZoneInspectorControls();
+}
+
+function deleteSprinklerById(sprinklerId) {
+  if (!sprinklerId) return;
+  project.sprinklers = project.sprinklers.filter((sprinkler) => sprinkler.id !== sprinklerId);
+  selectedSprinklerId = project.sprinklers[0]?.id || null;
+  inspectedZoneId = selectedSprinkler()?.zoneId || project.zones[0]?.id || null;
+  closeSprinklerContextMenu();
   render();
 }
 
@@ -1708,9 +1749,14 @@ mapCanvas.addEventListener('pointerup', endMapPan);
 mapCanvas.addEventListener('pointercancel', endMapPan);
 mapCanvas.addEventListener('wheel', zoomMapView, { passive: false });
 mapCanvas.addEventListener('contextmenu', (event) => {
-  if (event.ctrlKey || panState) event.preventDefault();
+  if (event.target.closest('.sprinkler-marker') || event.ctrlKey || panState) event.preventDefault();
 });
 mapCanvas.addEventListener('click', (event) => {
+  if (event.target.closest('.context-menu')) return;
+  if (contextMenuSprinklerId) {
+    closeSprinklerContextMenu();
+    return;
+  }
   if (suppressNextCanvasClick || event.ctrlKey) {
     suppressNextCanvasClick = false;
     return;
@@ -1722,6 +1768,8 @@ mapCanvas.addEventListener('click', (event) => {
   if (event.target.closest('.sprinkler-marker')) return;
   addSprinklerAt(canvasPositionFromEvent(event));
 });
+sprinklerContextMenu.addEventListener('click', (event) => event.stopPropagation());
+contextDeleteSprinklerBtn.addEventListener('click', () => deleteSprinklerById(contextMenuSprinklerId));
 
 sprinklerLayer.addEventListener('pointermove', (event) => {
   if (!dragState) return;
@@ -1775,7 +1823,13 @@ function scheduleCanvasResize() {
   });
 }
 
-window.addEventListener('resize', scheduleCanvasResize);
+window.addEventListener('resize', () => {
+  closeSprinklerContextMenu();
+  scheduleCanvasResize();
+});
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeSprinklerContextMenu();
+});
 if ('ResizeObserver' in window) {
   new ResizeObserver(scheduleCanvasResize).observe(mapCanvas);
 }
@@ -1808,13 +1862,7 @@ applyCatalogToSelectedBtn.addEventListener('click', () => {
 });
 
 
-deleteSelectedBtn.addEventListener('click', () => {
-  if (!selectedSprinklerId) return;
-  project.sprinklers = project.sprinklers.filter((sprinkler) => sprinkler.id !== selectedSprinklerId);
-  selectedSprinklerId = project.sprinklers[0]?.id || null;
-  inspectedZoneId = selectedSprinkler()?.zoneId || project.zones[0]?.id || null;
-  render();
-});
+deleteSelectedBtn.addEventListener('click', () => deleteSprinklerById(selectedSprinklerId));
 
 hydrateProject(emptyProject);
 loadDefaultCatalog();
