@@ -672,6 +672,20 @@ function selectedSprinkler() {
   return project.sprinklers.find((sprinkler) => sprinkler.id === selectedSprinklerId) || null;
 }
 
+function sprinklersForCurrentZone() {
+  const zoneId = currentInspectorZoneId();
+  return project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zoneId);
+}
+
+function selectedSprinklerInCurrentZone() {
+  const sprinkler = selectedSprinkler();
+  return sprinkler?.zoneId === currentInspectorZoneId() ? sprinkler : null;
+}
+
+function selectFirstSprinklerInCurrentZone() {
+  selectedSprinklerId = sprinklersForCurrentZone()[0]?.id || null;
+}
+
 function sprinklerLabel(sprinkler) {
   const number = project.sprinklers.findIndex((candidate) => candidate.id === sprinkler.id) + 1;
   const head = sprinkler.headModel || 'Unspecified head';
@@ -928,20 +942,24 @@ function syncSprinklersFromGps() {
 
 function renderSprinklerSelect() {
   clearSelect(zoneSprinklerSelect);
+  const zoneId = currentInspectorZoneId();
+  const zone = project.zones.find((candidate) => candidate.id === zoneId);
+  const zoneSprinklers = sprinklersForCurrentZone();
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = project.sprinklers.length ? 'Select sprinkler to edit' : 'No sprinklers to edit';
+  placeholder.textContent = zoneSprinklers.length
+    ? `Select ${zone?.name || 'zone'} sprinkler to edit`
+    : `No sprinklers in ${zone?.name || 'selected zone'}`;
   zoneSprinklerSelect.appendChild(placeholder);
 
-  project.sprinklers.forEach((sprinkler) => {
+  zoneSprinklers.forEach((sprinkler) => {
     const option = document.createElement('option');
-    const zone = project.zones.find((candidate) => candidate.id === sprinkler.zoneId);
     option.value = sprinkler.id;
-    option.textContent = `${sprinklerLabel(sprinkler)} · ${zone?.name || 'No zone'}`;
+    option.textContent = sprinklerLabel(sprinkler);
     zoneSprinklerSelect.appendChild(option);
   });
 
-  zoneSprinklerSelect.value = project.sprinklers.some((sprinkler) => sprinkler.id === selectedSprinklerId) ? selectedSprinklerId : '';
+  zoneSprinklerSelect.value = zoneSprinklers.some((sprinkler) => sprinkler.id === selectedSprinklerId) ? selectedSprinklerId : '';
 }
 
 function renderZoneInspectorControls() {
@@ -973,6 +991,7 @@ function renderZones() {
     input.addEventListener('input', () => {
       zone.name = input.value || `Zone ${index + 1}`;
       renderZoneInspectorControls();
+      renderCanvas();
       renderInspector();
       renderAnalysis();
     });
@@ -1185,10 +1204,13 @@ function renderCanvas() {
   coverageLayer.replaceChildren();
   sprinklerLayer.replaceChildren();
   renderCalibrationLayer();
-  emptyCanvasHint.classList.toggle('hidden', suppressEmptyCanvasHint || project.sprinklers.length > 0 || Boolean(calibrationState));
-  sprinklerCount.textContent = `${project.sprinklers.length} sprinkler${project.sprinklers.length === 1 ? '' : 's'}`;
+  const zoneId = currentInspectorZoneId();
+  const zone = project.zones.find((candidate) => candidate.id === zoneId);
+  const visibleSprinklers = sprinklersForCurrentZone();
+  emptyCanvasHint.classList.toggle('hidden', suppressEmptyCanvasHint || visibleSprinklers.length > 0 || Boolean(calibrationState));
+  sprinklerCount.textContent = `${visibleSprinklers.length} sprinkler${visibleSprinklers.length === 1 ? '' : 's'}${zone ? ` in ${zone.name}` : ''}`;
 
-  project.sprinklers.forEach((sprinkler) => {
+  visibleSprinklers.forEach((sprinkler) => {
     const color = getZoneColor(sprinkler.zoneId);
     const radiusPx = Math.max(10, effectiveRadiusFt(sprinkler) / currentFeetPerPixel());
     const arc = clampArcDegrees(sprinkler.arcDegrees);
@@ -1241,7 +1263,7 @@ function renderInspector() {
     selectedZone.appendChild(option);
   });
 
-  const sprinkler = selectedSprinkler();
+  const sprinkler = selectedSprinklerInCurrentZone();
   noSelection.classList.toggle('hidden', Boolean(sprinkler));
   selectedSprinklerFields.classList.toggle('hidden', !sprinkler);
   if (!sprinkler) return;
@@ -1395,7 +1417,7 @@ function addSprinklerAt(position) {
   const performance = model ? lookupPerformance(model, pressurePsi) : null;
   const sprinkler = {
     id: crypto.randomUUID(),
-    zoneId: project.zones[0].id,
+    zoneId: currentInspectorZoneId() || project.zones[0].id,
     ...position,
     headModel: model?.headModel || 'Unspecified head',
     nozzleModel: model?.nozzleModel || 'Unspecified nozzle',
@@ -1446,9 +1468,9 @@ function openSprinklerContextMenu(event, sprinkler) {
 function deleteSprinklerById(sprinklerId) {
   if (!sprinklerId) return;
   project.sprinklers = project.sprinklers.filter((sprinkler) => sprinkler.id !== sprinklerId);
-  selectedSprinklerId = project.sprinklers[0]?.id || null;
-  inspectedZoneId = selectedSprinkler()?.zoneId || project.zones[0]?.id || null;
   closeSprinklerContextMenu();
+  selectFirstSprinklerInCurrentZone();
+  inspectedZoneId = currentInspectorZoneId();
   render();
 }
 
@@ -1728,7 +1750,11 @@ sprinklerForm.addEventListener('submit', (event) => {
 
 zoneInspectorSelect.addEventListener('change', () => {
   inspectedZoneId = zoneInspectorSelect.value;
-  renderZoneInspectorControls();
+  if (selectedSprinkler()?.zoneId !== inspectedZoneId) selectFirstSprinklerInCurrentZone();
+  closeSprinklerContextMenu();
+  renderCanvas();
+  renderInspector();
+  renderAnalysis();
 });
 
 zoneSprinklerSelect.addEventListener('change', () => {
