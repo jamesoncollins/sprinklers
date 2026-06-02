@@ -137,7 +137,7 @@
           <div class="canvas-toolbar">
             <div>
               <h2>Planning Canvas</h2>
-              <p>Click to add sprinklers. Drag points to reposition. Ctrl+drag to pan, and use the scroll wheel to zoom.</p>
+              <p>Click to add sprinklers. Drag points to reposition. Right-click a sprinkler to delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.</p>
             </div>
             <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
           </div>
@@ -151,6 +151,9 @@
               <div id="sprinkler-layer" class="sprinkler-layer"></div>
             </div>
             <div id="empty-canvas-hint" class="empty-canvas-hint">Click anywhere to place your first sprinkler.</div>
+            <div id="sprinkler-context-menu" class="context-menu hidden" role="menu" aria-label="Sprinkler actions">
+              <button id="context-delete-sprinkler" type="button" class="context-menu-item danger" role="menuitem">Delete Sprinkler</button>
+            </div>
           </div>
           <details class="analysis-panel collapsible-menu">
             <summary>Analysis Summary</summary>
