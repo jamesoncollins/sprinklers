@@ -123,6 +123,7 @@ const applyCatalogToSelectedBtn = document.getElementById('apply-catalog-to-sele
 const deleteSelectedBtn = document.getElementById('delete-selected');
 const sprinklerContextMenu = document.getElementById('sprinkler-context-menu');
 const contextDeleteSprinklerBtn = document.getElementById('context-delete-sprinkler');
+const contextZoneSelect = document.getElementById('context-zone-select');
 
 function setCatalogStatus(message) {
   catalogStatus.textContent = message;
@@ -1443,12 +1444,24 @@ function closeSprinklerContextMenu() {
   sprinklerContextMenu.classList.add('hidden');
 }
 
+function renderSprinklerContextMenuZones(sprinkler) {
+  clearSelect(contextZoneSelect);
+  project.zones.forEach((zone) => {
+    const option = document.createElement('option');
+    option.value = zone.id;
+    option.textContent = zone.name;
+    contextZoneSelect.appendChild(option);
+  });
+  contextZoneSelect.value = sprinkler?.zoneId || project.zones[0]?.id || '';
+}
+
 function openSprinklerContextMenu(event, sprinkler) {
   event.preventDefault();
   event.stopPropagation();
   selectedSprinklerId = sprinkler.id;
   inspectedZoneId = sprinkler.zoneId;
   contextMenuSprinklerId = sprinkler.id;
+  renderSprinklerContextMenuZones(sprinkler);
 
   const canvasRect = mapCanvas.getBoundingClientRect();
   sprinklerContextMenu.classList.remove('hidden');
@@ -1797,6 +1810,15 @@ mapCanvas.addEventListener('click', (event) => {
   addSprinklerAt(canvasPositionFromEvent(event));
 });
 sprinklerContextMenu.addEventListener('click', (event) => event.stopPropagation());
+contextZoneSelect.addEventListener('change', () => {
+  const sprinkler = project.sprinklers.find((candidate) => candidate.id === contextMenuSprinklerId);
+  if (!sprinkler || !contextZoneSelect.value) return;
+  sprinkler.zoneId = contextZoneSelect.value;
+  selectedSprinklerId = sprinkler.id;
+  inspectedZoneId = sprinkler.zoneId;
+  closeSprinklerContextMenu();
+  render();
+});
 contextDeleteSprinklerBtn.addEventListener('click', () => deleteSprinklerById(contextMenuSprinklerId));
 
 sprinklerLayer.addEventListener('pointermove', (event) => {
