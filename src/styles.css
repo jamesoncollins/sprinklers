@@ -95,6 +95,7 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .calibration-line { position:absolute; height:0; border-top:3px dashed #ffbf47; transform-origin:0 50%; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.45)); }
 .calibration-label { position:absolute; transform:translate(-50%, -130%); padding:3px 7px; border-radius:999px; background:rgba(8,13,20,0.9); color:#fff; font-size:0.75rem; font-weight:800; white-space:nowrap; }
 .empty-canvas-hint { position: absolute; z-index: 5; inset: 0; display:flex; align-items:center; justify-content:center; color:#dbe8f8; font-weight:800; text-shadow: 0 1px 2px rgba(0,0,0,0.65); pointer-events:none; }
+.empty-canvas-hint.hidden { display: none; }
 .coverage { position:absolute; border-radius:50%; opacity:0.24; transform:translate(-50%, -50%); pointer-events:none; border:1px solid currentColor; }
 .coverage.full { background: currentColor; }
 .coverage.sector { background: conic-gradient(from var(--start-angle), currentColor 0deg var(--arc-angle), transparent var(--arc-angle) 360deg); }
