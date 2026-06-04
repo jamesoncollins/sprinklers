@@ -37,6 +37,7 @@ const emptyProject = {
     backgroundImage: { dataUrl: '', name: '', scale: 1, rotationDegrees: 0 },
     distanceScale: { feetPerPixel: defaultFeetPerPixel, points: [], measuredFeet: null },
     mapView: { scale: 1, panX: 0, panY: 0, rotationDegrees: 0 },
+    canvasLayers: {},
   },
   zones: [],
   sprinklers: [],
@@ -104,6 +105,7 @@ const coverageLayer = document.getElementById('coverage-layer');
 const calibrationLayer = document.getElementById('calibration-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
+const layerSelectorList = document.getElementById('layer-selector-list');
 const sprinklerCount = document.getElementById('sprinkler-count');
 const analysisSummary = document.getElementById('analysis-summary');
 const noSelection = document.getElementById('no-selection');
@@ -399,6 +401,74 @@ function normalizeDistanceScaleSettings(settings = {}) {
     points,
     measuredFeet: Number.isFinite(measuredFeet) && measuredFeet > 0 ? measuredFeet : null,
   };
+}
+
+function canvasLayerDefinitions() {
+  return Array.from(mapWorld.querySelectorAll('[data-canvas-layer]')).map((element) => ({
+    id: element.dataset.layerId || element.id,
+    label: element.dataset.layerLabel || element.id || 'Canvas layer',
+    description: element.dataset.layerDescription || '',
+    defaultVisible: element.dataset.layerDefaultVisible !== 'false',
+    element,
+  })).filter((layer) => Boolean(layer.id));
+}
+
+function normalizeCanvasLayerSettings(settings = {}) {
+  return canvasLayerDefinitions().reduce((layers, definition) => {
+    layers[definition.id] = typeof settings[definition.id] === 'boolean'
+      ? settings[definition.id]
+      : definition.defaultVisible;
+    return layers;
+  }, {});
+}
+
+function isCanvasLayerVisible(layerId) {
+  const definition = canvasLayerDefinitions().find((layer) => layer.id === layerId);
+  return project.site?.canvasLayers?.[layerId] ?? definition?.defaultVisible ?? true;
+}
+
+function applyCanvasLayerVisibility() {
+  project.site.canvasLayers = normalizeCanvasLayerSettings(project.site?.canvasLayers);
+  canvasLayerDefinitions().forEach(({ id, element }) => {
+    const visible = isCanvasLayerVisible(id);
+    element.classList.toggle('canvas-layer-hidden', !visible);
+    element.setAttribute('aria-hidden', String(!visible || element.getAttribute('aria-hidden') === 'true'));
+  });
+}
+
+function renderLayerSelectorMenu() {
+  layerSelectorList.replaceChildren();
+  project.site.canvasLayers = normalizeCanvasLayerSettings(project.site?.canvasLayers);
+
+  canvasLayerDefinitions().forEach(({ id, label, description }) => {
+    const row = document.createElement('label');
+    row.className = 'layer-toggle';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = isCanvasLayerVisible(id);
+    checkbox.addEventListener('change', () => {
+      project.site.canvasLayers = normalizeCanvasLayerSettings(project.site?.canvasLayers);
+      project.site.canvasLayers[id] = checkbox.checked;
+      applyCanvasLayerVisibility();
+    });
+
+    const copy = document.createElement('span');
+    copy.className = 'layer-toggle-copy';
+    const title = document.createElement('strong');
+    title.textContent = label;
+    copy.appendChild(title);
+    if (description) {
+      const detail = document.createElement('span');
+      detail.textContent = description;
+      copy.appendChild(detail);
+    }
+
+    row.append(checkbox, copy);
+    layerSelectorList.appendChild(row);
+  });
+
+  applyCanvasLayerVisibility();
 }
 
 function mapViewTransform() {
@@ -733,6 +803,7 @@ function hydrateProject(loaded, options = {}) {
       backgroundImage: normalizeBackgroundImageSettings({ ...emptyProject.site.backgroundImage, ...(loaded.site?.backgroundImage || {}) }),
       distanceScale: normalizeDistanceScaleSettings({ ...emptyProject.site.distanceScale, ...(loaded.site?.distanceScale || {}) }),
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
+      canvasLayers: normalizeCanvasLayerSettings({ ...emptyProject.site.canvasLayers, ...(loaded.site?.canvasLayers || {}) }),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone, index) => normalizeZone(zone, index)) : [],
     sprinklers: Array.isArray(loaded.sprinklers)
@@ -1205,6 +1276,7 @@ function renderCanvas() {
   coverageLayer.replaceChildren();
   sprinklerLayer.replaceChildren();
   renderCalibrationLayer();
+  applyCanvasLayerVisibility();
   const zoneId = currentInspectorZoneId();
   const zone = project.zones.find((candidate) => candidate.id === zoneId);
   const visibleSprinklers = sprinklersForCurrentZone();
@@ -1332,6 +1404,7 @@ function render() {
   updateProjectInputs();
   updateScaleCalibrationStatus();
   renderZones();
+  renderLayerSelectorMenu();
   applyMapViewTransform();
   renderSatelliteLayer();
   renderImageLayer();
