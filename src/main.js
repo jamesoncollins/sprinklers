@@ -3,6 +3,7 @@ const defaultFeetPerPixel = 0.25;
 const earthRadiusFeet = 20925524.9;
 const mapViewMinScale = 0.5;
 const mapViewMaxScale = 4;
+const defaultZoneWaterShare = 1;
 
 const imagerySources = {
   'esri-world': {
@@ -326,11 +327,13 @@ function getZoneColor(zoneId) {
 function normalizeZone(zone = {}, index = 0) {
   const pressurePsi = optionalNumber(zone.pressurePsi);
   const measuredFlowGpm = optionalNumber(zone.measuredFlowGpm);
+  const waterShare = optionalNumber(zone.waterShare);
   return {
     id: zone.id || crypto.randomUUID(),
     name: zone.name || `Zone ${index + 1}`,
     pressurePsi: pressurePsi && pressurePsi > 0 ? pressurePsi : 45,
     measuredFlowGpm: measuredFlowGpm && measuredFlowGpm > 0 ? measuredFlowGpm : null,
+    waterShare: waterShare && waterShare > 0 ? waterShare : defaultZoneWaterShare,
   };
 }
 
@@ -1031,9 +1034,26 @@ function renderZones() {
     });
     flowField.append(flowLabel, flowInputEl);
 
+    const waterShareField = document.createElement('div');
+    const waterShareLabel = document.createElement('label');
+    waterShareLabel.textContent = 'Water share factor';
+    const waterShareInputEl = document.createElement('input');
+    waterShareInputEl.type = 'number';
+    waterShareInputEl.min = '0.01';
+    waterShareInputEl.step = '0.01';
+    waterShareInputEl.value = zone.waterShare ?? defaultZoneWaterShare;
+    waterShareInputEl.setAttribute('aria-label', `${zone.name} water share factor`);
+    waterShareInputEl.title = 'Relative watering share for whole-lawn precipitation totals. Use 2 when this zone intentionally runs twice as long as a 1× zone.';
+    waterShareInputEl.addEventListener('input', () => {
+      const waterShare = Number(waterShareInputEl.value);
+      zone.waterShare = Number.isFinite(waterShare) && waterShare > 0 ? waterShare : defaultZoneWaterShare;
+      renderAnalysis();
+    });
+    waterShareField.append(waterShareLabel, waterShareInputEl);
+
     const settings = document.createElement('div');
     settings.className = 'zone-settings';
-    settings.append(pressureField, flowField);
+    settings.append(pressureField, flowField, waterShareField);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
@@ -1287,26 +1307,32 @@ function renderAnalysis() {
 
   const totalFlow = project.sprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
   const totalArea = project.sprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
-  const overallPr = totalArea > 0 ? (96.3 * totalFlow) / totalArea : 0;
+  const weightedTotalFlow = project.sprinklers.reduce((sum, sprinkler) => {
+    const zone = zoneForSprinkler(sprinkler);
+    return sum + effectiveFlowGpm(sprinkler) * (zone?.waterShare ?? defaultZoneWaterShare);
+  }, 0);
+  const overallPr = totalArea > 0 ? (96.3 * weightedTotalFlow) / totalArea : 0;
   const missingData = project.sprinklers.filter((sprinkler) => !effectiveFlowGpm(sprinkler) || !effectiveRadiusFt(sprinkler)).length;
 
   addAnalysisCard('Total flow', `${formatNumber(totalFlow)} gpm`, `${project.sprinklers.length} sprinklers`);
   addAnalysisCard('Throw area', `${formatNumber(totalArea, 0)} sq ft`, 'Sector-adjusted estimate');
-  addAnalysisCard('Overall PR', `${formatNumber(overallPr)} in/hr`, 'Based on total flow / throw area');
+  addAnalysisCard('Overall PR', `${formatNumber(overallPr)} in/hr`, 'Water-share adjusted across all zones');
 
   project.zones.forEach((zone) => {
     const zoneSprinklers = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id);
     const zoneFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
     const zoneArea = zoneSprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
     const zonePr = zoneArea > 0 ? (96.3 * zoneFlow) / zoneArea : 0;
+    const waterShare = zone.waterShare ?? defaultZoneWaterShare;
+    const adjustedZonePr = zonePr * waterShare;
     const supply = Number(zone.measuredFlowGpm) || 0;
     const warning = supply > 0 && zoneFlow > supply;
     const nearLimit = supply > 0 && zoneFlow <= supply && zoneFlow >= supply * 0.9;
     const supplyDetail = supply > 0 ? ` of ${formatNumber(supply)} gpm measured` : ' measured supply unknown';
     addAnalysisCard(
       zone.name,
-      `${formatNumber(zonePr)} in/hr`,
-      `${formatNumber(zoneFlow)} gpm${supplyDetail} · ${zoneSprinklers.length} heads · ${formatNumber(zone.pressurePsi ?? 45, 1)} PSI`,
+      `${formatNumber(adjustedZonePr)} in/hr`,
+      `${formatNumber(zonePr)} base in/hr · ${formatNumber(zoneFlow)} gpm${supplyDetail} · ${zoneSprinklers.length} heads · ${formatNumber(zone.pressurePsi ?? 45, 1)} PSI · ${formatNumber(waterShare, 2)}× share`,
       warning || nearLimit,
     );
     if (warning) {

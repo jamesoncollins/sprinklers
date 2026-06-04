@@ -32,12 +32,12 @@ Optional later backend (not required for MVP):
 2. **Map-based planning canvas**
    - Background satellite image layer.
    - Add/edit sprinkler points.
-   - Assign head model, nozzle model, rated pressure, pressure-regulation behavior, arc, and zone-level operating pressure / measured supply flow.
+   - Assign head model, nozzle model, rated pressure, pressure-regulation behavior, arc, and zone-level operating pressure / measured supply flow / water share factor.
 3. **Coverage visualization**
    - Draw throw arcs/circles from nozzle radius and arc angle. The orientation control sets the left-hand lock angle, so editing arc size extends or retracts only the right-hand side of the spray pattern.
 4. **Precipitation analysis**
    - Per-sprinkler precipitation estimate using zone-pressure-adjusted flow and throw for non-pressure-regulating heads.
-   - Zone aggregate precipitation estimate.
+   - Zone aggregate precipitation estimate, including a zone water share factor for intentionally longer or shorter runtimes.
 5. **Persistence**
    - Save project JSON and import later.
 
@@ -93,6 +93,8 @@ Per-head contribution can be estimated by sector-adjusted area:
 - `effective_radius_ft = rated_radius_ft * pressure_scale`
 - `throw_area_sqft = (arc_degrees / 360) * π * effective_radius_ft^2`
 - `head_pr_in_hr = (96.3 * effective_flow_gpm) / throw_area_sqft`
+- `zone_adjusted_pr_in_hr = zone_base_pr_in_hr * zone_water_share_factor`
+- `overall_pr_in_hr = (96.3 * sum(zone_effective_flow_gpm * zone_water_share_factor)) / total_irrigated_area_sqft`
 
 > Note: Real-world DU (distribution uniformity), overlap, wind, and soil intake rates should be accounted for in future releases.
 
