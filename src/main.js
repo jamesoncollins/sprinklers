@@ -1462,8 +1462,9 @@ function renderSprinklerContextMenuZones(sprinkler) {
 function openSprinklerContextMenu(event, sprinkler) {
   event.preventDefault();
   event.stopPropagation();
+  const activeZoneId = currentInspectorZoneId();
   selectedSprinklerId = sprinkler.id;
-  inspectedZoneId = sprinkler.zoneId;
+  inspectedZoneId = activeZoneId;
   contextMenuSprinklerId = sprinkler.id;
   renderCanvas();
   renderInspector();
@@ -1819,9 +1820,12 @@ sprinklerContextMenu.addEventListener('click', (event) => event.stopPropagation(
 contextZoneSelect.addEventListener('change', () => {
   const sprinkler = project.sprinklers.find((candidate) => candidate.id === contextMenuSprinklerId);
   if (!sprinkler || !contextZoneSelect.value) return;
+  const activeZoneId = currentInspectorZoneId();
+  const movedOutOfActiveZone = sprinkler.zoneId === activeZoneId && contextZoneSelect.value !== activeZoneId;
   sprinkler.zoneId = contextZoneSelect.value;
-  selectedSprinklerId = sprinkler.id;
-  inspectedZoneId = sprinkler.zoneId;
+  inspectedZoneId = activeZoneId;
+  if (movedOutOfActiveZone) selectFirstSprinklerInCurrentZone();
+  else selectedSprinklerId = sprinkler.id;
   closeSprinklerContextMenu();
   render();
 });
