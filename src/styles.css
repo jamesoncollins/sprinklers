@@ -64,7 +64,7 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 
 .zones-list { display: grid; gap: 8px; }
 .zone-row { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); }
-.zone-settings { grid-column: 2 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.zone-settings { grid-column: 2 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
 .zone-settings label { color: var(--muted); font-size: 0.75rem; font-weight: 800; }
 .zone-swatch { width: 14px; height: 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.35); }
 .zone-row input { padding: 6px 8px; }

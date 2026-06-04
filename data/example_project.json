@@ -15,13 +15,15 @@
       "id": "zone-front",
       "name": "Front Lawn",
       "pressurePsi": 45,
-      "measuredFlowGpm": 8
+      "measuredFlowGpm": 8,
+      "waterShare": 1
     },
     {
       "id": "zone-back",
       "name": "Back Lawn",
       "pressurePsi": 40,
-      "measuredFlowGpm": null
+      "measuredFlowGpm": null,
+      "waterShare": 2
     }
   ],
   "sprinklers": [
