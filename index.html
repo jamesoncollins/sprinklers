@@ -139,7 +139,13 @@
               <h2>Planning Canvas</h2>
               <p>Click to add sprinklers. Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.</p>
             </div>
-            <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
+            <div class="canvas-toolbar-actions">
+              <label class="overlay-toggle" for="show-precipitation-map">
+                <input id="show-precipitation-map" type="checkbox" />
+                Combined PR map
+              </label>
+              <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
+            </div>
           </div>
           <div id="map-canvas" class="map-canvas" role="application" aria-label="Editable sprinkler map">
             <div id="map-world" class="map-world">
@@ -147,10 +153,17 @@
               <div id="image-layer" class="image-layer" aria-hidden="true"></div>
               <div class="canvas-grid" aria-hidden="true"></div>
               <div id="coverage-layer" class="coverage-layer" aria-hidden="true"></div>
+              <div id="precipitation-layer" class="precipitation-layer" aria-hidden="true"></div>
               <div id="calibration-layer" class="calibration-layer" aria-hidden="true"></div>
               <div id="sprinkler-layer" class="sprinkler-layer"></div>
             </div>
             <div id="empty-canvas-hint" class="empty-canvas-hint">Click anywhere to place your first sprinkler.</div>
+            <div id="precipitation-legend" class="precipitation-legend hidden" aria-hidden="true">
+              <div class="precipitation-legend-title">Combined precipitation rate</div>
+              <div class="precipitation-legend-gradient"></div>
+              <div class="precipitation-legend-labels"><span>Low</span><span>High</span></div>
+              <div id="precipitation-legend-range" class="precipitation-legend-range">0 in/hr</div>
+            </div>
             <div id="sprinkler-context-menu" class="context-menu hidden" role="menu" aria-label="Sprinkler actions">
               <label class="context-menu-label" for="context-zone-select">Zone</label>
               <select id="context-zone-select" class="context-menu-select" aria-label="Change sprinkler zone"></select>

@@ -3,6 +3,16 @@ const defaultFeetPerPixel = 0.25;
 const earthRadiusFeet = 20925524.9;
 const mapViewMinScale = 0.5;
 const mapViewMaxScale = 4;
+const precipitationGridCellPx = 18;
+const precipitationColorStops = [
+  { value: 0, color: [247, 252, 245] },
+  { value: 0.25, color: [199, 233, 192] },
+  { value: 0.5, color: [116, 196, 118] },
+  { value: 0.75, color: [49, 163, 84] },
+  { value: 1, color: [255, 232, 120] },
+  { value: 1.5, color: [253, 141, 60] },
+  { value: 2, color: [215, 48, 31] },
+];
 
 const imagerySources = {
   'esri-world': {
@@ -37,6 +47,7 @@ const emptyProject = {
     backgroundImage: { dataUrl: '', name: '', scale: 1, rotationDegrees: 0 },
     distanceScale: { feetPerPixel: defaultFeetPerPixel, points: [], measuredFeet: null },
     mapView: { scale: 1, panX: 0, panY: 0, rotationDegrees: 0 },
+    visualization: { showPrecipitationMap: false },
   },
   zones: [],
   sprinklers: [],
@@ -101,10 +112,14 @@ const mapWorld = document.getElementById('map-world');
 const satelliteLayer = document.getElementById('satellite-layer');
 const imageLayer = document.getElementById('image-layer');
 const coverageLayer = document.getElementById('coverage-layer');
+const precipitationLayer = document.getElementById('precipitation-layer');
 const calibrationLayer = document.getElementById('calibration-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
 const sprinklerCount = document.getElementById('sprinkler-count');
+const showPrecipitationMapInput = document.getElementById('show-precipitation-map');
+const precipitationLegend = document.getElementById('precipitation-legend');
+const precipitationLegendRange = document.getElementById('precipitation-legend-range');
 const analysisSummary = document.getElementById('analysis-summary');
 const noSelection = document.getElementById('no-selection');
 const sprinklerPanel = document.getElementById('sprinklers-panel');
@@ -359,6 +374,10 @@ function normalizeSatelliteSettings(settings = {}) {
   };
 }
 
+function normalizeVisualizationSettings(settings = {}) {
+  return { showPrecipitationMap: Boolean(settings.showPrecipitationMap) };
+}
+
 function normalizeMapViewSettings(settings = {}) {
   const scale = Number(settings.scale);
   const panX = Number(settings.panX);
@@ -453,6 +472,8 @@ function updateProjectInputs() {
   imageScaleValue.textContent = `${backgroundImage.scale.toFixed(2)}×`;
   imageRotationInput.value = backgroundImage.rotationDegrees;
   imageRotationValue.textContent = `${Math.round(backgroundImage.rotationDegrees)}°`;
+
+  showPrecipitationMapInput.checked = Boolean(project.site?.visualization?.showPrecipitationMap);
 
   const satellite = normalizeSatelliteSettings(project.site?.satellite);
   satelliteLatitudeInput.value = Number.isFinite(satellite.latitude) ? satellite.latitude : '';
@@ -733,6 +754,7 @@ function hydrateProject(loaded, options = {}) {
       backgroundImage: normalizeBackgroundImageSettings({ ...emptyProject.site.backgroundImage, ...(loaded.site?.backgroundImage || {}) }),
       distanceScale: normalizeDistanceScaleSettings({ ...emptyProject.site.distanceScale, ...(loaded.site?.distanceScale || {}) }),
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
+      visualization: normalizeVisualizationSettings({ ...emptyProject.site.visualization, ...(loaded.site?.visualization || {}) }),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone, index) => normalizeZone(zone, index)) : [],
     sprinklers: Array.isArray(loaded.sprinklers)
@@ -1200,10 +1222,157 @@ function clearScaleCalibration() {
   updateScaleCalibrationStatus();
 }
 
+
+function colorForPrecipitationRate(rate, maxRate) {
+  if (rate <= 0 || maxRate <= 0) return 'rgba(0, 0, 0, 0)';
+  const scaleFactor = Math.max(1, maxRate / precipitationColorStops.at(-1).value);
+  const scaledRate = rate / scaleFactor;
+  const upperIndex = precipitationColorStops.findIndex((stop) => scaledRate <= stop.value);
+  if (upperIndex <= 0) {
+    const [r, g, b] = precipitationColorStops[0].color;
+    return `rgba(${r}, ${g}, ${b}, 0.5)`;
+  }
+  const upper = precipitationColorStops[upperIndex] || precipitationColorStops.at(-1);
+  const lower = precipitationColorStops[upperIndex - 1] || precipitationColorStops[0];
+  const span = Math.max(0.001, upper.value - lower.value);
+  const t = Math.min(1, Math.max(0, (scaledRate - lower.value) / span));
+  const [r1, g1, b1] = lower.color;
+  const [r2, g2, b2] = upper.color;
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return `rgba(${r}, ${g}, ${b}, 0.68)`;
+}
+
+function sprinklerCoversLocalPoint(sprinkler, point, feetPerPixel) {
+  const radiusFt = effectiveRadiusFt(sprinkler);
+  if (radiusFt <= 0) return false;
+
+  const center = localPointFromPercent(sprinkler);
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  const distanceFt = Math.hypot(dx, dy) * feetPerPixel;
+  if (distanceFt > radiusFt) return false;
+
+  const arc = clampArcDegrees(sprinkler.arcDegrees);
+  if (arc >= 360) return true;
+
+  const pointAngle = normalizeDegrees((Math.atan2(dx, -dy) * 180) / Math.PI);
+  const leftHandLock = normalizeDegrees(sprinkler.orientationDegrees);
+  const clockwiseSweep = normalizeDegrees(pointAngle - leftHandLock);
+  return clockwiseSweep <= arc;
+}
+
+function combinedPrecipitationAtPoint(point, feetPerPixel) {
+  return project.sprinklers.reduce((total, sprinkler) => {
+    if (!effectiveFlowGpm(sprinkler) || !effectiveRadiusFt(sprinkler)) return total;
+    return sprinklerCoversLocalPoint(sprinkler, point, feetPerPixel) ? total + sprinklerPr(sprinkler) : total;
+  }, 0);
+}
+
+function renderPrecipitationLayer() {
+  precipitationLayer.replaceChildren();
+  const enabled = Boolean(project.site?.visualization?.showPrecipitationMap);
+  mapCanvas.classList.toggle('precipitation-enabled', enabled);
+  precipitationLegend.classList.toggle('hidden', !enabled);
+  if (!enabled) return;
+
+  const box = activeCoordinateBox();
+  const feetPerPixel = currentFeetPerPixel();
+  const completeSprinklers = project.sprinklers.filter((sprinkler) => effectiveFlowGpm(sprinkler) > 0 && effectiveRadiusFt(sprinkler) > 0);
+  if (!box.width || !box.height || !completeSprinklers.length) {
+    precipitationLegendRange.textContent = 'Add sprinkler flow and radius data to calculate combined PR.';
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.className = 'precipitation-map';
+  canvas.width = Math.ceil(box.width);
+  canvas.height = Math.ceil(box.height);
+  canvas.style.left = `${box.left}px`;
+  canvas.style.top = `${box.top}px`;
+  canvas.style.width = `${box.width}px`;
+  canvas.style.height = `${box.height}px`;
+
+  const context = canvas.getContext('2d');
+  const cellSize = precipitationGridCellPx;
+  const columns = Math.ceil(box.width / cellSize);
+  const rows = Math.ceil(box.height / cellSize);
+  const rates = Array.from({ length: rows }, () => Array(columns).fill(0));
+  let maxRate = 0;
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const x = column * cellSize;
+      const y = row * cellSize;
+      const sample = {
+        x: box.left + Math.min(box.width - 1, x + cellSize / 2),
+        y: box.top + Math.min(box.height - 1, y + cellSize / 2),
+      };
+      const rate = combinedPrecipitationAtPoint(sample, feetPerPixel);
+      maxRate = Math.max(maxRate, rate);
+      rates[row][column] = rate;
+    }
+  }
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const rate = rates[row][column];
+      if (rate <= 0) continue;
+      const x = column * cellSize;
+      const y = row * cellSize;
+      context.fillStyle = colorForPrecipitationRate(rate, maxRate);
+      context.fillRect(x, y, Math.min(cellSize, box.width - x), Math.min(cellSize, box.height - y));
+    }
+  }
+
+  const contourScale = Math.max(1, maxRate / precipitationColorStops.at(-1).value);
+  const contourThresholds = precipitationColorStops.slice(1, -1).map((stop) => stop.value * contourScale);
+  context.save();
+  context.strokeStyle = 'rgba(255, 255, 255, 0.58)';
+  context.lineWidth = 1;
+  contourThresholds.forEach((threshold) => {
+    context.beginPath();
+    for (let row = 0; row < rows; row += 1) {
+      for (let column = 0; column < columns; column += 1) {
+        if (rates[row][column] < threshold) continue;
+        const x = column * cellSize;
+        const y = row * cellSize;
+        const rightX = Math.min(box.width, x + cellSize);
+        const bottomY = Math.min(box.height, y + cellSize);
+        if ((rates[row - 1]?.[column] || 0) < threshold) {
+          context.moveTo(x, y);
+          context.lineTo(rightX, y);
+        }
+        if ((rates[row + 1]?.[column] || 0) < threshold) {
+          context.moveTo(x, bottomY);
+          context.lineTo(rightX, bottomY);
+        }
+        if ((rates[row]?.[column - 1] || 0) < threshold) {
+          context.moveTo(x, y);
+          context.lineTo(x, bottomY);
+        }
+        if ((rates[row]?.[column + 1] || 0) < threshold) {
+          context.moveTo(rightX, y);
+          context.lineTo(rightX, bottomY);
+        }
+      }
+    }
+    context.stroke();
+  });
+  context.restore();
+
+  precipitationLayer.appendChild(canvas);
+  precipitationLegendRange.textContent = maxRate > 0
+    ? `0–${formatNumber(maxRate, 2)} in/hr combined across ${completeSprinklers.length} sprinkler${completeSprinklers.length === 1 ? '' : 's'}`
+    : 'No irrigated cells found in the current canvas view.';
+}
+
 function renderCanvas() {
   applyMapViewTransform();
   coverageLayer.replaceChildren();
   sprinklerLayer.replaceChildren();
+  renderPrecipitationLayer();
   renderCalibrationLayer();
   const zoneId = currentInspectorZoneId();
   const zone = project.zones.find((candidate) => candidate.id === zoneId);
@@ -1785,6 +1954,11 @@ zoneSprinklerSelect.addEventListener('change', () => {
   renderZoneInspectorControls();
 });
 
+showPrecipitationMapInput.addEventListener('change', () => {
+  project.site.visualization = normalizeVisualizationSettings({ showPrecipitationMap: showPrecipitationMapInput.checked });
+  renderCanvas();
+});
+
 addZoneBtn.addEventListener('click', () => {
   project.zones.push(normalizeZone({ name: `Zone ${project.zones.length + 1}` }, project.zones.length));
   render();
@@ -1799,7 +1973,7 @@ mapCanvas.addEventListener('contextmenu', (event) => {
   if (event.target.closest('.sprinkler-marker') || event.ctrlKey || panState) event.preventDefault();
 });
 mapCanvas.addEventListener('click', (event) => {
-  if (event.target.closest('.context-menu')) return;
+  if (event.target.closest('.context-menu') || event.target.closest('.precipitation-legend')) return;
   if (contextMenuSprinklerId) {
     closeSprinklerContextMenu();
     return;
