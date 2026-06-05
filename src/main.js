@@ -47,7 +47,6 @@ const emptyProject = {
     backgroundImage: { dataUrl: '', name: '', scale: 1, rotationDegrees: 0 },
     distanceScale: { feetPerPixel: defaultFeetPerPixel, points: [], measuredFeet: null },
     mapView: { scale: 1, panX: 0, panY: 0, rotationDegrees: 0 },
-    visualization: { showPrecipitationMap: false },
   },
   zones: [],
   sprinklers: [],
@@ -66,6 +65,7 @@ let backgroundImageNaturalSize = null;
 let backgroundImageBaseSize = null;
 let backgroundImageNaturalDataUrl = '';
 let suppressEmptyCanvasHint = false;
+let showPrecipitationMap = false;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
@@ -112,14 +112,10 @@ const mapWorld = document.getElementById('map-world');
 const satelliteLayer = document.getElementById('satellite-layer');
 const imageLayer = document.getElementById('image-layer');
 const coverageLayer = document.getElementById('coverage-layer');
-const precipitationLayer = document.getElementById('precipitation-layer');
 const calibrationLayer = document.getElementById('calibration-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
 const sprinklerCount = document.getElementById('sprinkler-count');
-const showPrecipitationMapInput = document.getElementById('show-precipitation-map');
-const precipitationLegend = document.getElementById('precipitation-legend');
-const precipitationLegendRange = document.getElementById('precipitation-legend-range');
 const analysisSummary = document.getElementById('analysis-summary');
 const noSelection = document.getElementById('no-selection');
 const sprinklerPanel = document.getElementById('sprinklers-panel');
@@ -139,6 +135,59 @@ const deleteSelectedBtn = document.getElementById('delete-selected');
 const sprinklerContextMenu = document.getElementById('sprinkler-context-menu');
 const contextDeleteSprinklerBtn = document.getElementById('context-delete-sprinkler');
 const contextZoneSelect = document.getElementById('context-zone-select');
+const precipitationUi = createPrecipitationUi();
+const precipitationLayer = precipitationUi.layer;
+const showPrecipitationMapInput = precipitationUi.input;
+const precipitationLegend = precipitationUi.legend;
+const precipitationLegendRange = precipitationUi.legendRange;
+
+
+function createPrecipitationUi() {
+  let layer = document.getElementById('precipitation-layer');
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.id = 'precipitation-layer';
+    layer.className = 'precipitation-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    mapWorld.insertBefore(layer, calibrationLayer);
+  }
+
+  let input = document.getElementById('show-precipitation-map');
+  if (!input) {
+    const toolbarActions = document.createElement('div');
+    toolbarActions.className = 'canvas-toolbar-actions';
+
+    const label = document.createElement('label');
+    label.className = 'overlay-toggle';
+    label.htmlFor = 'show-precipitation-map';
+
+    input = document.createElement('input');
+    input.id = 'show-precipitation-map';
+    input.type = 'checkbox';
+
+    label.append(input, document.createTextNode(' Combined PR map'));
+    sprinklerCount.parentElement.insertBefore(toolbarActions, sprinklerCount);
+    toolbarActions.append(label, sprinklerCount);
+  }
+
+  let legend = document.getElementById('precipitation-legend');
+  let legendRange = document.getElementById('precipitation-legend-range');
+  if (!legend || !legendRange) {
+    legend = document.createElement('div');
+    legend.id = 'precipitation-legend';
+    legend.className = 'precipitation-legend hidden';
+    legend.innerHTML = `
+      <div class="precipitation-legend-title">Combined precipitation rate</div>
+      <div class="precipitation-legend-gradient"></div>
+      <div class="precipitation-legend-labels"><span>Low</span><span>High</span></div>
+      <div id="precipitation-legend-range" class="precipitation-legend-range">0 in/hr</div>
+    `;
+    mapCanvas.insertBefore(legend, sprinklerContextMenu);
+    legendRange = legend.querySelector('#precipitation-legend-range');
+  }
+
+  return { layer, input, legend, legendRange };
+}
 
 function setCatalogStatus(message) {
   catalogStatus.textContent = message;
@@ -374,10 +423,6 @@ function normalizeSatelliteSettings(settings = {}) {
   };
 }
 
-function normalizeVisualizationSettings(settings = {}) {
-  return { showPrecipitationMap: Boolean(settings.showPrecipitationMap) };
-}
-
 function normalizeMapViewSettings(settings = {}) {
   const scale = Number(settings.scale);
   const panX = Number(settings.panX);
@@ -473,7 +518,7 @@ function updateProjectInputs() {
   imageRotationInput.value = backgroundImage.rotationDegrees;
   imageRotationValue.textContent = `${Math.round(backgroundImage.rotationDegrees)}°`;
 
-  showPrecipitationMapInput.checked = Boolean(project.site?.visualization?.showPrecipitationMap);
+  showPrecipitationMapInput.checked = showPrecipitationMap;
 
   const satellite = normalizeSatelliteSettings(project.site?.satellite);
   satelliteLatitudeInput.value = Number.isFinite(satellite.latitude) ? satellite.latitude : '';
@@ -754,7 +799,6 @@ function hydrateProject(loaded, options = {}) {
       backgroundImage: normalizeBackgroundImageSettings({ ...emptyProject.site.backgroundImage, ...(loaded.site?.backgroundImage || {}) }),
       distanceScale: normalizeDistanceScaleSettings({ ...emptyProject.site.distanceScale, ...(loaded.site?.distanceScale || {}) }),
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
-      visualization: normalizeVisualizationSettings({ ...emptyProject.site.visualization, ...(loaded.site?.visualization || {}) }),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone, index) => normalizeZone(zone, index)) : [],
     sprinklers: Array.isArray(loaded.sprinklers)
@@ -1272,7 +1316,7 @@ function combinedPrecipitationAtPoint(point, feetPerPixel) {
 
 function renderPrecipitationLayer() {
   precipitationLayer.replaceChildren();
-  const enabled = Boolean(project.site?.visualization?.showPrecipitationMap);
+  const enabled = showPrecipitationMap;
   mapCanvas.classList.toggle('precipitation-enabled', enabled);
   precipitationLegend.classList.toggle('hidden', !enabled);
   if (!enabled) return;
@@ -1955,7 +1999,7 @@ zoneSprinklerSelect.addEventListener('change', () => {
 });
 
 showPrecipitationMapInput.addEventListener('change', () => {
-  project.site.visualization = normalizeVisualizationSettings({ showPrecipitationMap: showPrecipitationMapInput.checked });
+  showPrecipitationMap = showPrecipitationMapInput.checked;
   renderCanvas();
 });
 
