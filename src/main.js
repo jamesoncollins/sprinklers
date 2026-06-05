@@ -13,6 +13,7 @@ const precipitationColorStops = [
   { value: 1.5, color: [253, 141, 60] },
   { value: 2, color: [215, 48, 31] },
 ];
+const defaultZoneWaterShare = 1;
 
 const imagerySources = {
   'esri-world': {
@@ -47,6 +48,7 @@ const emptyProject = {
     backgroundImage: { dataUrl: '', name: '', scale: 1, rotationDegrees: 0 },
     distanceScale: { feetPerPixel: defaultFeetPerPixel, points: [], measuredFeet: null },
     mapView: { scale: 1, panX: 0, panY: 0, rotationDegrees: 0 },
+    canvasLayers: {},
   },
   zones: [],
   sprinklers: [],
@@ -115,6 +117,7 @@ const coverageLayer = document.getElementById('coverage-layer');
 const calibrationLayer = document.getElementById('calibration-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
+const layerSelectorList = document.getElementById('layer-selector-list');
 const sprinklerCount = document.getElementById('sprinkler-count');
 const analysisSummary = document.getElementById('analysis-summary');
 const noSelection = document.getElementById('no-selection');
@@ -390,11 +393,13 @@ function getZoneColor(zoneId) {
 function normalizeZone(zone = {}, index = 0) {
   const pressurePsi = optionalNumber(zone.pressurePsi);
   const measuredFlowGpm = optionalNumber(zone.measuredFlowGpm);
+  const waterShare = optionalNumber(zone.waterShare);
   return {
     id: zone.id || crypto.randomUUID(),
     name: zone.name || `Zone ${index + 1}`,
     pressurePsi: pressurePsi && pressurePsi > 0 ? pressurePsi : 45,
     measuredFlowGpm: measuredFlowGpm && measuredFlowGpm > 0 ? measuredFlowGpm : null,
+    waterShare: waterShare && waterShare > 0 ? waterShare : defaultZoneWaterShare,
   };
 }
 
@@ -463,6 +468,74 @@ function normalizeDistanceScaleSettings(settings = {}) {
     points,
     measuredFeet: Number.isFinite(measuredFeet) && measuredFeet > 0 ? measuredFeet : null,
   };
+}
+
+function canvasLayerDefinitions() {
+  return Array.from(mapWorld.querySelectorAll('[data-canvas-layer]')).map((element) => ({
+    id: element.dataset.layerId || element.id,
+    label: element.dataset.layerLabel || element.id || 'Canvas layer',
+    description: element.dataset.layerDescription || '',
+    defaultVisible: element.dataset.layerDefaultVisible !== 'false',
+    element,
+  })).filter((layer) => Boolean(layer.id));
+}
+
+function normalizeCanvasLayerSettings(settings = {}) {
+  return canvasLayerDefinitions().reduce((layers, definition) => {
+    layers[definition.id] = typeof settings[definition.id] === 'boolean'
+      ? settings[definition.id]
+      : definition.defaultVisible;
+    return layers;
+  }, {});
+}
+
+function isCanvasLayerVisible(layerId) {
+  const definition = canvasLayerDefinitions().find((layer) => layer.id === layerId);
+  return project.site?.canvasLayers?.[layerId] ?? definition?.defaultVisible ?? true;
+}
+
+function applyCanvasLayerVisibility() {
+  project.site.canvasLayers = normalizeCanvasLayerSettings(project.site?.canvasLayers);
+  canvasLayerDefinitions().forEach(({ id, element }) => {
+    const visible = isCanvasLayerVisible(id);
+    element.classList.toggle('canvas-layer-hidden', !visible);
+    element.setAttribute('aria-hidden', String(!visible || element.getAttribute('aria-hidden') === 'true'));
+  });
+}
+
+function renderLayerSelectorMenu() {
+  layerSelectorList.replaceChildren();
+  project.site.canvasLayers = normalizeCanvasLayerSettings(project.site?.canvasLayers);
+
+  canvasLayerDefinitions().forEach(({ id, label, description }) => {
+    const row = document.createElement('label');
+    row.className = 'layer-toggle';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = isCanvasLayerVisible(id);
+    checkbox.addEventListener('change', () => {
+      project.site.canvasLayers = normalizeCanvasLayerSettings(project.site?.canvasLayers);
+      project.site.canvasLayers[id] = checkbox.checked;
+      applyCanvasLayerVisibility();
+    });
+
+    const copy = document.createElement('span');
+    copy.className = 'layer-toggle-copy';
+    const title = document.createElement('strong');
+    title.textContent = label;
+    copy.appendChild(title);
+    if (description) {
+      const detail = document.createElement('span');
+      detail.textContent = description;
+      copy.appendChild(detail);
+    }
+
+    row.append(checkbox, copy);
+    layerSelectorList.appendChild(row);
+  });
+
+  applyCanvasLayerVisibility();
 }
 
 function mapViewTransform() {
@@ -799,6 +872,7 @@ function hydrateProject(loaded, options = {}) {
       backgroundImage: normalizeBackgroundImageSettings({ ...emptyProject.site.backgroundImage, ...(loaded.site?.backgroundImage || {}) }),
       distanceScale: normalizeDistanceScaleSettings({ ...emptyProject.site.distanceScale, ...(loaded.site?.distanceScale || {}) }),
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
+      canvasLayers: normalizeCanvasLayerSettings({ ...emptyProject.site.canvasLayers, ...(loaded.site?.canvasLayers || {}) }),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone, index) => normalizeZone(zone, index)) : [],
     sprinklers: Array.isArray(loaded.sprinklers)
@@ -1097,9 +1171,26 @@ function renderZones() {
     });
     flowField.append(flowLabel, flowInputEl);
 
+    const waterShareField = document.createElement('div');
+    const waterShareLabel = document.createElement('label');
+    waterShareLabel.textContent = 'Water share factor';
+    const waterShareInputEl = document.createElement('input');
+    waterShareInputEl.type = 'number';
+    waterShareInputEl.min = '0.01';
+    waterShareInputEl.step = '0.01';
+    waterShareInputEl.value = zone.waterShare ?? defaultZoneWaterShare;
+    waterShareInputEl.setAttribute('aria-label', `${zone.name} water share factor`);
+    waterShareInputEl.title = 'Relative watering share for whole-lawn precipitation totals. Use 2 when this zone intentionally runs twice as long as a 1× zone.';
+    waterShareInputEl.addEventListener('input', () => {
+      const waterShare = Number(waterShareInputEl.value);
+      zone.waterShare = Number.isFinite(waterShare) && waterShare > 0 ? waterShare : defaultZoneWaterShare;
+      renderAnalysis();
+    });
+    waterShareField.append(waterShareLabel, waterShareInputEl);
+
     const settings = document.createElement('div');
     settings.className = 'zone-settings';
-    settings.append(pressureField, flowField);
+    settings.append(pressureField, flowField, waterShareField);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
@@ -1418,6 +1509,7 @@ function renderCanvas() {
   sprinklerLayer.replaceChildren();
   renderPrecipitationLayer();
   renderCalibrationLayer();
+  applyCanvasLayerVisibility();
   const zoneId = currentInspectorZoneId();
   const zone = project.zones.find((candidate) => candidate.id === zoneId);
   const visibleSprinklers = sprinklersForCurrentZone();
@@ -1500,26 +1592,32 @@ function renderAnalysis() {
 
   const totalFlow = project.sprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
   const totalArea = project.sprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
-  const overallPr = totalArea > 0 ? (96.3 * totalFlow) / totalArea : 0;
+  const weightedTotalFlow = project.sprinklers.reduce((sum, sprinkler) => {
+    const zone = zoneForSprinkler(sprinkler);
+    return sum + effectiveFlowGpm(sprinkler) * (zone?.waterShare ?? defaultZoneWaterShare);
+  }, 0);
+  const overallPr = totalArea > 0 ? (96.3 * weightedTotalFlow) / totalArea : 0;
   const missingData = project.sprinklers.filter((sprinkler) => !effectiveFlowGpm(sprinkler) || !effectiveRadiusFt(sprinkler)).length;
 
   addAnalysisCard('Total flow', `${formatNumber(totalFlow)} gpm`, `${project.sprinklers.length} sprinklers`);
   addAnalysisCard('Throw area', `${formatNumber(totalArea, 0)} sq ft`, 'Sector-adjusted estimate');
-  addAnalysisCard('Overall PR', `${formatNumber(overallPr)} in/hr`, 'Based on total flow / throw area');
+  addAnalysisCard('Overall PR', `${formatNumber(overallPr)} in/hr`, 'Water-share adjusted across all zones');
 
   project.zones.forEach((zone) => {
     const zoneSprinklers = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id);
     const zoneFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
     const zoneArea = zoneSprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
     const zonePr = zoneArea > 0 ? (96.3 * zoneFlow) / zoneArea : 0;
+    const waterShare = zone.waterShare ?? defaultZoneWaterShare;
+    const adjustedZonePr = zonePr * waterShare;
     const supply = Number(zone.measuredFlowGpm) || 0;
     const warning = supply > 0 && zoneFlow > supply;
     const nearLimit = supply > 0 && zoneFlow <= supply && zoneFlow >= supply * 0.9;
     const supplyDetail = supply > 0 ? ` of ${formatNumber(supply)} gpm measured` : ' measured supply unknown';
     addAnalysisCard(
       zone.name,
-      `${formatNumber(zonePr)} in/hr`,
-      `${formatNumber(zoneFlow)} gpm${supplyDetail} · ${zoneSprinklers.length} heads · ${formatNumber(zone.pressurePsi ?? 45, 1)} PSI`,
+      `${formatNumber(adjustedZonePr)} in/hr`,
+      `${formatNumber(zonePr)} base in/hr · ${formatNumber(zoneFlow)} gpm${supplyDetail} · ${zoneSprinklers.length} heads · ${formatNumber(zone.pressurePsi ?? 45, 1)} PSI · ${formatNumber(waterShare, 2)}× share`,
       warning || nearLimit,
     );
     if (warning) {
@@ -1545,6 +1643,7 @@ function render() {
   updateProjectInputs();
   updateScaleCalibrationStatus();
   renderZones();
+  renderLayerSelectorMenu();
   applyMapViewTransform();
   renderSatelliteLayer();
   renderImageLayer();
@@ -1675,8 +1774,9 @@ function renderSprinklerContextMenuZones(sprinkler) {
 function openSprinklerContextMenu(event, sprinkler) {
   event.preventDefault();
   event.stopPropagation();
+  const activeZoneId = currentInspectorZoneId();
   selectedSprinklerId = sprinkler.id;
-  inspectedZoneId = sprinkler.zoneId;
+  inspectedZoneId = activeZoneId;
   contextMenuSprinklerId = sprinkler.id;
   renderCanvas();
   renderInspector();
@@ -2037,9 +2137,12 @@ sprinklerContextMenu.addEventListener('click', (event) => event.stopPropagation(
 contextZoneSelect.addEventListener('change', () => {
   const sprinkler = project.sprinklers.find((candidate) => candidate.id === contextMenuSprinklerId);
   if (!sprinkler || !contextZoneSelect.value) return;
+  const activeZoneId = currentInspectorZoneId();
+  const movedOutOfActiveZone = sprinkler.zoneId === activeZoneId && contextZoneSelect.value !== activeZoneId;
   sprinkler.zoneId = contextZoneSelect.value;
-  selectedSprinklerId = sprinkler.id;
-  inspectedZoneId = sprinkler.zoneId;
+  inspectedZoneId = activeZoneId;
+  if (movedOutOfActiveZone) selectFirstSprinklerInCurrentZone();
+  else selectedSprinklerId = sprinkler.id;
   closeSprinklerContextMenu();
   render();
 });

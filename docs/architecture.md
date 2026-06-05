@@ -42,7 +42,7 @@
     }
   },
   "zones": [
-    { "id": "zone-1", "name": "Front Lawn" }
+    { "id": "zone-1", "name": "Front Lawn", "pressurePsi": 45, "measuredFlowGpm": 8, "waterShare": 1 }
   ],
   "sprinklers": [
     {
