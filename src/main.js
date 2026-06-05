@@ -154,23 +154,24 @@ function createPrecipitationUi() {
     layer.setAttribute('aria-hidden', 'true');
     mapWorld.insertBefore(layer, calibrationLayer);
   }
+  layer.dataset.canvasLayer = '';
+  layer.dataset.layerLabel = 'Combined precipitation rate';
+  layer.dataset.layerDescription = 'Heat map showing stacked precipitation where sprinkler throws overlap.';
+  layer.dataset.layerDefaultVisible = 'true';
 
   let input = document.getElementById('show-precipitation-map');
   if (!input) {
-    const toolbarActions = document.createElement('div');
-    toolbarActions.className = 'canvas-toolbar-actions';
-
     const label = document.createElement('label');
     label.className = 'overlay-toggle';
     label.htmlFor = 'show-precipitation-map';
+    label.title = 'Show a combined precipitation-rate heat map across all sprinkler throw overlaps.';
 
     input = document.createElement('input');
     input.id = 'show-precipitation-map';
     input.type = 'checkbox';
 
-    label.append(input, document.createTextNode(' Combined PR map'));
-    sprinklerCount.parentElement.insertBefore(toolbarActions, sprinklerCount);
-    toolbarActions.append(label, sprinklerCount);
+    label.append(input, document.createTextNode(' Combined precipitation rate'));
+    sprinklerCount.parentElement.insertBefore(label, sprinklerCount);
   }
 
   let legend = document.getElementById('precipitation-legend');
