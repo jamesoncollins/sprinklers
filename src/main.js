@@ -13,6 +13,7 @@ const precipitationColorStops = [
   { value: 1.5, color: [253, 141, 60] },
   { value: 2, color: [215, 48, 31] },
 ];
+const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
 const defaultZoneWaterShare = 1;
 
 const imagerySources = {
@@ -154,23 +155,24 @@ function createPrecipitationUi() {
     layer.setAttribute('aria-hidden', 'true');
     mapWorld.insertBefore(layer, calibrationLayer);
   }
+  layer.dataset.canvasLayer = '';
+  layer.dataset.layerLabel = 'Combined precipitation rate';
+  layer.dataset.layerDescription = 'Heat map showing stacked precipitation where sprinkler throws overlap.';
+  layer.dataset.layerDefaultVisible = 'true';
 
   let input = document.getElementById('show-precipitation-map');
   if (!input) {
-    const toolbarActions = document.createElement('div');
-    toolbarActions.className = 'canvas-toolbar-actions';
-
     const label = document.createElement('label');
     label.className = 'overlay-toggle';
     label.htmlFor = 'show-precipitation-map';
+    label.title = 'Show a combined precipitation-rate heat map across all sprinkler throw overlaps.';
 
     input = document.createElement('input');
     input.id = 'show-precipitation-map';
     input.type = 'checkbox';
 
-    label.append(input, document.createTextNode(' Combined PR map'));
-    sprinklerCount.parentElement.insertBefore(toolbarActions, sprinklerCount);
-    toolbarActions.append(label, sprinklerCount);
+    label.append(input, document.createTextNode(' Combined precipitation rate'));
+    sprinklerCount.parentElement.insertBefore(label, sprinklerCount);
   }
 
   let legend = document.getElementById('precipitation-legend');
@@ -1360,14 +1362,14 @@ function clearScaleCalibration() {
 
 function colorForPrecipitationRate(rate, maxRate) {
   if (rate <= 0 || maxRate <= 0) return 'rgba(0, 0, 0, 0)';
-  const scaleFactor = Math.max(1, maxRate / precipitationColorStops.at(-1).value);
+  const scaleFactor = Math.max(1, maxRate / maxPrecipitationColorStop.value);
   const scaledRate = rate / scaleFactor;
   const upperIndex = precipitationColorStops.findIndex((stop) => scaledRate <= stop.value);
   if (upperIndex <= 0) {
     const [r, g, b] = precipitationColorStops[0].color;
     return `rgba(${r}, ${g}, ${b}, 0.5)`;
   }
-  const upper = precipitationColorStops[upperIndex] || precipitationColorStops.at(-1);
+  const upper = precipitationColorStops[upperIndex] || maxPrecipitationColorStop;
   const lower = precipitationColorStops[upperIndex - 1] || precipitationColorStops[0];
   const span = Math.max(0.001, upper.value - lower.value);
   const t = Math.min(1, Math.max(0, (scaledRate - lower.value) / span));
@@ -1461,7 +1463,7 @@ function renderPrecipitationLayer() {
     }
   }
 
-  const contourScale = Math.max(1, maxRate / precipitationColorStops.at(-1).value);
+  const contourScale = Math.max(1, maxRate / maxPrecipitationColorStop.value);
   const contourThresholds = precipitationColorStops.slice(1, -1).map((stop) => stop.value * contourScale);
   context.save();
   context.strokeStyle = 'rgba(255, 255, 255, 0.58)';
@@ -2100,6 +2102,11 @@ zoneSprinklerSelect.addEventListener('change', () => {
 
 showPrecipitationMapInput.addEventListener('change', () => {
   showPrecipitationMap = showPrecipitationMapInput.checked;
+  if (showPrecipitationMap) {
+    project.site.canvasLayers = normalizeCanvasLayerSettings(project.site?.canvasLayers);
+    project.site.canvasLayers[precipitationLayer.id] = true;
+    renderLayerSelectorMenu();
+  }
   renderCanvas();
 });
 
