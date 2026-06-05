@@ -140,6 +140,10 @@
               <p>Click to add sprinklers. Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.</p>
             </div>
             <div class="canvas-toolbar-actions">
+              <label class="overlay-toggle" for="show-precipitation-map" title="Show a combined precipitation-rate heat map across all sprinkler throw overlaps.">
+                <input id="show-precipitation-map" type="checkbox" />
+                Combined precipitation rate
+              </label>
               <details class="layer-menu">
                 <summary class="layer-menu-summary">Layers</summary>
                 <div id="layer-selector-list" class="layer-selector-list" aria-label="Canvas layer visibility"></div>
@@ -154,6 +158,7 @@
               <div id="image-layer" class="image-layer" data-canvas-layer data-layer-label="Uploaded image" data-layer-description="Uploaded yard image behind the plan." data-layer-default-visible="true" aria-hidden="true"></div>
               <div class="canvas-grid" data-canvas-layer data-layer-id="reference-grid" data-layer-label="Reference grid" data-layer-description="The planning grid overlay." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="coverage-layer" class="coverage-layer" data-canvas-layer data-layer-label="Throw arcs" data-layer-description="Sprinkler throw radius circles and arc sectors." data-layer-default-visible="true" aria-hidden="true"></div>
+              <div id="precipitation-layer" class="precipitation-layer" data-canvas-layer data-layer-label="Combined precipitation rate" data-layer-description="Heat map showing stacked precipitation where sprinkler throws overlap." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="calibration-layer" class="calibration-layer" data-canvas-layer data-layer-label="Measurements" data-layer-description="Distance calibration points, lines, and labels." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="sprinkler-layer" class="sprinkler-layer" data-canvas-layer data-layer-label="Sprinklers" data-layer-description="Clickable sprinkler head markers." data-layer-default-visible="true"></div>
             </div>
