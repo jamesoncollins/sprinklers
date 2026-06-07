@@ -24,6 +24,7 @@ button,.file-btn,select,input { border:1px solid var(--border); padding:8px 10px
 select,input { border-color: var(--border); color: var(--text); width: 100%; }
 option { background: var(--surface-3); color: var(--text); }
 input::placeholder { color: #6f839d; }
+input[readonly] { color: var(--muted); background: #121c27; cursor: default; }
 button,.file-btn { cursor:pointer; color: #eef6ff; background: #244365; }
 button:hover,.file-btn:hover { filter: brightness(1.12); }
 .file-btn input { display:none; }

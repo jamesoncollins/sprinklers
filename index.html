@@ -123,12 +123,11 @@
             </div>
 
             <div class="field-group">
-              <label for="pressure-input">Rated pressure (PSI)</label>
-              <input id="pressure-input" type="number" min="1" step="0.1" value="45" />
+              <label for="pressure-input">Catalog pressure (PSI)</label>
+              <input id="pressure-input" type="number" readonly value="" aria-describedby="lookup-result" />
             </div>
 
-            <button id="lookup-performance" class="full-width">Lookup Performance</button>
-            <p id="lookup-result" class="status-text">Awaiting lookup.</p>
+            <p id="lookup-result" class="status-text">Select a catalog model to view performance.</p>
             <p class="status-text">Non-pressure-regulating heads are scaled by each zone's actual pressure. Pressure-regulating heads keep their rated flow and throw.</p>
           </details>
         </aside>
