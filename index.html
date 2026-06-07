@@ -145,12 +145,8 @@
               </label>
               <label class="overlay-toggle precipitation-contour-control" for="precipitation-contour-interval" title="Choose the precipitation-rate interval between contour lines.">
                 <span>Contours</span>
-                <select id="precipitation-contour-interval" aria-label="Precipitation contour interval">
-                  <option value="0.1">0.10 in/hr</option>
-                  <option value="0.25" selected>0.25 in/hr</option>
-                  <option value="0.5">0.50 in/hr</option>
-                  <option value="1">1.00 in/hr</option>
-                </select>
+                <input id="precipitation-contour-interval" type="range" min="0.05" max="1" step="0.05" value="0.25" aria-label="Precipitation contour interval" />
+                <span id="precipitation-contour-interval-value" class="precipitation-contour-value">0.25 in/hr</span>
               </label>
               <button id="start-grass-area" type="button" class="secondary-btn" title="Mark a closed grass area that should receive precipitation calculations.">Draw grass area</button>
               <button id="finish-grass-area" type="button" class="secondary-btn hidden" disabled>Finish grass</button>
