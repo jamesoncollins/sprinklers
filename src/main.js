@@ -1722,8 +1722,8 @@ function addGrassAreaPoint(position) {
 
 function colorForPrecipitationRate(rate, maxRate) {
   if (rate <= 0 || maxRate <= 0) return 'rgba(0, 0, 0, 0)';
-  const scaleFactor = Math.max(1, maxRate / maxPrecipitationColorStop.value);
-  const scaledRate = rate / scaleFactor;
+  const normalizedRate = Math.min(1, Math.max(0, rate / maxRate));
+  const scaledRate = normalizedRate * maxPrecipitationColorStop.value;
   const upperIndex = precipitationColorStops.findIndex((stop) => scaledRate <= stop.value);
   if (upperIndex <= 0) {
     const [r, g, b] = precipitationColorStops[0].color;
