@@ -3,7 +3,8 @@ const defaultFeetPerPixel = 0.25;
 const earthRadiusFeet = 20925524.9;
 const mapViewMinScale = 0.5;
 const mapViewMaxScale = 4;
-const precipitationGridCellPx = 18;
+const precipitationGridCellFeet = 0.5;
+const minPrecipitationGridCellPx = 1;
 const precipitationColorStops = [
   { value: 0, color: [247, 252, 245] },
   { value: 0.25, color: [199, 233, 192] },
@@ -1496,6 +1497,85 @@ function combinedPrecipitationAtPoint(point, feetPerPixel) {
   }, 0);
 }
 
+function precipitationGridCellPx(feetPerPixel) {
+  if (!Number.isFinite(feetPerPixel) || feetPerPixel <= 0) return minPrecipitationGridCellPx;
+  return Math.max(minPrecipitationGridCellPx, precipitationGridCellFeet / feetPerPixel);
+}
+
+function createPrecipitationCanvas(box, className) {
+  const canvas = document.createElement('canvas');
+  canvas.className = className;
+  canvas.width = Math.ceil(box.width);
+  canvas.height = Math.ceil(box.height);
+  canvas.style.left = `${box.left}px`;
+  canvas.style.top = `${box.top}px`;
+  canvas.style.width = `${box.width}px`;
+  canvas.style.height = `${box.height}px`;
+  return canvas;
+}
+
+function contourIntersectionsForCell(values, threshold, x, y, cellSize) {
+  const [topLeft, topRight, bottomRight, bottomLeft] = values;
+  const points = [];
+  const addIntersection = (first, second, start, end) => {
+    if ((first < threshold && second < threshold) || (first >= threshold && second >= threshold)) return;
+    const span = second - first;
+    const t = Math.abs(span) < 0.000001 ? 0.5 : Math.min(1, Math.max(0, (threshold - first) / span));
+    points.push({
+      x: start.x + (end.x - start.x) * t,
+      y: start.y + (end.y - start.y) * t,
+    });
+  };
+
+  addIntersection(topLeft, topRight, { x, y }, { x: x + cellSize, y });
+  addIntersection(topRight, bottomRight, { x: x + cellSize, y }, { x: x + cellSize, y: y + cellSize });
+  addIntersection(bottomRight, bottomLeft, { x: x + cellSize, y: y + cellSize }, { x, y: y + cellSize });
+  addIntersection(bottomLeft, topLeft, { x, y: y + cellSize }, { x, y });
+  return points;
+}
+
+function drawPrecipitationContours(context, rates, rows, columns, cellSize, maxRate) {
+  if (rows < 2 || columns < 2 || maxRate <= 0) return;
+
+  const contourScale = Math.max(1, maxRate / maxPrecipitationColorStop.value);
+  const contourThresholds = precipitationColorStops.slice(1, -1).map((stop) => stop.value * contourScale);
+  context.save();
+  context.strokeStyle = 'rgba(255, 255, 255, 0.78)';
+  context.lineWidth = 1.25;
+  context.lineJoin = 'round';
+  context.lineCap = 'round';
+  context.shadowColor = 'rgba(0, 0, 0, 0.35)';
+  context.shadowBlur = 1.5;
+
+  contourThresholds.forEach((threshold) => {
+    context.beginPath();
+    for (let row = 0; row < rows - 1; row += 1) {
+      for (let column = 0; column < columns - 1; column += 1) {
+        const x = column * cellSize + cellSize / 2;
+        const y = row * cellSize + cellSize / 2;
+        const points = contourIntersectionsForCell([
+          rates[row][column],
+          rates[row][column + 1],
+          rates[row + 1][column + 1],
+          rates[row + 1][column],
+        ], threshold, x, y, cellSize);
+
+        if (points.length === 2) {
+          context.moveTo(points[0].x, points[0].y);
+          context.lineTo(points[1].x, points[1].y);
+        } else if (points.length === 4) {
+          context.moveTo(points[0].x, points[0].y);
+          context.lineTo(points[1].x, points[1].y);
+          context.moveTo(points[2].x, points[2].y);
+          context.lineTo(points[3].x, points[3].y);
+        }
+      }
+    }
+    context.stroke();
+  });
+  context.restore();
+}
+
 function renderPrecipitationLayer() {
   precipitationLayer.replaceChildren();
   const enabled = showPrecipitationMap;
@@ -1511,17 +1591,12 @@ function renderPrecipitationLayer() {
     return;
   }
 
-  const canvas = document.createElement('canvas');
-  canvas.className = 'precipitation-map';
-  canvas.width = Math.ceil(box.width);
-  canvas.height = Math.ceil(box.height);
-  canvas.style.left = `${box.left}px`;
-  canvas.style.top = `${box.top}px`;
-  canvas.style.width = `${box.width}px`;
-  canvas.style.height = `${box.height}px`;
+  const canvas = createPrecipitationCanvas(box, 'precipitation-map');
+  const contourCanvas = createPrecipitationCanvas(box, 'precipitation-contours');
 
   const context = canvas.getContext('2d');
-  const cellSize = precipitationGridCellPx;
+  const contourContext = contourCanvas.getContext('2d');
+  const cellSize = precipitationGridCellPx(feetPerPixel);
   const columns = Math.ceil(box.width / cellSize);
   const rows = Math.ceil(box.height / cellSize);
   const rates = Array.from({ length: rows }, () => Array(columns).fill(0));
@@ -1552,43 +1627,9 @@ function renderPrecipitationLayer() {
     }
   }
 
-  const contourScale = Math.max(1, maxRate / maxPrecipitationColorStop.value);
-  const contourThresholds = precipitationColorStops.slice(1, -1).map((stop) => stop.value * contourScale);
-  context.save();
-  context.strokeStyle = 'rgba(255, 255, 255, 0.58)';
-  context.lineWidth = 1;
-  contourThresholds.forEach((threshold) => {
-    context.beginPath();
-    for (let row = 0; row < rows; row += 1) {
-      for (let column = 0; column < columns; column += 1) {
-        if (rates[row][column] < threshold) continue;
-        const x = column * cellSize;
-        const y = row * cellSize;
-        const rightX = Math.min(box.width, x + cellSize);
-        const bottomY = Math.min(box.height, y + cellSize);
-        if ((rates[row - 1]?.[column] || 0) < threshold) {
-          context.moveTo(x, y);
-          context.lineTo(rightX, y);
-        }
-        if ((rates[row + 1]?.[column] || 0) < threshold) {
-          context.moveTo(x, bottomY);
-          context.lineTo(rightX, bottomY);
-        }
-        if ((rates[row]?.[column - 1] || 0) < threshold) {
-          context.moveTo(x, y);
-          context.lineTo(x, bottomY);
-        }
-        if ((rates[row]?.[column + 1] || 0) < threshold) {
-          context.moveTo(rightX, y);
-          context.lineTo(rightX, bottomY);
-        }
-      }
-    }
-    context.stroke();
-  });
-  context.restore();
+  drawPrecipitationContours(contourContext, rates, rows, columns, cellSize, maxRate);
 
-  precipitationLayer.appendChild(canvas);
+  precipitationLayer.append(canvas, contourCanvas);
   precipitationLegendRange.textContent = maxRate > 0
     ? `0–${formatNumber(maxRate, 2)} in/hr combined across ${completeSprinklers.length} sprinkler${completeSprinklers.length === 1 ? '' : 's'}`
     : 'No irrigated cells found in the current canvas view.';
