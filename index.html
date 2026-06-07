@@ -152,6 +152,11 @@
                   <option value="1">1.00 in/hr</option>
                 </select>
               </label>
+              <button id="start-grass-area" type="button" class="secondary-btn" title="Mark a closed grass area that should receive precipitation calculations.">Draw grass area</button>
+              <button id="finish-grass-area" type="button" class="secondary-btn hidden" disabled>Finish grass</button>
+              <button id="cancel-grass-area" type="button" class="secondary-btn hidden">Cancel grass</button>
+              <button id="clear-grass-areas" type="button" class="danger" title="Remove all marked grass areas.">Clear grass</button>
+              <div id="grass-area-count" class="metric-pill">0 grass areas</div>
               <details class="layer-menu">
                 <summary class="layer-menu-summary">Layers</summary>
                 <div id="layer-selector-list" class="layer-selector-list" aria-label="Canvas layer visibility"></div>
@@ -165,6 +170,7 @@
               <div id="satellite-layer" class="satellite-layer" data-canvas-layer data-layer-label="Satellite imagery" data-layer-description="Map tiles behind the plan when satellite background is selected." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="image-layer" class="image-layer" data-canvas-layer data-layer-label="Uploaded image" data-layer-description="Uploaded yard image behind the plan." data-layer-default-visible="true" aria-hidden="true"></div>
               <div class="canvas-grid" data-canvas-layer data-layer-id="reference-grid" data-layer-label="Reference grid" data-layer-description="The planning grid overlay." data-layer-default-visible="true" aria-hidden="true"></div>
+              <div id="grass-layer" class="grass-layer" data-canvas-layer data-layer-label="Grass areas" data-layer-description="Closed lawn shapes that constrain combined precipitation-rate display." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="coverage-layer" class="coverage-layer" data-canvas-layer data-layer-label="Throw arcs" data-layer-description="Sprinkler throw radius circles and arc sectors." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="precipitation-layer" class="precipitation-layer" data-canvas-layer data-layer-label="Combined precipitation rate" data-layer-description="Heat map showing stacked precipitation where sprinkler throws overlap." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="calibration-layer" class="calibration-layer" data-canvas-layer data-layer-label="Measurements" data-layer-description="Distance calibration points, lines, and labels." data-layer-default-visible="true" aria-hidden="true"></div>

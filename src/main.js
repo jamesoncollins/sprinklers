@@ -54,6 +54,7 @@ const emptyProject = {
     mapView: { scale: 1, panX: 0, panY: 0, rotationDegrees: 0 },
     canvasLayers: {},
     precipitationContourInterval: defaultPrecipitationContourInterval,
+    grassAreas: [],
   },
   zones: [],
   sprinklers: [],
@@ -74,6 +75,7 @@ let backgroundImageNaturalDataUrl = '';
 let suppressEmptyCanvasHint = false;
 let showPrecipitationMap = false;
 let precipitationContourInterval = defaultPrecipitationContourInterval;
+let grassDrawingState = null;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
@@ -118,6 +120,7 @@ const mapCanvas = document.getElementById('map-canvas');
 const mapWorld = document.getElementById('map-world');
 const satelliteLayer = document.getElementById('satellite-layer');
 const imageLayer = document.getElementById('image-layer');
+const grassLayer = document.getElementById('grass-layer');
 const coverageLayer = document.getElementById('coverage-layer');
 const calibrationLayer = document.getElementById('calibration-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
@@ -150,6 +153,11 @@ const precipitationLegend = precipitationUi.legend;
 const precipitationLegendRange = precipitationUi.legendRange;
 const precipitationContourSummary = precipitationUi.contourSummary;
 const precipitationContourIntervalSelect = precipitationUi.contourIntervalSelect;
+const startGrassAreaBtn = document.getElementById('start-grass-area');
+const finishGrassAreaBtn = document.getElementById('finish-grass-area');
+const cancelGrassAreaBtn = document.getElementById('cancel-grass-area');
+const clearGrassAreasBtn = document.getElementById('clear-grass-areas');
+const grassAreaCount = document.getElementById('grass-area-count');
 
 
 function createPrecipitationUi() {
@@ -163,7 +171,7 @@ function createPrecipitationUi() {
   }
   layer.dataset.canvasLayer = '';
   layer.dataset.layerLabel = 'Combined precipitation rate';
-  layer.dataset.layerDescription = 'Heat map showing stacked precipitation where sprinkler throws overlap.';
+  layer.dataset.layerDescription = 'Heat map showing stacked precipitation where sprinkler throws overlap inside marked grass areas.';
   layer.dataset.layerDefaultVisible = 'true';
 
   let input = document.getElementById('show-precipitation-map');
@@ -590,6 +598,35 @@ function normalizeDistanceScaleSettings(settings = {}) {
   };
 }
 
+
+function normalizeGrassArea(area = {}, index = 0) {
+  const points = Array.isArray(area.points)
+    ? area.points
+        .map((point) => ({ xPercent: Number(point.xPercent), yPercent: Number(point.yPercent) }))
+        .filter((point) => Number.isFinite(point.xPercent) && Number.isFinite(point.yPercent))
+        .map((point) => ({
+          xPercent: Math.min(100, Math.max(0, point.xPercent)),
+          yPercent: Math.min(100, Math.max(0, point.yPercent)),
+        }))
+    : [];
+
+  return {
+    id: area.id || crypto.randomUUID(),
+    name: area.name || `Grass Area ${index + 1}`,
+    points,
+  };
+}
+
+function normalizeGrassAreas(areas = []) {
+  return Array.isArray(areas)
+    ? areas.map((area, index) => normalizeGrassArea(area, index)).filter((area) => area.points.length >= 3)
+    : [];
+}
+
+function hasGrassAreas() {
+  return normalizeGrassAreas(project.site?.grassAreas).length > 0;
+}
+
 function canvasLayerDefinitions() {
   return Array.from(mapWorld.querySelectorAll('[data-canvas-layer]')).map((element) => ({
     id: element.dataset.layerId || element.id,
@@ -995,6 +1032,7 @@ function hydrateProject(loaded, options = {}) {
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
       canvasLayers: normalizeCanvasLayerSettings({ ...emptyProject.site.canvasLayers, ...(loaded.site?.canvasLayers || {}) }),
       precipitationContourInterval: normalizePrecipitationContourInterval(loaded.site?.precipitationContourInterval),
+      grassAreas: normalizeGrassAreas(loaded.site?.grassAreas),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone, index) => normalizeZone(zone, index)) : [],
     sprinklers: Array.isArray(loaded.sprinklers)
@@ -1006,6 +1044,7 @@ function hydrateProject(loaded, options = {}) {
   syncSprinklersFromGps();
   selectedSprinklerId = project.sprinklers[0]?.id || null;
   inspectedZoneId = selectedSprinkler()?.zoneId || project.zones[0]?.id || null;
+  grassDrawingState = null;
   suppressEmptyCanvasHint = Boolean(options.suppressEmptyCanvasHint);
   render();
 }
@@ -1497,6 +1536,151 @@ function clearScaleCalibration() {
 }
 
 
+
+function grassSvgPoint(areaPoint, box) {
+  return `${(areaPoint.xPercent / 100) * box.width},${(areaPoint.yPercent / 100) * box.height}`;
+}
+
+function renderGrassLayer() {
+  grassLayer.replaceChildren();
+  const box = activeCoordinateBox();
+  const areas = normalizeGrassAreas(project.site?.grassAreas);
+  project.site.grassAreas = areas;
+  const draftPoints = grassDrawingState?.points || [];
+
+  grassLayer.style.left = `${box.left}px`;
+  grassLayer.style.top = `${box.top}px`;
+  grassLayer.style.width = `${box.width}px`;
+  grassLayer.style.height = `${box.height}px`;
+
+  if (!box.width || !box.height || (!areas.length && !draftPoints.length)) return;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'grass-svg');
+  svg.setAttribute('viewBox', `0 0 ${box.width} ${box.height}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+
+  areas.forEach((area) => {
+    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    polygon.setAttribute('class', 'grass-area-shape');
+    polygon.setAttribute('points', area.points.map((point) => grassSvgPoint(point, box)).join(' '));
+    svg.appendChild(polygon);
+  });
+
+  if (draftPoints.length) {
+    const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    polyline.setAttribute('class', 'grass-area-draft-line');
+    polyline.setAttribute('points', draftPoints.map((point) => grassSvgPoint(point, box)).join(' '));
+    svg.appendChild(polyline);
+
+    draftPoints.forEach((point, index) => {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('class', `grass-area-vertex${index === 0 ? ' first' : ''}`);
+      circle.setAttribute('cx', (point.xPercent / 100) * box.width);
+      circle.setAttribute('cy', (point.yPercent / 100) * box.height);
+      circle.setAttribute('r', index === 0 ? 6 : 4.5);
+      svg.appendChild(circle);
+    });
+  }
+
+  grassLayer.appendChild(svg);
+}
+
+function pointInPolygon(point, polygonPoints) {
+  let inside = false;
+  for (let i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i, i += 1) {
+    const xi = polygonPoints[i].x;
+    const yi = polygonPoints[i].y;
+    const xj = polygonPoints[j].x;
+    const yj = polygonPoints[j].y;
+    const intersects = yi > point.y !== yj > point.y
+      && point.x < ((xj - xi) * (point.y - yi)) / ((yj - yi) || 0.000001) + xi;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function applyGrassClip(context, box) {
+  const areas = normalizeGrassAreas(project.site?.grassAreas);
+  if (!areas.length) return false;
+  context.beginPath();
+  areas.forEach((area) => {
+    area.points.forEach((point, index) => {
+      const x = (point.xPercent / 100) * box.width;
+      const y = (point.yPercent / 100) * box.height;
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    });
+    context.closePath();
+  });
+  context.clip();
+  return true;
+}
+
+function localPointIsInsideGrass(point) {
+  const areas = normalizeGrassAreas(project.site?.grassAreas);
+  if (!areas.length) return true;
+  const box = activeCoordinateBox();
+  const relativePoint = { x: point.x - box.left, y: point.y - box.top };
+  return areas.some((area) => {
+    const polygonPoints = area.points.map((areaPoint) => ({
+      x: (areaPoint.xPercent / 100) * box.width,
+      y: (areaPoint.yPercent / 100) * box.height,
+    }));
+    return pointInPolygon(relativePoint, polygonPoints);
+  });
+}
+
+function updateGrassDrawingControls() {
+  const drawing = Boolean(grassDrawingState);
+  startGrassAreaBtn.classList.toggle('hidden', drawing);
+  finishGrassAreaBtn.classList.toggle('hidden', !drawing);
+  cancelGrassAreaBtn.classList.toggle('hidden', !drawing);
+  finishGrassAreaBtn.disabled = !drawing || grassDrawingState.points.length < 3;
+  mapCanvas.classList.toggle('drawing-grass', drawing);
+
+  const areaCount = normalizeGrassAreas(project.site?.grassAreas).length;
+  grassAreaCount.textContent = `${areaCount} grass area${areaCount === 1 ? '' : 's'}`;
+  clearGrassAreasBtn.disabled = areaCount === 0 && !drawing;
+}
+
+function startGrassAreaDrawing() {
+  closeSprinklerContextMenu();
+  calibrationState = null;
+  mapCanvas.classList.remove('calibrating');
+  grassDrawingState = { points: [] };
+  suppressEmptyCanvasHint = true;
+  renderCanvas();
+  updateScaleCalibrationStatus();
+}
+
+function finishGrassAreaDrawing() {
+  if (!grassDrawingState || grassDrawingState.points.length < 3) return;
+  project.site.grassAreas = normalizeGrassAreas([
+    ...(project.site.grassAreas || []),
+    { id: crypto.randomUUID(), points: grassDrawingState.points },
+  ]);
+  grassDrawingState = null;
+  renderCanvas();
+}
+
+function cancelGrassAreaDrawing() {
+  grassDrawingState = null;
+  renderCanvas();
+}
+
+function clearGrassAreas() {
+  grassDrawingState = null;
+  project.site.grassAreas = [];
+  renderCanvas();
+}
+
+function addGrassAreaPoint(position) {
+  if (!grassDrawingState) return;
+  grassDrawingState.points.push(position);
+  renderCanvas();
+}
+
 function colorForPrecipitationRate(rate, maxRate) {
   if (rate <= 0 || maxRate <= 0) return 'rgba(0, 0, 0, 0)';
   const scaleFactor = Math.max(1, maxRate / maxPrecipitationColorStop.value);
@@ -1665,12 +1849,14 @@ function renderPrecipitationLayer() {
         x: box.left + Math.min(box.width - 1, x + cellSize / 2),
         y: box.top + Math.min(box.height - 1, y + cellSize / 2),
       };
-      const rate = combinedPrecipitationAtPoint(sample, feetPerPixel);
+      const rate = localPointIsInsideGrass(sample) ? combinedPrecipitationAtPoint(sample, feetPerPixel) : 0;
       maxRate = Math.max(maxRate, rate);
       rates[row][column] = rate;
     }
   }
 
+  context.save();
+  applyGrassClip(context, box);
   for (let row = 0; row < rows; row += 1) {
     for (let column = 0; column < columns; column += 1) {
       const rate = rates[row][column];
@@ -1681,13 +1867,20 @@ function renderPrecipitationLayer() {
       context.fillRect(x, y, Math.min(cellSize, box.width - x), Math.min(cellSize, box.height - y));
     }
   }
+  context.restore();
 
+  contourContext.save();
+  applyGrassClip(contourContext, box);
   const contourCount = drawPrecipitationContours(contourContext, rates, rows, columns, cellSize, maxRate);
+  contourContext.restore();
 
   precipitationLayer.append(canvas, contourCanvas);
+  const grassScopeText = hasGrassAreas() ? ` inside ${normalizeGrassAreas(project.site.grassAreas).length} grass area${normalizeGrassAreas(project.site.grassAreas).length === 1 ? '' : 's'}` : '';
   precipitationLegendRange.textContent = maxRate > 0
-    ? `0–${formatNumber(maxRate, 2)} in/hr combined across ${completeSprinklers.length} sprinkler${completeSprinklers.length === 1 ? '' : 's'}`
-    : 'No irrigated cells found in the current canvas view.';
+    ? `0–${formatNumber(maxRate, 2)} in/hr combined${grassScopeText} across ${completeSprinklers.length} sprinkler${completeSprinklers.length === 1 ? '' : 's'}`
+    : hasGrassAreas()
+      ? 'No irrigated grass cells found in the current canvas view.'
+      : 'No irrigated cells found in the current canvas view; draw grass areas to limit the overlay.';
   precipitationContourSummary.textContent = maxRate > 0
     ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr (${contourCount} line${contourCount === 1 ? '' : 's'}).`
     : '';
@@ -1695,15 +1888,27 @@ function renderPrecipitationLayer() {
 
 function renderCanvas() {
   applyMapViewTransform();
+  grassLayer.replaceChildren();
   coverageLayer.replaceChildren();
   sprinklerLayer.replaceChildren();
+  renderGrassLayer();
   renderPrecipitationLayer();
   renderCalibrationLayer();
+  updateGrassDrawingControls();
   applyCanvasLayerVisibility();
   const zoneId = currentInspectorZoneId();
   const zone = project.zones.find((candidate) => candidate.id === zoneId);
   const visibleSprinklers = sprinklersForCurrentZone();
-  emptyCanvasHint.classList.toggle('hidden', suppressEmptyCanvasHint || visibleSprinklers.length > 0 || Boolean(calibrationState));
+  const drawingGrass = Boolean(grassDrawingState);
+  emptyCanvasHint.classList.toggle('hidden', suppressEmptyCanvasHint || visibleSprinklers.length > 0 || Boolean(calibrationState) || drawingGrass);
+  if (drawingGrass) {
+    emptyCanvasHint.textContent = grassDrawingState.points.length < 3
+      ? 'Click around the lawn edge to add at least 3 grass-area points.'
+      : 'Click more points or choose Finish grass to close this grass area.';
+    emptyCanvasHint.classList.remove('hidden');
+  } else {
+    emptyCanvasHint.textContent = 'Click anywhere to place your first sprinkler.';
+  }
   sprinklerCount.textContent = `${visibleSprinklers.length} sprinkler${visibleSprinklers.length === 1 ? '' : 's'}${zone ? ` in ${zone.name}` : ''}`;
 
   visibleSprinklers.forEach((sprinkler) => {
@@ -2303,6 +2508,11 @@ precipitationContourIntervalSelect.addEventListener('change', () => {
   renderCanvas();
 });
 
+startGrassAreaBtn.addEventListener('click', startGrassAreaDrawing);
+finishGrassAreaBtn.addEventListener('click', finishGrassAreaDrawing);
+cancelGrassAreaBtn.addEventListener('click', cancelGrassAreaDrawing);
+clearGrassAreasBtn.addEventListener('click', clearGrassAreas);
+
 showPrecipitationMapInput.addEventListener('change', () => {
   showPrecipitationMap = showPrecipitationMapInput.checked;
   if (showPrecipitationMap) {
@@ -2338,6 +2548,10 @@ mapCanvas.addEventListener('click', (event) => {
   }
   if (calibrationState) {
     addCalibrationPoint(canvasPositionFromEvent(event));
+    return;
+  }
+  if (grassDrawingState) {
+    addGrassAreaPoint(canvasPositionFromEvent(event));
     return;
   }
   if (event.target.closest('.sprinkler-marker')) return;
@@ -2415,7 +2629,10 @@ window.addEventListener('resize', () => {
   scheduleCanvasResize();
 });
 window.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') closeSprinklerContextMenu();
+  if (event.key === 'Escape') {
+    if (grassDrawingState) cancelGrassAreaDrawing();
+    closeSprinklerContextMenu();
+  }
 });
 if ('ResizeObserver' in window) {
   new ResizeObserver(scheduleCanvasResize).observe(mapCanvas);
