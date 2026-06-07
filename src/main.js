@@ -79,7 +79,6 @@ const manufacturerSelect = document.getElementById('manufacturer-select');
 const headSelect = document.getElementById('head-select');
 const nozzleSelect = document.getElementById('nozzle-select');
 const pressureInput = document.getElementById('pressure-input');
-const lookupBtn = document.getElementById('lookup-performance');
 const lookupResult = document.getElementById('lookup-result');
 const siteNameInput = document.getElementById('site-name');
 const siteAddressInput = document.getElementById('site-address');
@@ -227,6 +226,8 @@ function loadCatalogFromText(text, sourceLabel) {
   setOptions(manufacturerSelect, getManufacturers(), 'Select manufacturer');
   setOptions(headSelect, [], 'Select head model');
   setOptions(nozzleSelect, [], 'Select nozzle model');
+  syncCatalogPressureInput(null);
+  updateLookupResult();
 
   const warningText = warnings.length ? ` Warnings: ${warnings.length}.` : '';
   setCatalogStatus(`Loaded ${sourceLabel}: ${models.length} model/nozzle combinations.${warningText}`);
@@ -337,6 +338,19 @@ function buildCatalog(rows) {
   });
 
   return { models, warnings };
+}
+
+
+function selectedCatalogPressurePsi(model) {
+  if (!model?.points?.length) return null;
+  const preferredPoint = model.points.find((point) => point.pressurePsi === 45);
+  return (preferredPoint || model.points[0]).pressurePsi;
+}
+
+function syncCatalogPressureInput(model = findSelectedModel()) {
+  const pressurePsi = selectedCatalogPressurePsi(model);
+  pressureInput.value = pressurePsi === null ? '' : formatNumber(pressurePsi, 1);
+  return pressurePsi;
 }
 
 function lookupPerformance(model, pressurePsi) {
@@ -1812,7 +1826,7 @@ function zoomMapView(event) {
 function addSprinklerAt(position) {
   ensureDefaultZone();
   const model = findSelectedModel();
-  const pressurePsi = Number(pressureInput.value) || 45;
+  const pressurePsi = selectedCatalogPressurePsi(model) || 45;
   const performance = model ? lookupPerformance(model, pressurePsi) : null;
   const sprinkler = {
     id: crypto.randomUUID(),
@@ -1917,15 +1931,15 @@ function updateSelectedSprinklerFromForm() {
 
 function updateLookupResult() {
   const model = findSelectedModel();
-  const pressurePsi = Number(pressureInput.value);
+  const pressurePsi = syncCatalogPressureInput(model);
 
   if (!model) {
     lookupResult.textContent = 'Please select manufacturer, head model, and nozzle model first.';
     return;
   }
 
-  if (Number.isNaN(pressurePsi) || pressurePsi <= 0) {
-    lookupResult.textContent = 'Please enter a valid pressure PSI value.';
+  if (pressurePsi === null) {
+    lookupResult.textContent = 'Selected model has no catalog pressure points.';
     return;
   }
 
@@ -1938,7 +1952,7 @@ function updateLookupResult() {
   const warningText = result.warning ? ` Warning: ${result.warning}` : '';
   const regulationText = model.pressureRegulating ? 'pressure regulating' : 'not pressure regulating; zone pressure will scale placed heads';
   const nominalPrecipitationText = formatNominalPrecipitation(result.nominalPrecipitationInHr);
-  lookupResult.textContent = `Rated flow: ${result.flowGpm.toFixed(2)} gpm | Rated radius: ${result.radiusFt.toFixed(2)} ft (${result.mode}, ${regulationText}).${nominalPrecipitationText}${warningText}`;
+  lookupResult.textContent = `Catalog pressure: ${formatNumber(pressurePsi, 1)} PSI | Rated flow: ${result.flowGpm.toFixed(2)} gpm | Rated radius: ${result.radiusFt.toFixed(2)} ft (${result.mode}, ${regulationText}).${nominalPrecipitationText}${warningText}`;
 }
 
 manufacturerSelect.addEventListener('change', () => {
@@ -1953,7 +1967,6 @@ headSelect.addEventListener('change', () => {
 });
 
 nozzleSelect.addEventListener('change', updateLookupResult);
-pressureInput.addEventListener('input', updateLookupResult);
 
 catalogInput.addEventListener('change', async (event) => {
   const file = event.target.files?.[0];
@@ -1981,7 +1994,6 @@ async function loadDefaultCatalog() {
   }
 }
 
-lookupBtn.addEventListener('click', updateLookupResult);
 
 newBtn.addEventListener('click', () => {
   hydrateProject(structuredClone(emptyProject), { suppressEmptyCanvasHint: false });
@@ -2310,8 +2322,8 @@ if ('ResizeObserver' in window) {
 applyCatalogToSelectedBtn.addEventListener('click', () => {
   const sprinkler = selectedSprinkler();
   const model = findSelectedModel();
-  const pressurePsi = Number(pressureInput.value);
-  if (!sprinkler || !model || Number.isNaN(pressurePsi) || pressurePsi <= 0) return;
+  const pressurePsi = selectedCatalogPressurePsi(model);
+  if (!sprinkler || !model || pressurePsi === null) return;
   const result = lookupPerformance(model, pressurePsi);
   if (result.flowGpm == null || result.radiusFt == null) return;
   Object.assign(sprinkler, {
