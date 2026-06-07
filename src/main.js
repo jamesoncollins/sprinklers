@@ -15,7 +15,9 @@ const precipitationColorStops = [
   { value: 2, color: [215, 48, 31] },
 ];
 const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
-const precipitationContourIntervals = [0.1, 0.25, 0.5, 1];
+const minPrecipitationContourInterval = 0.05;
+const maxPrecipitationContourInterval = 1;
+const precipitationContourIntervalStep = 0.05;
 const defaultPrecipitationContourInterval = 0.25;
 const defaultZoneWaterShare = 1;
 
@@ -149,7 +151,9 @@ const showPrecipitationMapInput = precipitationUi.input;
 const precipitationLegend = precipitationUi.legend;
 const precipitationLegendRange = precipitationUi.legendRange;
 const precipitationContourSummary = precipitationUi.contourSummary;
-const precipitationContourIntervalSelect = precipitationUi.contourIntervalSelect;
+const precipitationContourIntervalInput = precipitationUi.contourIntervalInput;
+const precipitationContourIntervalValue = precipitationUi.contourIntervalValue;
+const precipitationTooltip = precipitationUi.tooltip;
 
 
 function createPrecipitationUi() {
@@ -181,8 +185,9 @@ function createPrecipitationUi() {
     sprinklerCount.parentElement.insertBefore(label, sprinklerCount);
   }
 
-  let contourIntervalSelect = document.getElementById('precipitation-contour-interval');
-  if (!contourIntervalSelect) {
+  let contourIntervalInput = document.getElementById('precipitation-contour-interval');
+  let contourIntervalValue = document.getElementById('precipitation-contour-interval-value');
+  if (!contourIntervalInput) {
     const label = document.createElement('label');
     label.className = 'overlay-toggle precipitation-contour-control';
     label.htmlFor = 'precipitation-contour-interval';
@@ -191,19 +196,35 @@ function createPrecipitationUi() {
     const labelText = document.createElement('span');
     labelText.textContent = 'Contours';
 
-    contourIntervalSelect = document.createElement('select');
-    contourIntervalSelect.id = 'precipitation-contour-interval';
-    contourIntervalSelect.setAttribute('aria-label', 'Precipitation contour interval');
+    contourIntervalInput = document.createElement('input');
+    contourIntervalInput.id = 'precipitation-contour-interval';
+    contourIntervalInput.type = 'range';
+    contourIntervalInput.setAttribute('aria-label', 'Precipitation contour interval');
 
-    label.append(labelText, contourIntervalSelect);
+    contourIntervalValue = document.createElement('span');
+    contourIntervalValue.id = 'precipitation-contour-interval-value';
+    contourIntervalValue.className = 'precipitation-contour-value';
+
+    label.append(labelText, contourIntervalInput, contourIntervalValue);
     sprinklerCount.parentElement.insertBefore(label, sprinklerCount);
+  } else if (contourIntervalInput.tagName === 'SELECT') {
+    const rangeInput = document.createElement('input');
+    rangeInput.id = contourIntervalInput.id;
+    rangeInput.type = 'range';
+    rangeInput.setAttribute('aria-label', contourIntervalInput.getAttribute('aria-label') || 'Precipitation contour interval');
+    contourIntervalInput.replaceWith(rangeInput);
+    contourIntervalInput = rangeInput;
   }
-  contourIntervalSelect.replaceChildren(...precipitationContourIntervals.map((interval) => {
-    const option = document.createElement('option');
-    option.value = String(interval);
-    option.textContent = `${formatNumber(interval, 2)} in/hr`;
-    return option;
-  }));
+  contourIntervalInput.type = 'range';
+  contourIntervalInput.min = String(minPrecipitationContourInterval);
+  contourIntervalInput.max = String(maxPrecipitationContourInterval);
+  contourIntervalInput.step = String(precipitationContourIntervalStep);
+  if (!contourIntervalValue) {
+    contourIntervalValue = document.createElement('span');
+    contourIntervalValue.id = 'precipitation-contour-interval-value';
+    contourIntervalValue.className = 'precipitation-contour-value';
+    contourIntervalInput.insertAdjacentElement('afterend', contourIntervalValue);
+  }
 
   let legend = document.getElementById('precipitation-legend');
   let legendRange = document.getElementById('precipitation-legend-range');
@@ -230,7 +251,17 @@ function createPrecipitationUi() {
     legend.appendChild(contourSummary);
   }
 
-  return { layer, input, legend, legendRange, contourSummary, contourIntervalSelect };
+  let tooltip = document.getElementById('precipitation-tooltip');
+  if (!tooltip) {
+    tooltip = document.createElement('div');
+    tooltip.id = 'precipitation-tooltip';
+    tooltip.className = 'precipitation-tooltip hidden';
+    tooltip.setAttribute('role', 'status');
+    tooltip.setAttribute('aria-live', 'polite');
+    mapCanvas.insertBefore(tooltip, sprinklerContextMenu);
+  }
+
+  return { layer, input, legend, legendRange, contourSummary, contourIntervalInput, contourIntervalValue, tooltip };
 }
 
 function setCatalogStatus(message) {
@@ -287,7 +318,14 @@ function parseOptionalNumber(value) {
 
 function normalizePrecipitationContourInterval(value) {
   const parsed = Number.parseFloat(value);
-  return precipitationContourIntervals.includes(parsed) ? parsed : defaultPrecipitationContourInterval;
+  if (!Number.isFinite(parsed)) return defaultPrecipitationContourInterval;
+  const snapped = Math.round(parsed / precipitationContourIntervalStep) * precipitationContourIntervalStep;
+  return Number(Math.min(maxPrecipitationContourInterval, Math.max(minPrecipitationContourInterval, snapped)).toFixed(2));
+}
+
+function updatePrecipitationContourControl() {
+  precipitationContourIntervalInput.value = String(precipitationContourInterval);
+  precipitationContourIntervalValue.textContent = `${formatNumber(precipitationContourInterval, 2)} in/hr`;
 }
 
 function nominalPrecipitationFromRow(row) {
@@ -712,7 +750,7 @@ function updateProjectInputs() {
   imageRotationValue.textContent = `${Math.round(backgroundImage.rotationDegrees)}°`;
 
   showPrecipitationMapInput.checked = showPrecipitationMap;
-  precipitationContourIntervalSelect.value = String(precipitationContourInterval);
+  updatePrecipitationContourControl();
 
   const satellite = normalizeSatelliteSettings(project.site?.satellite);
   satelliteLatitudeInput.value = Number.isFinite(satellite.latitude) ? satellite.latitude : '';
@@ -1635,7 +1673,10 @@ function renderPrecipitationLayer() {
   const enabled = showPrecipitationMap;
   mapCanvas.classList.toggle('precipitation-enabled', enabled);
   precipitationLegend.classList.toggle('hidden', !enabled);
-  if (!enabled) return;
+  if (!enabled) {
+    hidePrecipitationTooltip();
+    return;
+  }
 
   const box = activeCoordinateBox();
   const feetPerPixel = currentFeetPerPixel();
@@ -1643,6 +1684,7 @@ function renderPrecipitationLayer() {
   if (!box.width || !box.height || !completeSprinklers.length) {
     precipitationLegendRange.textContent = 'Add sprinkler flow and radius data to calculate combined PR.';
     precipitationContourSummary.textContent = '';
+    hidePrecipitationTooltip();
     return;
   }
 
@@ -1859,6 +1901,40 @@ function canvasPositionFromEvent(event) {
     xPercent: Math.min(100, Math.max(0, ((local.x - box.left) / box.width) * 100)),
     yPercent: Math.min(100, Math.max(0, ((local.y - box.top) / box.height) * 100)),
   };
+}
+
+function hidePrecipitationTooltip() {
+  precipitationTooltip.classList.add('hidden');
+}
+
+function precipitationLocalPointFromEvent(event) {
+  const rect = mapCanvas.getBoundingClientRect();
+  const local = screenPointToLocalPoint(event.clientX - rect.left, event.clientY - rect.top);
+  const box = activeCoordinateBox();
+  if (local.x < box.left || local.x > box.left + box.width || local.y < box.top || local.y > box.top + box.height) return null;
+  return local;
+}
+
+function updatePrecipitationTooltip(event) {
+  if (!showPrecipitationMap || !isCanvasLayerVisible(precipitationLayer.id) || panState || dragState || event.target.closest('.precipitation-legend') || event.target.closest('.context-menu')) {
+    hidePrecipitationTooltip();
+    return;
+  }
+
+  const point = precipitationLocalPointFromEvent(event);
+  if (!point) {
+    hidePrecipitationTooltip();
+    return;
+  }
+
+  const rate = combinedPrecipitationAtPoint(point, currentFeetPerPixel());
+  const rect = mapCanvas.getBoundingClientRect();
+  const left = Math.min(rect.width - 16, Math.max(8, event.clientX - rect.left));
+  const top = Math.min(rect.height - 8, Math.max(28, event.clientY - rect.top));
+  precipitationTooltip.style.left = `${left}px`;
+  precipitationTooltip.style.top = `${top}px`;
+  precipitationTooltip.innerHTML = `<strong>${formatNumber(rate, 2)} in/hr</strong><span>Combined precipitation rate here</span>`;
+  precipitationTooltip.classList.remove('hidden');
 }
 
 function startMapPan(event) {
@@ -2296,10 +2372,10 @@ zoneSprinklerSelect.addEventListener('change', () => {
   renderZoneInspectorControls();
 });
 
-precipitationContourIntervalSelect.addEventListener('change', () => {
-  precipitationContourInterval = normalizePrecipitationContourInterval(precipitationContourIntervalSelect.value);
+precipitationContourIntervalInput.addEventListener('input', () => {
+  precipitationContourInterval = normalizePrecipitationContourInterval(precipitationContourIntervalInput.value);
   project.site.precipitationContourInterval = precipitationContourInterval;
-  precipitationContourIntervalSelect.value = String(precipitationContourInterval);
+  updatePrecipitationContourControl();
   renderCanvas();
 });
 
@@ -2320,6 +2396,8 @@ addZoneBtn.addEventListener('click', () => {
 
 mapCanvas.addEventListener('pointerdown', startMapPan);
 mapCanvas.addEventListener('pointermove', updateMapPan);
+mapCanvas.addEventListener('pointermove', updatePrecipitationTooltip);
+mapCanvas.addEventListener('pointerleave', hidePrecipitationTooltip);
 mapCanvas.addEventListener('pointerup', endMapPan);
 mapCanvas.addEventListener('pointercancel', endMapPan);
 mapCanvas.addEventListener('wheel', zoomMapView, { passive: false });
