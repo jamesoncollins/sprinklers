@@ -15,6 +15,8 @@ const precipitationColorStops = [
   { value: 2, color: [215, 48, 31] },
 ];
 const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
+const precipitationContourIntervals = [0.1, 0.25, 0.5, 1];
+const defaultPrecipitationContourInterval = 0.25;
 const defaultZoneWaterShare = 1;
 
 const imagerySources = {
@@ -51,6 +53,7 @@ const emptyProject = {
     distanceScale: { feetPerPixel: defaultFeetPerPixel, points: [], measuredFeet: null },
     mapView: { scale: 1, panX: 0, panY: 0, rotationDegrees: 0 },
     canvasLayers: {},
+    precipitationContourInterval: defaultPrecipitationContourInterval,
   },
   zones: [],
   sprinklers: [],
@@ -191,16 +194,16 @@ function createPrecipitationUi() {
     contourIntervalSelect = document.createElement('select');
     contourIntervalSelect.id = 'precipitation-contour-interval';
     contourIntervalSelect.setAttribute('aria-label', 'Precipitation contour interval');
-    precipitationContourIntervals.forEach((interval) => {
-      const option = document.createElement('option');
-      option.value = String(interval);
-      option.textContent = `${formatNumber(interval, 2)} in/hr`;
-      contourIntervalSelect.appendChild(option);
-    });
 
     label.append(labelText, contourIntervalSelect);
     sprinklerCount.parentElement.insertBefore(label, sprinklerCount);
   }
+  contourIntervalSelect.replaceChildren(...precipitationContourIntervals.map((interval) => {
+    const option = document.createElement('option');
+    option.value = String(interval);
+    option.textContent = `${formatNumber(interval, 2)} in/hr`;
+    return option;
+  }));
 
   let legend = document.getElementById('precipitation-legend');
   let legendRange = document.getElementById('precipitation-legend-range');
@@ -280,6 +283,11 @@ function parseOptionalNumber(value) {
   if (value === undefined || value === null || value === '') return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizePrecipitationContourInterval(value) {
+  const parsed = Number.parseFloat(value);
+  return precipitationContourIntervals.includes(parsed) ? parsed : defaultPrecipitationContourInterval;
 }
 
 function nominalPrecipitationFromRow(row) {
@@ -986,12 +994,14 @@ function hydrateProject(loaded, options = {}) {
       distanceScale: normalizeDistanceScaleSettings({ ...emptyProject.site.distanceScale, ...(loaded.site?.distanceScale || {}) }),
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
       canvasLayers: normalizeCanvasLayerSettings({ ...emptyProject.site.canvasLayers, ...(loaded.site?.canvasLayers || {}) }),
+      precipitationContourInterval: normalizePrecipitationContourInterval(loaded.site?.precipitationContourInterval),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone, index) => normalizeZone(zone, index)) : [],
     sprinklers: Array.isArray(loaded.sprinklers)
       ? loaded.sprinklers.map((sprinkler, index) => normalizeSprinklerPosition({ ...sprinkler }, index))
       : [],
   };
+  precipitationContourInterval = project.site.precipitationContourInterval;
   ensureDefaultZone();
   syncSprinklersFromGps();
   selectedSprinklerId = project.sprinklers[0]?.id || null;
@@ -1571,11 +1581,17 @@ function contourIntersectionsForCell(values, threshold, x, y, cellSize) {
   return points;
 }
 
-function drawPrecipitationContours(context, rates, rows, columns, cellSize, maxRate) {
-  if (rows < 2 || columns < 2 || maxRate <= 0) return;
+function contourThresholdsForMaxRate(maxRate) {
+  if (maxRate <= 0) return [];
+  const thresholdCount = Math.floor(maxRate / precipitationContourInterval);
+  return Array.from({ length: thresholdCount }, (_, index) => (index + 1) * precipitationContourInterval);
+}
 
-  const contourScale = Math.max(1, maxRate / maxPrecipitationColorStop.value);
-  const contourThresholds = precipitationColorStops.slice(1, -1).map((stop) => stop.value * contourScale);
+function drawPrecipitationContours(context, rates, rows, columns, cellSize, maxRate) {
+  if (rows < 2 || columns < 2 || maxRate <= 0) return 0;
+
+  const contourThresholds = contourThresholdsForMaxRate(maxRate);
+  if (!contourThresholds.length) return 0;
   context.save();
   context.strokeStyle = 'rgba(255, 255, 255, 0.78)';
   context.lineWidth = 1.25;
@@ -1611,6 +1627,7 @@ function drawPrecipitationContours(context, rates, rows, columns, cellSize, maxR
     context.stroke();
   });
   context.restore();
+  return contourThresholds.length;
 }
 
 function renderPrecipitationLayer() {
@@ -1625,6 +1642,7 @@ function renderPrecipitationLayer() {
   const completeSprinklers = project.sprinklers.filter((sprinkler) => effectiveFlowGpm(sprinkler) > 0 && effectiveRadiusFt(sprinkler) > 0);
   if (!box.width || !box.height || !completeSprinklers.length) {
     precipitationLegendRange.textContent = 'Add sprinkler flow and radius data to calculate combined PR.';
+    precipitationContourSummary.textContent = '';
     return;
   }
 
@@ -1664,14 +1682,14 @@ function renderPrecipitationLayer() {
     }
   }
 
-  drawPrecipitationContours(contourContext, rates, rows, columns, cellSize, maxRate);
+  const contourCount = drawPrecipitationContours(contourContext, rates, rows, columns, cellSize, maxRate);
 
   precipitationLayer.append(canvas, contourCanvas);
   precipitationLegendRange.textContent = maxRate > 0
     ? `0–${formatNumber(maxRate, 2)} in/hr combined across ${completeSprinklers.length} sprinkler${completeSprinklers.length === 1 ? '' : 's'}`
     : 'No irrigated cells found in the current canvas view.';
   precipitationContourSummary.textContent = maxRate > 0
-    ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr (${contourThresholds.length} line${contourThresholds.length === 1 ? '' : 's'}).`
+    ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr (${contourCount} line${contourCount === 1 ? '' : 's'}).`
     : '';
 }
 
@@ -2280,6 +2298,7 @@ zoneSprinklerSelect.addEventListener('change', () => {
 
 precipitationContourIntervalSelect.addEventListener('change', () => {
   precipitationContourInterval = normalizePrecipitationContourInterval(precipitationContourIntervalSelect.value);
+  project.site.precipitationContourInterval = precipitationContourInterval;
   precipitationContourIntervalSelect.value = String(precipitationContourInterval);
   renderCanvas();
 });
