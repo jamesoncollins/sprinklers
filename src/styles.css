@@ -140,6 +140,7 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .canvas-toolbar-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
 .overlay-toggle { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid var(--border); border-radius:999px; background:var(--surface-3); color:var(--text); font-weight:800; white-space:nowrap; }
 .overlay-toggle input { margin:0; accent-color:var(--blue-500); }
+.precipitation-contour-control select { width:auto; min-width:92px; padding:4px 8px; border-radius:999px; font-size:0.82rem; }
 .precipitation-layer { position:absolute; inset:0; z-index:4; pointer-events:none; overflow:visible; }
 .precipitation-map, .precipitation-contours { position:absolute; image-rendering:auto; mix-blend-mode:normal; }
 .precipitation-map { opacity:0.82; filter: blur(2px) saturate(1.35); }
