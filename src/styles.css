@@ -140,7 +140,9 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .canvas-toolbar-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
 .overlay-toggle { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid var(--border); border-radius:999px; background:var(--surface-3); color:var(--text); font-weight:800; white-space:nowrap; }
 .overlay-toggle input { margin:0; accent-color:var(--blue-500); }
-.precipitation-contour-control select { width:auto; min-width:92px; padding:4px 8px; border-radius:999px; font-size:0.82rem; }
+.precipitation-contour-control { gap:8px; }
+.precipitation-contour-control input[type='range'] { width:110px; padding:0; }
+.precipitation-contour-value { min-width:62px; color:var(--muted); font-size:0.78rem; font-weight:900; text-align:right; }
 .precipitation-layer { position:absolute; inset:0; z-index:4; pointer-events:none; overflow:visible; }
 .precipitation-map, .precipitation-contours { position:absolute; image-rendering:auto; mix-blend-mode:normal; }
 .precipitation-map { opacity:0.82; filter: blur(2px) saturate(1.35); }
@@ -151,3 +153,5 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .precipitation-legend-gradient { height:12px; border-radius:999px; background:linear-gradient(90deg, rgba(247,252,245,0.8), rgba(199,233,192,0.9), rgba(116,196,118,0.95), rgba(49,163,84,0.95), rgba(255,232,120,0.95), rgba(253,141,60,0.95), rgba(215,48,31,0.95)); border:1px solid rgba(255,255,255,0.28); }
 .precipitation-legend-labels { display:flex; justify-content:space-between; margin-top:4px; color:rgba(255,255,255,0.72); font-size:0.72rem; font-weight:800; }
 .precipitation-legend-range { margin-top:6px; color:rgba(255,255,255,0.86); font-size:0.75rem; font-weight:700; }
+.precipitation-tooltip { position:absolute; z-index:9; max-width:210px; padding:7px 9px; border:1px solid rgba(255,255,255,0.25); border-radius:8px; background:rgba(8,13,20,0.92); color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.36); pointer-events:none; transform:translate(12px, -100%); font-size:0.78rem; font-weight:800; line-height:1.25; }
+.precipitation-tooltip strong { display:block; font-size:0.88rem; }
