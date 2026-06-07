@@ -54,7 +54,7 @@ For uploaded images or blank sketches, use **Calibrate by Two Points** in the Di
 
 The repository keeps one growing built-in CSV catalog at `data/default-catalogs/default_sprinkler_catalog.csv`. It currently contains Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`), including the blue, red, and grey low-angle nozzle rows that used to live in separate starter files.
 
-The web app auto-loads this built-in catalog on startup. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, including `pressure_regulating` (`true`/`false`) so pressure-regulated models hold rated flow/throw while non-regulating models scale by zone pressure. Optional precipitation columns are preserved from the manufacturer table.
+The web app auto-loads this built-in catalog on startup. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, including `pressure_regulating` (`true`/`false`) so pressure-regulated models hold rated flow/throw while non-regulating models scale by zone pressure. Optional manufacturer precipitation columns such as `precip_in_hr`, `precip_square_in_hr`, and `precip_triangle_in_hr` are preserved as nominal reference metadata for lookup display, but analysis uses calculated precipitation from effective flow and actual coverage area.
 
 ## Data Strategy
 
@@ -95,6 +95,9 @@ Per-head contribution can be estimated by sector-adjusted area:
 - `head_pr_in_hr = (96.3 * effective_flow_gpm) / throw_area_sqft`
 - `zone_adjusted_pr_in_hr = zone_base_pr_in_hr * zone_water_share_factor`
 - `overall_pr_in_hr = (96.3 * sum(zone_effective_flow_gpm * zone_water_share_factor)) / total_irrigated_area_sqft`
+- Zone analysis also reports calculated per-head minimum, average, and maximum PR to help compare runtime needs across zones and spot heads whose precipitation rate does not match the rest of the zone.
+
+Manufacturer precipitation values are treated as optional nominal catalog references only. They may reflect a vendor's default arc or spacing assumption, so they are displayed during lookup when available but are not the authoritative analysis input.
 
 > Note: Real-world DU (distribution uniformity), overlap, wind, and soil intake rates should be accounted for in future releases.
 

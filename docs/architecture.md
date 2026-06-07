@@ -73,7 +73,12 @@
 - `flow_gpm`
 - `radius_ft`
 - `arc_degrees` (optional nominal test arc)
+- `precip_in_hr` / `precipitation_in_hr` / `precip_default_in_hr` (optional manufacturer nominal PR reference)
+- `precip_square_in_hr` / `precip_square` / `square_spacing_pr_in_hr` (optional manufacturer square-spacing PR reference)
+- `precip_triangle_in_hr` / `precip_triangular_in_hr` / `triangular_spacing_pr_in_hr` (optional manufacturer triangular-spacing PR reference)
 - `notes`
+
+Optional manufacturer PR fields are preserved as catalog metadata for display and sanity checks. They do not replace calculated precipitation, which is derived from effective flow and actual sector-adjusted coverage area.
 
 ## Interpolation approach
 
@@ -81,7 +86,7 @@ For selected `(manufacturer, head_model, nozzle_model)`:
 
 - Find nearest lower and upper rows around input pressure.
 - If exact pressure exists, use exact row values.
-- If bounds exist, linearly interpolate for `flow_gpm` and `radius_ft`.
+- If bounds exist, linearly interpolate for `flow_gpm`, `radius_ft`, and optional nominal precipitation metadata when both bounds provide the same metadata field.
 - If out of range, clamp to nearest pressure row and flag warning.
 
 ## Future enhancements
@@ -114,9 +119,24 @@ For selected `(manufacturer, head_model, nozzle_model)`:
       "headModel": "PGP-ADJ",
       "nozzleModel": "Blue-2.0",
       "points": [
-        { "pressurePsi": 25, "flowGpm": 1.4, "radiusFt": 33 },
-        { "pressurePsi": 35, "flowGpm": 1.7, "radiusFt": 33 },
-        { "pressurePsi": 45, "flowGpm": 2.0, "radiusFt": 34 }
+        {
+          "pressurePsi": 25,
+          "flowGpm": 1.4,
+          "radiusFt": 33,
+          "nominalPrecipitationInHr": { "square": 0.28, "triangular": 0.32 }
+        },
+        {
+          "pressurePsi": 35,
+          "flowGpm": 1.7,
+          "radiusFt": 33,
+          "nominalPrecipitationInHr": { "square": 0.32, "triangular": 0.37 }
+        },
+        {
+          "pressurePsi": 45,
+          "flowGpm": 2.0,
+          "radiusFt": 34,
+          "nominalPrecipitationInHr": { "square": 0.36, "triangular": 0.42 }
+        }
       ]
     }
   ]
