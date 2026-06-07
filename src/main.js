@@ -238,6 +238,49 @@ function parseBoolean(value, defaultValue = false) {
   return ['true', 'yes', 'y', '1'].includes(String(value).trim().toLowerCase());
 }
 
+function parseOptionalNumber(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function nominalPrecipitationFromRow(row) {
+  return {
+    catalog: parseOptionalNumber(row.precip_in_hr ?? row.precipitation_in_hr ?? row.precip_default_in_hr),
+    square: parseOptionalNumber(row.precip_square_in_hr ?? row.precip_square ?? row.square_spacing_pr_in_hr),
+    triangular: parseOptionalNumber(row.precip_triangle_in_hr ?? row.precip_triangular_in_hr ?? row.triangular_spacing_pr_in_hr),
+  };
+}
+
+function hasNominalPrecipitation(precipitation) {
+  return Object.values(precipitation).some((value) => value !== null);
+}
+
+function interpolateNullableNumber(lowValue, highValue, ratio) {
+  if (lowValue === null || highValue === null) return null;
+  return lowValue + (highValue - lowValue) * ratio;
+}
+
+function interpolateNominalPrecipitation(lowPoint, highPoint, ratio) {
+  const low = lowPoint.nominalPrecipitationInHr || {};
+  const high = highPoint.nominalPrecipitationInHr || {};
+  const precipitation = {
+    catalog: interpolateNullableNumber(low.catalog ?? null, high.catalog ?? null, ratio),
+    square: interpolateNullableNumber(low.square ?? null, high.square ?? null, ratio),
+    triangular: interpolateNullableNumber(low.triangular ?? null, high.triangular ?? null, ratio),
+  };
+  return hasNominalPrecipitation(precipitation) ? precipitation : null;
+}
+
+function formatNominalPrecipitation(precipitation) {
+  if (!precipitation || !hasNominalPrecipitation(precipitation)) return '';
+  const parts = [];
+  if (precipitation.catalog !== null && precipitation.catalog !== undefined) parts.push(`${formatNumber(precipitation.catalog)} catalog`);
+  if (precipitation.square !== null && precipitation.square !== undefined) parts.push(`${formatNumber(precipitation.square)} square`);
+  if (precipitation.triangular !== null && precipitation.triangular !== undefined) parts.push(`${formatNumber(precipitation.triangular)} triangular`);
+  return parts.length ? ` Manufacturer nominal PR: ${parts.join(' / ')} in/hr; calculated PR still uses effective flow and actual coverage area.` : '';
+}
+
 function buildCatalog(rows) {
   const required = ['manufacturer', 'head_model', 'nozzle_model', 'pressure_psi', 'flow_gpm', 'radius_ft'];
   const warnings = [];
@@ -278,7 +321,14 @@ function buildCatalog(rows) {
       });
     }
 
-    groups.get(key).points.push({ pressurePsi, flowGpm, radiusFt });
+    const nominalPrecipitationInHr = nominalPrecipitationFromRow(row);
+    const point = { pressurePsi, flowGpm, radiusFt };
+    if (hasNominalPrecipitation(nominalPrecipitationInHr)) {
+      point.nominalPrecipitationInHr = nominalPrecipitationInHr;
+    }
+    if (row.notes) point.notes = row.notes;
+
+    groups.get(key).points.push(point);
   });
 
   const models = Array.from(groups.values()).map((model) => {
@@ -297,13 +347,20 @@ function lookupPerformance(model, pressurePsi) {
 
   const exact = points.find((point) => point.pressurePsi === pressurePsi);
   if (exact) {
-    return { flowGpm: exact.flowGpm, radiusFt: exact.radiusFt, warning: null, mode: 'exact' };
+    return {
+      flowGpm: exact.flowGpm,
+      radiusFt: exact.radiusFt,
+      nominalPrecipitationInHr: exact.nominalPrecipitationInHr || null,
+      warning: null,
+      mode: 'exact',
+    };
   }
 
   if (pressurePsi < points[0].pressurePsi) {
     return {
       flowGpm: points[0].flowGpm,
       radiusFt: points[0].radiusFt,
+      nominalPrecipitationInHr: points[0].nominalPrecipitationInHr || null,
       warning: `Pressure ${pressurePsi} PSI is below supported range; clamped to ${points[0].pressurePsi} PSI.`,
       mode: 'clamp-low',
     };
@@ -314,6 +371,7 @@ function lookupPerformance(model, pressurePsi) {
     return {
       flowGpm: maxPoint.flowGpm,
       radiusFt: maxPoint.radiusFt,
+      nominalPrecipitationInHr: maxPoint.nominalPrecipitationInHr || null,
       warning: `Pressure ${pressurePsi} PSI is above supported range; clamped to ${maxPoint.pressurePsi} PSI.`,
       mode: 'clamp-high',
     };
@@ -327,6 +385,7 @@ function lookupPerformance(model, pressurePsi) {
       return {
         flowGpm: low.flowGpm + (high.flowGpm - low.flowGpm) * ratio,
         radiusFt: low.radiusFt + (high.radiusFt - low.radiusFt) * ratio,
+        nominalPrecipitationInHr: interpolateNominalPrecipitation(low, high, ratio),
         warning: null,
         mode: 'interpolated',
       };
@@ -932,6 +991,22 @@ function sprinklerPr(sprinkler) {
   const area = sprinklerAreaSqft(sprinkler);
   if (area <= 0) return 0;
   return (96.3 * flow) / area;
+}
+
+function sprinklerPrecipitationStats(sprinklers) {
+  const rates = sprinklers
+    .map((sprinkler) => sprinklerPr(sprinkler))
+    .filter((rate) => Number.isFinite(rate) && rate > 0);
+  if (!rates.length) return null;
+  const min = Math.min(...rates);
+  const max = Math.max(...rates);
+  const average = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+  return { min, max, average, count: rates.length };
+}
+
+function formatPrecipitationStats(stats) {
+  if (!stats) return 'head PR min/max/average unavailable';
+  return `head PR min/max/average ${formatNumber(stats.min)}/${formatNumber(stats.max)}/${formatNumber(stats.average)} in/hr across ${stats.count} head${stats.count === 1 ? '' : 's'}`;
 }
 
 
@@ -1610,6 +1685,7 @@ function renderAnalysis() {
     const zoneFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
     const zoneArea = zoneSprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
     const zonePr = zoneArea > 0 ? (96.3 * zoneFlow) / zoneArea : 0;
+    const headPrStats = sprinklerPrecipitationStats(zoneSprinklers);
     const waterShare = zone.waterShare ?? defaultZoneWaterShare;
     const adjustedZonePr = zonePr * waterShare;
     const supply = Number(zone.measuredFlowGpm) || 0;
@@ -1619,7 +1695,7 @@ function renderAnalysis() {
     addAnalysisCard(
       zone.name,
       `${formatNumber(adjustedZonePr)} in/hr`,
-      `${formatNumber(zonePr)} base in/hr · ${formatNumber(zoneFlow)} gpm${supplyDetail} · ${zoneSprinklers.length} heads · ${formatNumber(zone.pressurePsi ?? 45, 1)} PSI · ${formatNumber(waterShare, 2)}× share`,
+      `${formatNumber(zonePr)} base in/hr · ${formatPrecipitationStats(headPrStats)} · ${formatNumber(zoneFlow)} gpm${supplyDetail} · ${zoneSprinklers.length} heads · ${formatNumber(zone.pressurePsi ?? 45, 1)} PSI · ${formatNumber(waterShare, 2)}× share`,
       warning || nearLimit,
     );
     if (warning) {
@@ -1637,7 +1713,15 @@ function renderAnalysis() {
 function addAnalysisCard(label, value, detail, warning = false) {
   const card = document.createElement('div');
   card.className = `analysis-card ${warning ? 'warning-card' : ''}`;
-  card.innerHTML = `<span>${label}</span><strong>${value}</strong><span>${detail}</span>`;
+
+  const labelEl = document.createElement('span');
+  labelEl.textContent = label;
+  const valueEl = document.createElement('strong');
+  valueEl.textContent = value;
+  const detailEl = document.createElement('span');
+  detailEl.textContent = detail;
+
+  card.append(labelEl, valueEl, detailEl);
   analysisSummary.appendChild(card);
 }
 
@@ -1853,7 +1937,8 @@ function updateLookupResult() {
 
   const warningText = result.warning ? ` Warning: ${result.warning}` : '';
   const regulationText = model.pressureRegulating ? 'pressure regulating' : 'not pressure regulating; zone pressure will scale placed heads';
-  lookupResult.textContent = `Rated flow: ${result.flowGpm.toFixed(2)} gpm | Rated radius: ${result.radiusFt.toFixed(2)} ft (${result.mode}, ${regulationText}).${warningText}`;
+  const nominalPrecipitationText = formatNominalPrecipitation(result.nominalPrecipitationInHr);
+  lookupResult.textContent = `Rated flow: ${result.flowGpm.toFixed(2)} gpm | Rated radius: ${result.radiusFt.toFixed(2)} ft (${result.mode}, ${regulationText}).${nominalPrecipitationText}${warningText}`;
 }
 
 manufacturerSelect.addEventListener('change', () => {
