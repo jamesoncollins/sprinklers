@@ -139,34 +139,40 @@
               <p>Click to add sprinklers. Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.</p>
             </div>
             <div class="canvas-toolbar-actions">
-              <label class="overlay-toggle" for="show-precipitation-map" title="Show a combined precipitation-rate heat map across all sprinkler throw overlaps.">
-                <input id="show-precipitation-map" type="checkbox" />
-                Combined precipitation rate
-              </label>
-              <label class="overlay-toggle precipitation-contour-control" for="precipitation-contour-interval" title="Choose the precipitation-rate interval between contour lines.">
-                <span>Contours</span>
-                <input id="precipitation-contour-interval" type="range" min="0.05" max="1" step="0.05" value="0.25" aria-label="Precipitation contour interval" />
-                <span id="precipitation-contour-interval-value" class="precipitation-contour-value">0.25 in/hr</span>
-              </label>
-              <label class="overlay-toggle precipitation-grid-control" for="precipitation-grid-cell-feet" title="Choose the precipitation overlay sampling grid size. Larger cells render faster with less contour detail.">
-                <span>Grid</span>
-                <input id="precipitation-grid-cell-feet" type="range" min="0.5" max="5" step="0.5" value="1" aria-label="Precipitation grid cell size in feet" />
-                <span id="precipitation-grid-cell-feet-value" class="precipitation-contour-value">1 ft</span>
-              </label>
-              <button id="start-grass-area" type="button" class="secondary-btn" title="Mark a closed grass area that should receive precipitation calculations.">Draw grass area</button>
-              <button id="finish-grass-area" type="button" class="secondary-btn hidden" disabled>Finish grass</button>
-              <button id="cancel-grass-area" type="button" class="secondary-btn hidden">Cancel grass</button>
-              <button id="clear-grass-areas" type="button" class="danger" title="Remove all marked grass areas.">Clear grass</button>
-              <div id="grass-area-count" class="metric-pill">0 grass areas</div>
-              <details class="layer-menu">
-                <summary class="layer-menu-summary">Layers</summary>
-                <div id="layer-selector-list" class="layer-selector-list" aria-label="Canvas layer visibility"></div>
-              </details>
               <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
+              <details class="canvas-tools-menu">
+                <summary class="canvas-tools-summary">Canvas tools</summary>
+                <div class="canvas-tools-list">
+                  <label class="overlay-toggle" for="show-precipitation-map" title="Show a combined precipitation-rate heat map across all sprinkler throw overlaps.">
+                    <input id="show-precipitation-map" type="checkbox" />
+                    Combined precipitation rate
+                  </label>
+                  <label class="overlay-toggle precipitation-contour-control" for="precipitation-contour-interval" title="Choose the precipitation-rate interval between contour lines.">
+                    <span>Contours</span>
+                    <input id="precipitation-contour-interval" type="range" min="0.05" max="1" step="0.05" value="0.25" aria-label="Precipitation contour interval" />
+                    <span id="precipitation-contour-interval-value" class="precipitation-contour-value">0.25 in/hr</span>
+                  </label>
+                  <label class="overlay-toggle precipitation-grid-control" for="precipitation-grid-cell-feet" title="Choose the precipitation overlay sampling grid size. Larger cells render faster with less contour detail.">
+                    <span>Grid</span>
+                    <input id="precipitation-grid-cell-feet" type="range" min="0.5" max="5" step="0.5" value="1" aria-label="Precipitation grid cell size in feet" />
+                    <span id="precipitation-grid-cell-feet-value" class="precipitation-contour-value">1 ft</span>
+                  </label>
+                  <div class="canvas-tools-buttons">
+                    <button id="start-grass-area" type="button" class="secondary-btn" title="Mark a closed grass area that should receive precipitation calculations.">Draw grass area</button>
+                    <button id="finish-grass-area" type="button" class="secondary-btn hidden" disabled>Finish grass</button>
+                    <button id="cancel-grass-area" type="button" class="secondary-btn hidden">Cancel grass</button>
+                    <button id="clear-grass-areas" type="button" class="danger" title="Remove all marked grass areas.">Clear grass</button>
+                  </div>
+                  <div id="grass-area-count" class="metric-pill">0 grass areas</div>
+                  <details class="layer-menu">
+                    <summary class="layer-menu-summary">Layers</summary>
+                    <div id="layer-selector-list" class="layer-selector-list" aria-label="Canvas layer visibility"></div>
+                  </details>
+                </div>
+              </details>
             </div>
           </div>
-          <details class="canvas-zone-panel collapsible-menu" open>
-            <summary>Zones</summary>
+          <div class="canvas-zone-panel">
             <div class="canvas-zone-controls">
               <div class="field-group canvas-zone-select">
                 <label for="zone-inspector-select">Zone</label>
@@ -174,8 +180,7 @@
               </div>
               <button id="add-zone" type="button" class="secondary-btn">Add Zone</button>
             </div>
-            <div id="zones-list" class="zones-list" aria-live="polite"></div>
-          </details>
+          </div>
 
           <div id="map-canvas" class="map-canvas" role="application" aria-label="Editable sprinkler map">
             <div id="map-world" class="map-world">
@@ -202,6 +207,11 @@
           <details class="analysis-panel panel-menu">
             <summary class="panel-summary">Analysis Summary</summary>
             <div id="analysis-summary" class="analysis-grid"></div>
+          </details>
+
+          <details class="panel-menu" open>
+            <summary class="panel-summary">Zone Details</summary>
+            <div id="zones-list" class="zones-list" aria-live="polite"></div>
           </details>
 
           <details id="sprinklers-panel" class="panel-menu" open>
