@@ -386,9 +386,26 @@ function formatFeetSetting(feet) {
 
 function updatePrecipitationContourControl() {
   precipitationContourIntervalInput.value = String(precipitationContourInterval);
+  precipitationContourIntervalInput.setAttribute('aria-valuetext', `${formatNumber(precipitationContourInterval, 2)} inches per hour`);
   precipitationContourIntervalValue.textContent = `${formatNumber(precipitationContourInterval, 2)} in/hr`;
   precipitationGridCellInput.value = String(precipitationGridCellFeet);
+  precipitationGridCellInput.setAttribute('aria-valuetext', `${formatFeetSetting(precipitationGridCellFeet)} grid cells`);
   precipitationGridCellValue.textContent = formatFeetSetting(precipitationGridCellFeet);
+}
+
+function updatePrecipitationSettingsFromControl(control) {
+  if (control === precipitationContourIntervalInput) {
+    precipitationContourInterval = normalizePrecipitationContourInterval(control.value);
+    project.site.precipitationContourInterval = precipitationContourInterval;
+  } else if (control === precipitationGridCellInput) {
+    precipitationGridCellFeet = normalizePrecipitationGridCellFeet(control.value);
+    project.site.precipitationGridCellFeet = precipitationGridCellFeet;
+  } else {
+    return;
+  }
+
+  updatePrecipitationContourControl();
+  renderCanvas();
 }
 
 function nominalPrecipitationFromRow(row) {
@@ -2634,18 +2651,9 @@ zoneSprinklerSelect.addEventListener('change', () => {
   renderZoneInspectorControls();
 });
 
-precipitationContourIntervalInput.addEventListener('input', () => {
-  precipitationContourInterval = normalizePrecipitationContourInterval(precipitationContourIntervalInput.value);
-  project.site.precipitationContourInterval = precipitationContourInterval;
-  updatePrecipitationContourControl();
-  renderCanvas();
-});
-
-precipitationGridCellInput.addEventListener('input', () => {
-  precipitationGridCellFeet = normalizePrecipitationGridCellFeet(precipitationGridCellInput.value);
-  project.site.precipitationGridCellFeet = precipitationGridCellFeet;
-  updatePrecipitationContourControl();
-  renderCanvas();
+[precipitationContourIntervalInput, precipitationGridCellInput].forEach((control) => {
+  control.addEventListener('input', () => updatePrecipitationSettingsFromControl(control));
+  control.addEventListener('change', () => updatePrecipitationSettingsFromControl(control));
 });
 
 startGrassAreaBtn.addEventListener('click', startGrassAreaDrawing);
