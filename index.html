@@ -165,6 +165,18 @@
               <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
             </div>
           </div>
+          <details class="canvas-zone-panel collapsible-menu" open>
+            <summary>Zones</summary>
+            <div class="canvas-zone-controls">
+              <div class="field-group canvas-zone-select">
+                <label for="zone-inspector-select">Zone</label>
+                <select id="zone-inspector-select"></select>
+              </div>
+              <button id="add-zone" type="button" class="secondary-btn">Add Zone</button>
+            </div>
+            <div id="zones-list" class="zones-list" aria-live="polite"></div>
+          </details>
+
           <div id="map-canvas" class="map-canvas" role="application" aria-label="Editable sprinkler map">
             <div id="map-world" class="map-world">
               <!-- Any element marked with data-canvas-layer is automatically added to the Layers menu. -->
@@ -184,21 +196,12 @@
               <button id="context-delete-sprinkler" type="button" class="context-menu-item danger" role="menuitem">Delete Sprinkler</button>
             </div>
           </div>
-          <details class="analysis-panel collapsible-menu">
-            <summary>Analysis Summary</summary>
-            <div id="analysis-summary" class="analysis-grid"></div>
-          </details>
         </section>
 
         <aside class="panel inspector-panel">
-          <details class="panel-menu">
-            <summary class="panel-summary">Zones</summary>
-            <div class="field-group">
-              <label for="zone-inspector-select">Zone</label>
-              <select id="zone-inspector-select"></select>
-            </div>
-            <div id="zones-list" class="zones-list" aria-live="polite"></div>
-            <button id="add-zone" class="full-width">Add Zone</button>
+          <details class="analysis-panel panel-menu">
+            <summary class="panel-summary">Analysis Summary</summary>
+            <div id="analysis-summary" class="analysis-grid"></div>
           </details>
 
           <details id="sprinklers-panel" class="panel-menu" open>
