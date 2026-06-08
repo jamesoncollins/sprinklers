@@ -1218,11 +1218,58 @@ function sprinklerPrecipitationStats(sprinklers) {
   return { min, max, average, count: rates.length };
 }
 
-function formatPrecipitationStats(stats) {
-  if (!stats) return 'head PR min/max/average unavailable';
-  return `head PR min/max/average ${formatNumber(stats.min)}/${formatNumber(stats.max)}/${formatNumber(stats.average)} in/hr across ${stats.count} head${stats.count === 1 ? '' : 's'}`;
+
+function zoneCalculatedStats(zone) {
+  const zoneSprinklers = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id);
+  const totalFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
+  const precipitationStats = sprinklerPrecipitationStats(zoneSprinklers);
+  return {
+    sprinklers: zoneSprinklers,
+    totalFlow,
+    precipitationStats,
+  };
 }
 
+function zoneStatCard(label, value) {
+  const card = document.createElement('div');
+  card.className = 'zone-stat';
+
+  const labelEl = document.createElement('span');
+  labelEl.textContent = label;
+  const valueEl = document.createElement('strong');
+  valueEl.textContent = value;
+
+  card.append(labelEl, valueEl);
+  return card;
+}
+
+function renderZoneCalculatedInfo(container, zone) {
+  const { sprinklers, totalFlow, precipitationStats } = zoneCalculatedStats(zone);
+  container.replaceChildren(
+    zoneStatCard('Min PR', precipitationStats ? `${formatNumber(precipitationStats.min)} in/hr` : '—'),
+    zoneStatCard('Avg PR', precipitationStats ? `${formatNumber(precipitationStats.average)} in/hr` : '—'),
+    zoneStatCard('Max PR', precipitationStats ? `${formatNumber(precipitationStats.max)} in/hr` : '—'),
+    zoneStatCard('Total flow', `${formatNumber(totalFlow)} gpm`),
+  );
+
+  const note = document.createElement('div');
+  note.className = 'zone-calculated-note';
+  note.textContent = precipitationStats
+    ? `${sprinklers.length} head${sprinklers.length === 1 ? '' : 's'} included in calculated precipitation rates.`
+    : 'Add flow, radius, and arc data to this zone to calculate precipitation rates.';
+  container.appendChild(note);
+}
+
+function updateZoneCalculatedInfo(zoneId) {
+  const zone = project.zones.find((candidate) => candidate.id === zoneId);
+  const container = zonesList.querySelector(`[data-zone-calculated-info="${CSS.escape(zoneId)}"]`);
+  if (!zone || !container) return;
+  renderZoneCalculatedInfo(container, zone);
+}
+
+function updateAllZoneCalculatedInfo() {
+  project.zones.forEach((zone) => updateZoneCalculatedInfo(zone.id));
+}
 
 function canvasCenter() {
   const rect = mapCanvas.getBoundingClientRect();
@@ -1441,6 +1488,7 @@ function renderZones() {
       const pressure = Number(pressureInputEl.value);
       zone.pressurePsi = Number.isFinite(pressure) && pressure > 0 ? pressure : 45;
       renderCanvas();
+      updateZoneCalculatedInfo(zone.id);
       renderAnalysis();
     });
     pressureField.append(pressureLabel, pressureInputEl);
@@ -1458,6 +1506,7 @@ function renderZones() {
     flowInputEl.addEventListener('input', () => {
       const flow = Number(flowInputEl.value);
       zone.measuredFlowGpm = Number.isFinite(flow) && flow > 0 ? flow : null;
+      updateZoneCalculatedInfo(zone.id);
       renderAnalysis();
     });
     flowField.append(flowLabel, flowInputEl);
@@ -1475,6 +1524,7 @@ function renderZones() {
     waterShareInputEl.addEventListener('input', () => {
       const waterShare = Number(waterShareInputEl.value);
       zone.waterShare = Number.isFinite(waterShare) && waterShare > 0 ? waterShare : defaultZoneWaterShare;
+      updateZoneCalculatedInfo(zone.id);
       renderAnalysis();
     });
     waterShareField.append(waterShareLabel, waterShareInputEl);
@@ -1482,6 +1532,11 @@ function renderZones() {
     const settings = document.createElement('div');
     settings.className = 'zone-settings';
     settings.append(pressureField, flowField, waterShareField);
+
+    const calculatedInfo = document.createElement('div');
+    calculatedInfo.className = 'zone-calculated-info';
+    calculatedInfo.dataset.zoneCalculatedInfo = zone.id;
+    renderZoneCalculatedInfo(calculatedInfo, zone);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
@@ -1497,7 +1552,7 @@ function renderZones() {
       render();
     });
 
-    row.append(swatch, input, deleteBtn, settings);
+    row.append(swatch, input, deleteBtn, settings, calculatedInfo);
     zonesList.appendChild(row);
   });
 }
@@ -2101,6 +2156,7 @@ function renderInspector() {
 
 function renderAnalysis() {
   analysisSummary.replaceChildren();
+  updateAllZoneCalculatedInfo();
 
   const totalFlow = project.sprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
   const totalArea = project.sprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
@@ -2118,21 +2174,9 @@ function renderAnalysis() {
   project.zones.forEach((zone) => {
     const zoneSprinklers = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id);
     const zoneFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
-    const zoneArea = zoneSprinklers.reduce((sum, sprinkler) => sum + sprinklerAreaSqft(sprinkler), 0);
-    const zonePr = zoneArea > 0 ? (96.3 * zoneFlow) / zoneArea : 0;
-    const headPrStats = sprinklerPrecipitationStats(zoneSprinklers);
-    const waterShare = zone.waterShare ?? defaultZoneWaterShare;
-    const adjustedZonePr = zonePr * waterShare;
     const supply = Number(zone.measuredFlowGpm) || 0;
     const warning = supply > 0 && zoneFlow > supply;
     const nearLimit = supply > 0 && zoneFlow <= supply && zoneFlow >= supply * 0.9;
-    const supplyDetail = supply > 0 ? ` of ${formatNumber(supply)} gpm measured` : ' measured supply unknown';
-    addAnalysisCard(
-      zone.name,
-      `${formatNumber(adjustedZonePr)} in/hr`,
-      `${formatNumber(zonePr)} base in/hr · ${formatPrecipitationStats(headPrStats)} · ${formatNumber(zoneFlow)} gpm${supplyDetail} · ${zoneSprinklers.length} heads · ${formatNumber(zone.pressurePsi ?? 45, 1)} PSI · ${formatNumber(waterShare, 2)}× share`,
-      warning || nearLimit,
-    );
     if (warning) {
       addAnalysisCard('Supply warning', `${zone.name} overrun`, `Estimated head demand exceeds measured supply by ${formatNumber(zoneFlow - supply)} gpm. Actual pressure may drop as flow rises.`, true);
     } else if (nearLimit) {
