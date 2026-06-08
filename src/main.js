@@ -3,7 +3,10 @@ const defaultFeetPerPixel = 0.25;
 const earthRadiusFeet = 20925524.9;
 const mapViewMinScale = 0.5;
 const mapViewMaxScale = 4;
-const precipitationGridCellFeet = 0.5;
+const defaultPrecipitationGridCellFeet = 1;
+const minPrecipitationGridCellFeet = 0.5;
+const maxPrecipitationGridCellFeet = 5;
+const precipitationGridCellFeetStep = 0.5;
 const minPrecipitationGridCellPx = 1;
 const precipitationColorStops = [
   { value: 0, color: [247, 252, 245] },
@@ -56,6 +59,7 @@ const emptyProject = {
     mapView: { scale: 1, panX: 0, panY: 0, rotationDegrees: 0 },
     canvasLayers: {},
     precipitationContourInterval: defaultPrecipitationContourInterval,
+    precipitationGridCellFeet: defaultPrecipitationGridCellFeet,
     grassAreas: [],
   },
   zones: [],
@@ -77,6 +81,7 @@ let backgroundImageNaturalDataUrl = '';
 let suppressEmptyCanvasHint = false;
 let showPrecipitationMap = false;
 let precipitationContourInterval = defaultPrecipitationContourInterval;
+let precipitationGridCellFeet = defaultPrecipitationGridCellFeet;
 let grassDrawingState = null;
 
 const newBtn = document.getElementById('new-project');
@@ -155,6 +160,8 @@ const precipitationLegend = precipitationUi.legend;
 const precipitationLegendRange = precipitationUi.legendRange;
 const precipitationContourSummary = precipitationUi.contourSummary;
 const precipitationContourIntervalSelect = precipitationUi.contourIntervalSelect;
+const precipitationGridCellInput = precipitationUi.gridCellInput;
+const precipitationGridCellValue = precipitationUi.gridCellValue;
 const startGrassAreaBtn = document.getElementById('start-grass-area');
 const finishGrassAreaBtn = document.getElementById('finish-grass-area');
 const cancelGrassAreaBtn = document.getElementById('cancel-grass-area');
@@ -235,6 +242,40 @@ function createPrecipitationUi() {
     contourIntervalInput.insertAdjacentElement('afterend', contourIntervalValue);
   }
 
+  let gridCellInput = document.getElementById('precipitation-grid-cell-feet');
+  let gridCellValue = document.getElementById('precipitation-grid-cell-feet-value');
+  if (!gridCellInput) {
+    const label = document.createElement('label');
+    label.className = 'overlay-toggle precipitation-grid-control';
+    label.htmlFor = 'precipitation-grid-cell-feet';
+    label.title = 'Choose the precipitation overlay sampling grid size. Larger cells render faster with less contour detail.';
+
+    const labelText = document.createElement('span');
+    labelText.textContent = 'Grid';
+
+    gridCellInput = document.createElement('input');
+    gridCellInput.id = 'precipitation-grid-cell-feet';
+    gridCellInput.type = 'range';
+    gridCellInput.setAttribute('aria-label', 'Precipitation grid cell size in feet');
+
+    gridCellValue = document.createElement('span');
+    gridCellValue.id = 'precipitation-grid-cell-feet-value';
+    gridCellValue.className = 'precipitation-contour-value';
+
+    label.append(labelText, gridCellInput, gridCellValue);
+    sprinklerCount.parentElement.insertBefore(label, sprinklerCount);
+  }
+  gridCellInput.type = 'range';
+  gridCellInput.min = String(minPrecipitationGridCellFeet);
+  gridCellInput.max = String(maxPrecipitationGridCellFeet);
+  gridCellInput.step = String(precipitationGridCellFeetStep);
+  if (!gridCellValue) {
+    gridCellValue = document.createElement('span');
+    gridCellValue.id = 'precipitation-grid-cell-feet-value';
+    gridCellValue.className = 'precipitation-contour-value';
+    gridCellInput.insertAdjacentElement('afterend', gridCellValue);
+  }
+
   let legend = document.getElementById('precipitation-legend');
   let legendRange = document.getElementById('precipitation-legend-range');
   if (!legend || !legendRange) {
@@ -270,7 +311,7 @@ function createPrecipitationUi() {
     mapCanvas.insertBefore(tooltip, sprinklerContextMenu);
   }
 
-  return { layer, input, legend, legendRange, contourSummary, contourIntervalInput, contourIntervalValue, tooltip };
+  return { layer, input, legend, legendRange, contourSummary, contourIntervalInput, contourIntervalValue, gridCellInput, gridCellValue, tooltip };
 }
 
 function setCatalogStatus(message) {
@@ -332,9 +373,22 @@ function normalizePrecipitationContourInterval(value) {
   return Number(Math.min(maxPrecipitationContourInterval, Math.max(minPrecipitationContourInterval, snapped)).toFixed(2));
 }
 
+function normalizePrecipitationGridCellFeet(value) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return defaultPrecipitationGridCellFeet;
+  const snapped = Math.round(parsed / precipitationGridCellFeetStep) * precipitationGridCellFeetStep;
+  return Number(Math.min(maxPrecipitationGridCellFeet, Math.max(minPrecipitationGridCellFeet, snapped)).toFixed(1));
+}
+
+function formatFeetSetting(feet) {
+  return feet === 1 ? '1 ft' : `${formatNumber(feet, 1)} ft`;
+}
+
 function updatePrecipitationContourControl() {
   precipitationContourIntervalInput.value = String(precipitationContourInterval);
   precipitationContourIntervalValue.textContent = `${formatNumber(precipitationContourInterval, 2)} in/hr`;
+  precipitationGridCellInput.value = String(precipitationGridCellFeet);
+  precipitationGridCellValue.textContent = formatFeetSetting(precipitationGridCellFeet);
 }
 
 function nominalPrecipitationFromRow(row) {
@@ -1071,6 +1125,7 @@ function hydrateProject(loaded, options = {}) {
       mapView: normalizeMapViewSettings({ ...emptyProject.site.mapView, ...(loaded.site?.mapView || {}) }),
       canvasLayers: normalizeCanvasLayerSettings({ ...emptyProject.site.canvasLayers, ...(loaded.site?.canvasLayers || {}) }),
       precipitationContourInterval: normalizePrecipitationContourInterval(loaded.site?.precipitationContourInterval),
+      precipitationGridCellFeet: normalizePrecipitationGridCellFeet(loaded.site?.precipitationGridCellFeet),
       grassAreas: normalizeGrassAreas(loaded.site?.grassAreas),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone, index) => normalizeZone(zone, index)) : [],
@@ -1079,6 +1134,7 @@ function hydrateProject(loaded, options = {}) {
       : [],
   };
   precipitationContourInterval = project.site.precipitationContourInterval;
+  precipitationGridCellFeet = project.site.precipitationGridCellFeet;
   ensureDefaultZone();
   syncSprinklersFromGps();
   selectedSprinklerId = project.sprinklers[0]?.id || null;
@@ -1769,7 +1825,7 @@ function combinedPrecipitationAtPoint(point, feetPerPixel) {
 
 function precipitationGridCellPx(feetPerPixel) {
   if (!Number.isFinite(feetPerPixel) || feetPerPixel <= 0) return minPrecipitationGridCellPx;
-  return Math.max(minPrecipitationGridCellPx, precipitationGridCellFeet / feetPerPixel);
+  return Math.max(minPrecipitationGridCellPx, normalizePrecipitationGridCellFeet(precipitationGridCellFeet) / feetPerPixel);
 }
 
 function createPrecipitationCanvas(box, className) {
@@ -1925,7 +1981,7 @@ function renderPrecipitationLayer() {
       ? 'No irrigated grass cells found in the current canvas view.'
       : 'No irrigated cells found in the current canvas view; draw grass areas to limit the overlay.';
   precipitationContourSummary.textContent = maxRate > 0
-    ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr (${contourCount} line${contourCount === 1 ? '' : 's'}).`
+    ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr on a ${formatFeetSetting(precipitationGridCellFeet)} grid (${contourCount} line${contourCount === 1 ? '' : 's'}).`
     : '';
 }
 
@@ -2581,6 +2637,13 @@ zoneSprinklerSelect.addEventListener('change', () => {
 precipitationContourIntervalInput.addEventListener('input', () => {
   precipitationContourInterval = normalizePrecipitationContourInterval(precipitationContourIntervalInput.value);
   project.site.precipitationContourInterval = precipitationContourInterval;
+  updatePrecipitationContourControl();
+  renderCanvas();
+});
+
+precipitationGridCellInput.addEventListener('input', () => {
+  precipitationGridCellFeet = normalizePrecipitationGridCellFeet(precipitationGridCellInput.value);
+  project.site.precipitationGridCellFeet = precipitationGridCellFeet;
   updatePrecipitationContourControl();
   renderCanvas();
 });
