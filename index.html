@@ -172,17 +172,11 @@
               </details>
             </div>
           </div>
-          <div class="canvas-zone-panel">
-            <div class="canvas-zone-controls">
-              <div class="field-group canvas-zone-select">
-                <label for="zone-inspector-select">Zone</label>
-                <select id="zone-inspector-select"></select>
-              </div>
+          <div id="map-canvas" class="map-canvas" role="application" aria-label="Editable sprinkler map">
+            <div class="canvas-zone-controls" aria-label="Canvas zone selection">
+              <select id="zone-inspector-select" class="canvas-zone-select" aria-label="Zone"></select>
               <button id="add-zone" type="button" class="secondary-btn">Add Zone</button>
             </div>
-          </div>
-
-          <div id="map-canvas" class="map-canvas" role="application" aria-label="Editable sprinkler map">
             <div id="map-world" class="map-world">
               <!-- Any element marked with data-canvas-layer is automatically added to the Layers menu. -->
               <div id="satellite-layer" class="satellite-layer" data-canvas-layer data-layer-label="Satellite imagery" data-layer-description="Map tiles behind the plan when satellite background is selected." data-layer-default-visible="true" aria-hidden="true"></div>

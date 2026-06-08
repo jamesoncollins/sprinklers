@@ -121,6 +121,7 @@ const satelliteStatus = document.getElementById('satellite-status');
 const resetMapViewBtn = document.getElementById('reset-map-view');
 const zonesList = document.getElementById('zones-list');
 const zoneInspectorSelect = document.getElementById('zone-inspector-select');
+const canvasZoneControls = document.querySelector('.canvas-zone-controls');
 const zoneSprinklerSelect = document.getElementById('zone-sprinkler-select');
 const addZoneBtn = document.getElementById('add-zone');
 const mapCanvas = document.getElementById('map-canvas');
@@ -2687,7 +2688,7 @@ mapCanvas.addEventListener('contextmenu', (event) => {
   if (event.target.closest('.sprinkler-marker') || event.ctrlKey || panState) event.preventDefault();
 });
 mapCanvas.addEventListener('click', (event) => {
-  if (event.target.closest('.context-menu') || event.target.closest('.precipitation-legend')) return;
+  if (event.target.closest('.context-menu') || event.target.closest('.precipitation-legend') || event.target.closest('.canvas-zone-controls')) return;
   if (contextMenuSprinklerId) {
     closeSprinklerContextMenu();
     return;
@@ -2707,6 +2708,11 @@ mapCanvas.addEventListener('click', (event) => {
   if (event.target.closest('.sprinkler-marker')) return;
   addSprinklerAt(canvasPositionFromEvent(event));
 });
+if (canvasZoneControls) {
+  ['click', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'contextmenu', 'wheel'].forEach((eventName) => {
+    canvasZoneControls.addEventListener(eventName, (event) => event.stopPropagation());
+  });
+}
 sprinklerContextMenu.addEventListener('click', (event) => event.stopPropagation());
 contextZoneSelect.addEventListener('change', () => {
   const sprinkler = project.sprinklers.find((candidate) => candidate.id === contextMenuSprinklerId);
