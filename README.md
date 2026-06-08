@@ -38,6 +38,7 @@ Optional later backend (not required for MVP):
 4. **Precipitation analysis**
    - Per-sprinkler precipitation estimate using zone-pressure-adjusted flow and throw for non-pressure-regulating heads.
    - Zone aggregate precipitation estimate, including a zone water share factor for intentionally longer or shorter runtimes.
+   - Combined precipitation map contours use a project-level sampling grid setting, defaulting to 1 ft cells for faster rendering.
 5. **Persistence**
    - Save project JSON and import later.
 
@@ -48,7 +49,7 @@ The Planning Canvas can use either the offline yard sketch grid or live imagery 
 
 Use **Ctrl+drag** on the canvas to pan the planning view, use the mouse **scroll wheel** over the canvas to zoom around the pointer, and click **Reset Pan / Zoom** to return to the original centered view. These settings are saved in exported project JSON under `site.satellite` and `site.mapView`, so imported projects restore the same imagery source and map view.
 
-For uploaded images or blank sketches, use **Calibrate by Two Points** in the Distance scale controls: click two known points on the canvas and enter their real-world separation in feet. Sprinkler throw overlays then use that manual feet-per-pixel scale, while satellite imagery automatically derives its scale from the imagery latitude and zoom. Manual calibration data is saved in exported project JSON under `site.distanceScale`.
+For uploaded images or blank sketches, use **Calibrate by Two Points** in the Distance scale controls: click two known points on the canvas and enter their real-world separation in feet. Sprinkler throw overlays then use that manual feet-per-pixel scale, while satellite imagery automatically derives its scale from the imagery latitude and zoom. Manual calibration data is saved in exported project JSON under `site.distanceScale`. Combined precipitation contour interval and sampling grid settings are saved under `site.precipitationContourInterval` and `site.precipitationGridCellFeet`.
 
 ## Default CSV catalogs
 

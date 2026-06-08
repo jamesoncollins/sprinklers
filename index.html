@@ -148,6 +148,11 @@
                 <input id="precipitation-contour-interval" type="range" min="0.05" max="1" step="0.05" value="0.25" aria-label="Precipitation contour interval" />
                 <span id="precipitation-contour-interval-value" class="precipitation-contour-value">0.25 in/hr</span>
               </label>
+              <label class="overlay-toggle precipitation-grid-control" for="precipitation-grid-cell-feet" title="Choose the precipitation overlay sampling grid size. Larger cells render faster with less contour detail.">
+                <span>Grid</span>
+                <input id="precipitation-grid-cell-feet" type="range" min="0.5" max="5" step="0.5" value="1" aria-label="Precipitation grid cell size in feet" />
+                <span id="precipitation-grid-cell-feet-value" class="precipitation-contour-value">1 ft</span>
+              </label>
               <button id="start-grass-area" type="button" class="secondary-btn" title="Mark a closed grass area that should receive precipitation calculations.">Draw grass area</button>
               <button id="finish-grass-area" type="button" class="secondary-btn hidden" disabled>Finish grass</button>
               <button id="cancel-grass-area" type="button" class="secondary-btn hidden">Cancel grass</button>
