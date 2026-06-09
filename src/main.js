@@ -23,6 +23,8 @@ const maxPrecipitationContourInterval = 1;
 const precipitationContourIntervalStep = 0.05;
 const defaultPrecipitationContourInterval = 0.25;
 const defaultZoneWaterShare = 1;
+const arcPatternType = 'arc';
+const rectanglePatternType = 'rectangle';
 
 const imagerySources = {
   'esri-world': {
@@ -426,6 +428,26 @@ function interpolateNullableNumber(lowValue, highValue, ratio) {
   return lowValue + (highValue - lowValue) * ratio;
 }
 
+function normalizePatternType(value) {
+  const patternType = String(value || '').trim().toLowerCase();
+  if (patternType === rectanglePatternType) return rectanglePatternType;
+  return arcPatternType;
+}
+
+function isRectanglePattern(sprinklerOrModel) {
+  return normalizePatternType(sprinklerOrModel?.patternType) === rectanglePatternType;
+}
+
+function normalizeRectangleHeadOffset(value, fallback = 0.5) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(1, Math.max(0, parsed));
+}
+
+function patternTypeLabel(patternType) {
+  return isRectanglePattern({ patternType }) ? 'rectangular throw' : 'arc/sector';
+}
+
 function interpolateNominalPrecipitation(lowPoint, highPoint, ratio) {
   const low = lowPoint.nominalPrecipitationInHr || {};
   const high = highPoint.nominalPrecipitationInHr || {};
@@ -463,10 +485,28 @@ function buildCatalog(rows) {
     const flowGpm = Number(row.flow_gpm);
     const radiusFt = Number(row.radius_ft);
     const arcDegrees = Number(row.arc_degrees || 360);
+    const patternType = normalizePatternType(row.pattern_type);
+    const widthFt = parseOptionalNumber(row.width_ft);
+    const headOffsetX = parseOptionalNumber(row.head_offset_x);
+    const headOffsetY = parseOptionalNumber(row.head_offset_y);
 
     if ([pressurePsi, flowGpm, radiusFt, arcDegrees].some((v) => Number.isNaN(v))) {
       warnings.push(`Row ${line}: pressure_psi, flow_gpm, radius_ft, and arc_degrees must be numeric`);
       return;
+    }
+
+    if (patternType === rectanglePatternType && (!Number.isFinite(widthFt) || widthFt <= 0)) {
+      warnings.push(`Row ${line}: rectangle pattern rows must include a positive width_ft`);
+      return;
+    }
+
+    if (patternType === rectanglePatternType) {
+      const resolvedHeadOffsetX = headOffsetX;
+      const resolvedHeadOffsetY = headOffsetY;
+      if (![resolvedHeadOffsetX, resolvedHeadOffsetY].every((value) => Number.isFinite(value) && value >= 0 && value <= 1)) {
+        warnings.push(`Row ${line}: rectangle pattern rows must include head_offset_x and head_offset_y values from 0 to 1`);
+        return;
+      }
     }
 
     const manufacturer = row.manufacturer;
@@ -481,6 +521,9 @@ function buildCatalog(rows) {
         headModel,
         nozzleModel,
         defaultArcDegrees: arcDegrees,
+        patternType,
+        headOffsetX: patternType === rectanglePatternType ? normalizeRectangleHeadOffset(headOffsetX, 0.5) : 0.5,
+        headOffsetY: patternType === rectanglePatternType ? normalizeRectangleHeadOffset(headOffsetY, 0.5) : 0.5,
         pressureRegulating,
         points: [],
       });
@@ -488,6 +531,7 @@ function buildCatalog(rows) {
 
     const nominalPrecipitationInHr = nominalPrecipitationFromRow(row);
     const point = { pressurePsi, flowGpm, radiusFt };
+    if (widthFt !== null) point.widthFt = widthFt;
     if (hasNominalPrecipitation(nominalPrecipitationInHr)) {
       point.nominalPrecipitationInHr = nominalPrecipitationInHr;
     }
@@ -528,6 +572,7 @@ function lookupPerformance(model, pressurePsi) {
     return {
       flowGpm: exact.flowGpm,
       radiusFt: exact.radiusFt,
+      widthFt: exact.widthFt ?? null,
       nominalPrecipitationInHr: exact.nominalPrecipitationInHr || null,
       warning: null,
       mode: 'exact',
@@ -538,6 +583,7 @@ function lookupPerformance(model, pressurePsi) {
     return {
       flowGpm: points[0].flowGpm,
       radiusFt: points[0].radiusFt,
+      widthFt: points[0].widthFt ?? null,
       nominalPrecipitationInHr: points[0].nominalPrecipitationInHr || null,
       warning: `Pressure ${pressurePsi} PSI is below supported range; clamped to ${points[0].pressurePsi} PSI.`,
       mode: 'clamp-low',
@@ -549,6 +595,7 @@ function lookupPerformance(model, pressurePsi) {
     return {
       flowGpm: maxPoint.flowGpm,
       radiusFt: maxPoint.radiusFt,
+      widthFt: maxPoint.widthFt ?? null,
       nominalPrecipitationInHr: maxPoint.nominalPrecipitationInHr || null,
       warning: `Pressure ${pressurePsi} PSI is above supported range; clamped to ${maxPoint.pressurePsi} PSI.`,
       mode: 'clamp-high',
@@ -563,6 +610,7 @@ function lookupPerformance(model, pressurePsi) {
       return {
         flowGpm: low.flowGpm + (high.flowGpm - low.flowGpm) * ratio,
         radiusFt: low.radiusFt + (high.radiusFt - low.radiusFt) * ratio,
+        widthFt: interpolateNullableNumber(low.widthFt ?? null, high.widthFt ?? null, ratio),
         nominalPrecipitationInHr: interpolateNominalPrecipitation(low, high, ratio),
         warning: null,
         mode: 'interpolated',
@@ -1117,10 +1165,15 @@ function normalizeSprinklerPosition(sprinkler, index) {
     pressureRegulating: Boolean(sprinkler.pressureRegulating),
     baseFlowGpm: optionalNumber(sprinkler.baseFlowGpm ?? sprinkler.flowGpm) || 0,
     baseRadiusFt: optionalNumber(sprinkler.baseRadiusFt ?? sprinkler.radiusFt) || 0,
+    baseWidthFt: optionalNumber(sprinkler.baseWidthFt ?? sprinkler.widthFt) || 0,
+    patternType: normalizePatternType(sprinkler.patternType),
+    headOffsetX: normalizeRectangleHeadOffset(sprinkler.headOffsetX, 0.5),
+    headOffsetY: normalizeRectangleHeadOffset(sprinkler.headOffsetY, 0.5),
   };
   normalized.pressurePsi = normalized.ratedPressurePsi;
   normalized.flowGpm = normalized.baseFlowGpm;
   normalized.radiusFt = normalized.baseRadiusFt;
+  normalized.widthFt = normalized.baseWidthFt;
   if (Number.isFinite(normalized.xPercent) && Number.isFinite(normalized.yPercent)) return normalized;
 
   return {
@@ -1186,6 +1239,10 @@ function effectiveRadiusFt(sprinkler) {
   return (Number(sprinkler.baseRadiusFt ?? sprinkler.radiusFt) || 0) * pressureScaleFactor(sprinkler);
 }
 
+function effectiveWidthFt(sprinkler) {
+  return (Number(sprinkler.baseWidthFt ?? sprinkler.widthFt) || 0) * pressureScaleFactor(sprinkler);
+}
+
 function clampArcDegrees(value) {
   return Math.min(360, Math.max(1, Number(value) || 360));
 }
@@ -1196,6 +1253,10 @@ function normalizeDegrees(value) {
 
 function sprinklerAreaSqft(sprinkler) {
   const radius = effectiveRadiusFt(sprinkler);
+  if (isRectanglePattern(sprinkler)) {
+    const width = effectiveWidthFt(sprinkler);
+    return radius > 0 && width > 0 ? radius * width : 0;
+  }
   const arc = clampArcDegrees(sprinkler.arcDegrees);
   return (arc / 360) * Math.PI * radius * radius;
 }
@@ -1870,7 +1931,28 @@ function colorForPrecipitationRate(rate, maxRate) {
   return `rgba(${r}, ${g}, ${b}, 0.68)`;
 }
 
+function pointInRectanglePattern(sprinkler, point, feetPerPixel) {
+  const lengthFt = effectiveRadiusFt(sprinkler);
+  const widthFt = effectiveWidthFt(sprinkler);
+  if (lengthFt <= 0 || widthFt <= 0) return false;
+
+  const center = localPointFromPercent(sprinkler);
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  const angle = (normalizeDegrees(sprinkler.orientationDegrees) * Math.PI) / 180;
+  const forwardFt = (dx * Math.sin(angle) + dy * -Math.cos(angle)) * feetPerPixel;
+  const rightFt = (dx * Math.cos(angle) + dy * Math.sin(angle)) * feetPerPixel;
+  const headOffsetX = normalizeRectangleHeadOffset(sprinkler.headOffsetX, 0.5);
+  const headOffsetY = normalizeRectangleHeadOffset(sprinkler.headOffsetY, 0.5);
+  const rectangleX = headOffsetX * lengthFt + rightFt;
+  const rectangleY = headOffsetY * widthFt + forwardFt;
+
+  return rectangleX >= 0 && rectangleX <= lengthFt && rectangleY >= 0 && rectangleY <= widthFt;
+}
+
 function sprinklerCoversLocalPoint(sprinkler, point, feetPerPixel) {
+  if (isRectanglePattern(sprinkler)) return pointInRectanglePattern(sprinkler, point, feetPerPixel);
+
   const radiusFt = effectiveRadiusFt(sprinkler);
   if (radiusFt <= 0) return false;
 
@@ -1994,7 +2076,7 @@ function renderPrecipitationLayer() {
 
   const box = activeCoordinateBox();
   const feetPerPixel = currentFeetPerPixel();
-  const completeSprinklers = project.sprinklers.filter((sprinkler) => effectiveFlowGpm(sprinkler) > 0 && effectiveRadiusFt(sprinkler) > 0);
+  const completeSprinklers = project.sprinklers.filter((sprinkler) => effectiveFlowGpm(sprinkler) > 0 && effectiveRadiusFt(sprinkler) > 0 && (!isRectanglePattern(sprinkler) || effectiveWidthFt(sprinkler) > 0));
   if (!box.width || !box.height || !completeSprinklers.length) {
     precipitationLegendRange.textContent = 'Add sprinkler flow and radius data to calculate combined PR.';
     precipitationContourSummary.textContent = '';
@@ -2058,6 +2140,49 @@ function renderPrecipitationLayer() {
     : '';
 }
 
+function rectangleCoverageClass(patternType) {
+  return `coverage ${normalizePatternType(patternType)}`;
+}
+
+function renderRectangleCoverage(sprinkler, color) {
+  const lengthPx = Math.max(10, effectiveRadiusFt(sprinkler) / currentFeetPerPixel());
+  const widthPx = Math.max(4, effectiveWidthFt(sprinkler) / currentFeetPerPixel());
+  const headOffsetX = normalizeRectangleHeadOffset(sprinkler.headOffsetX, 0.5);
+  const headOffsetY = normalizeRectangleHeadOffset(sprinkler.headOffsetY, 0.5);
+  const coverage = document.createElement('div');
+  coverage.className = rectangleCoverageClass(sprinkler.patternType);
+  setPositionFromPercent(coverage, sprinkler);
+  coverage.style.width = `${lengthPx}px`;
+  coverage.style.height = `${widthPx}px`;
+  coverage.style.color = color;
+  // Rectangle geometry treats positive local Y as the sprinkler's forward throw direction.
+  // In screen space, the unrotated forward direction is upward, so invert the stored
+  // head Y offset when anchoring the DOM rectangle to keep rendering and precipitation
+  // sampling aligned with the same coordinate system.
+  const headAnchorY = 1 - headOffsetY;
+  coverage.style.transform = `translate(${-headOffsetX * 100}%, ${-headAnchorY * 100}%) rotate(${normalizeDegrees(sprinkler.orientationDegrees)}deg)`;
+  coverage.style.transformOrigin = `${headOffsetX * 100}% ${headAnchorY * 100}%`;
+  coverageLayer.appendChild(coverage);
+  return coverage;
+}
+
+function renderArcCoverage(sprinkler, color) {
+  const radiusPx = Math.max(10, effectiveRadiusFt(sprinkler) / currentFeetPerPixel());
+  const arc = clampArcDegrees(sprinkler.arcDegrees);
+  const leftHandLock = normalizeDegrees(sprinkler.orientationDegrees);
+  const coverage = document.createElement('div');
+  coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
+  setPositionFromPercent(coverage, sprinkler);
+  coverage.style.width = `${radiusPx * 2}px`;
+  coverage.style.height = `${radiusPx * 2}px`;
+  coverage.style.color = color;
+  // Keep the left-hand lock fixed; arc changes should only sweep the right edge.
+  coverage.style.setProperty('--arc-angle', `${arc}deg`);
+  coverage.style.setProperty('--start-angle', `${leftHandLock}deg`);
+  coverageLayer.appendChild(coverage);
+  return coverage;
+}
+
 function renderEmptyCanvasHint() {
   const title = document.createElement('strong');
   title.textContent = 'Click anywhere to place your first sprinkler.';
@@ -2093,20 +2218,9 @@ function renderCanvas() {
 
   visibleSprinklers.forEach((sprinkler) => {
     const color = getZoneColor(sprinkler.zoneId);
-    const radiusPx = Math.max(10, effectiveRadiusFt(sprinkler) / currentFeetPerPixel());
-    const arc = clampArcDegrees(sprinkler.arcDegrees);
-    const leftHandLock = normalizeDegrees(sprinkler.orientationDegrees);
-
-    const coverage = document.createElement('div');
-    coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
-    setPositionFromPercent(coverage, sprinkler);
-    coverage.style.width = `${radiusPx * 2}px`;
-    coverage.style.height = `${radiusPx * 2}px`;
-    coverage.style.color = color;
-    // Keep the left-hand lock fixed; arc changes should only sweep the right edge.
-    coverage.style.setProperty('--arc-angle', `${arc}deg`);
-    coverage.style.setProperty('--start-angle', `${leftHandLock}deg`);
-    coverageLayer.appendChild(coverage);
+    const coverage = isRectanglePattern(sprinkler)
+      ? renderRectangleCoverage(sprinkler, color)
+      : renderArcCoverage(sprinkler, color);
 
     const marker = document.createElement('button');
     marker.type = 'button';
@@ -2114,7 +2228,7 @@ function renderCanvas() {
     setPositionFromPercent(marker, sprinkler);
     marker.style.backgroundColor = color;
     marker.style.setProperty('--marker-scale', `${1 / normalizeMapViewSettings(project.site.mapView).scale}`);
-    marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr, ${formatNumber(effectiveFlowGpm(sprinkler))} gpm effective)`;
+    marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr, ${formatNumber(effectiveFlowGpm(sprinkler))} gpm effective${isRectanglePattern(sprinkler) ? `, ${formatNumber(effectiveWidthFt(sprinkler), 1)} x ${formatNumber(effectiveRadiusFt(sprinkler), 1)} ft rectangle` : ''})`;
     marker.setAttribute('aria-label', `Select sprinkler ${sprinkler.headModel || sprinkler.id}`);
     marker.addEventListener('pointerdown', (event) => {
       if (event.ctrlKey || event.button !== 0) return;
@@ -2160,6 +2274,9 @@ function renderInspector() {
   selectedArc.value = sprinkler.arcDegrees ?? 360;
   selectedOrientation.value = sprinkler.orientationDegrees ?? 0;
   selectedPressureRegulating.checked = Boolean(sprinkler.pressureRegulating);
+  selectedArc.disabled = isRectanglePattern(sprinkler);
+  selectedArc.title = isRectanglePattern(sprinkler) ? 'Rectangle-pattern nozzles use width x length geometry instead of arc degrees.' : '';
+  selectedRadius.labels?.[0]?.replaceChildren(document.createTextNode(isRectanglePattern(sprinkler) ? 'Length (ft)' : 'Radius (ft)'));
 }
 
 function renderAnalysis() {
@@ -2173,7 +2290,7 @@ function renderAnalysis() {
     return sum + effectiveFlowGpm(sprinkler) * (zone?.waterShare ?? defaultZoneWaterShare);
   }, 0);
   const overallPr = totalArea > 0 ? (96.3 * weightedTotalFlow) / totalArea : 0;
-  const missingData = project.sprinklers.filter((sprinkler) => !effectiveFlowGpm(sprinkler) || !effectiveRadiusFt(sprinkler)).length;
+  const missingData = project.sprinklers.filter((sprinkler) => !effectiveFlowGpm(sprinkler) || !effectiveRadiusFt(sprinkler) || (isRectanglePattern(sprinkler) && !effectiveWidthFt(sprinkler))).length;
 
   addAnalysisCard('Total flow', `${formatNumber(totalFlow)} gpm`, `${project.sprinklers.length} sprinklers`);
   addAnalysisCard('Throw area', `${formatNumber(totalArea, 0)} sq ft`, 'Sector-adjusted estimate');
@@ -2193,7 +2310,7 @@ function renderAnalysis() {
   });
 
   if (missingData > 0) {
-    addAnalysisCard('Warning', `${missingData} incomplete`, 'Add flow and radius data before trusting PR.', true);
+    addAnalysisCard('Warning', `${missingData} incomplete`, 'Add flow and throw geometry data before trusting PR.', true);
   }
 }
 
@@ -2344,6 +2461,11 @@ function addSprinklerAt(position) {
     pressurePsi,
     ratedPressurePsi: pressurePsi,
     pressureRegulating: Boolean(model?.pressureRegulating),
+    patternType: normalizePatternType(model?.patternType),
+    headOffsetX: normalizeRectangleHeadOffset(model?.headOffsetX, 0.5),
+    headOffsetY: normalizeRectangleHeadOffset(model?.headOffsetY, 0.5),
+    widthFt: performance?.widthFt ?? 0,
+    baseWidthFt: performance?.widthFt ?? 0,
     arcDegrees: model?.defaultArcDegrees || 360,
     orientationDegrees: 0,
     radiusFt: performance?.radiusFt ?? 12,
@@ -2428,6 +2550,8 @@ function updateSelectedSprinklerFromForm() {
   sprinkler.baseRadiusFt = Number(selectedRadius.value) || 0;
   sprinkler.radiusFt = sprinkler.baseRadiusFt;
   sprinkler.pressureRegulating = selectedPressureRegulating.checked;
+  if (!isRectanglePattern(sprinkler)) sprinkler.baseWidthFt = 0;
+  sprinkler.widthFt = sprinkler.baseWidthFt || 0;
   sprinkler.arcDegrees = clampArcDegrees(selectedArc.value);
   sprinkler.orientationDegrees = normalizeDegrees(selectedOrientation.value);
   renderCanvas();
@@ -2459,7 +2583,10 @@ function updateLookupResult() {
   const warningText = result.warning ? ` Warning: ${result.warning}` : '';
   const regulationText = model.pressureRegulating ? 'pressure regulating' : 'not pressure regulating; zone pressure will scale placed heads';
   const nominalPrecipitationText = formatNominalPrecipitation(result.nominalPrecipitationInHr);
-  lookupResult.textContent = `Catalog pressure: ${formatNumber(pressurePsi, 1)} PSI | Rated flow: ${result.flowGpm.toFixed(2)} gpm | Rated radius: ${result.radiusFt.toFixed(2)} ft (${result.mode}, ${regulationText}).${nominalPrecipitationText}${warningText}`;
+  const patternText = isRectanglePattern(model)
+    ? `Rectangular throw: ${formatNumber(result.widthFt, 1)} x ${formatNumber(result.radiusFt, 1)} ft; head offset ${formatNumber(model.headOffsetX * 100, 0)}%, ${formatNumber(model.headOffsetY * 100, 0)}%`
+    : `Rated radius: ${result.radiusFt.toFixed(2)} ft`;
+  lookupResult.textContent = `Catalog pressure: ${formatNumber(pressurePsi, 1)} PSI | Rated flow: ${result.flowGpm.toFixed(2)} gpm | ${patternText} (${result.mode}, ${regulationText}).${nominalPrecipitationText}${warningText}`;
 }
 
 manufacturerSelect.addEventListener('change', () => {
@@ -2863,6 +2990,11 @@ applyCatalogToSelectedBtn.addEventListener('click', () => {
     pressurePsi,
     ratedPressurePsi: pressurePsi,
     pressureRegulating: Boolean(model.pressureRegulating),
+    patternType: normalizePatternType(model.patternType),
+    headOffsetX: normalizeRectangleHeadOffset(model.headOffsetX, 0.5),
+    headOffsetY: normalizeRectangleHeadOffset(model.headOffsetY, 0.5),
+    widthFt: result.widthFt ?? 0,
+    baseWidthFt: result.widthFt ?? 0,
     flowGpm: result.flowGpm,
     radiusFt: result.radiusFt,
     baseFlowGpm: result.flowGpm,
