@@ -53,7 +53,7 @@ For uploaded images or blank sketches, use **Calibrate by Two Points** in the Di
 
 ## Default CSV catalogs
 
-The repository keeps one growing built-in CSV catalog at `data/default-catalogs/default_sprinkler_catalog.csv`. It currently contains Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`), including the blue, red, and grey low-angle nozzle rows that used to live in separate starter files.
+The repository keeps one growing built-in CSV catalog at `data/default-catalogs/default_sprinkler_catalog.csv`. It currently contains Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`) and Rain Bird R-VAN adjustable rotary nozzle performance data from Rain Bird's R-VAN Tech Spec PDF (`https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf`).
 
 The web app auto-loads this built-in catalog on startup. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, including `pressure_regulating` (`true`/`false`) so pressure-regulated models hold rated flow/throw while non-regulating models scale by zone pressure. Optional manufacturer precipitation columns such as `precip_in_hr`, `precip_square_in_hr`, and `precip_triangle_in_hr` are preserved as nominal reference metadata for lookup display, but analysis uses calculated precipitation from effective flow and actual coverage area.
 

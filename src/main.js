@@ -2058,6 +2058,14 @@ function renderPrecipitationLayer() {
     : '';
 }
 
+function renderEmptyCanvasHint() {
+  const title = document.createElement('strong');
+  title.textContent = 'Click anywhere to place your first sprinkler.';
+  const details = document.createElement('span');
+  details.textContent = 'Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.';
+  emptyCanvasHint.replaceChildren(title, details);
+}
+
 function renderCanvas() {
   applyMapViewTransform();
   grassLayer.replaceChildren();
@@ -2079,7 +2087,7 @@ function renderCanvas() {
       : 'Click more points or choose Finish grass to close this grass area.';
     emptyCanvasHint.classList.remove('hidden');
   } else {
-    emptyCanvasHint.textContent = 'Click anywhere to place your first sprinkler.';
+    renderEmptyCanvasHint();
   }
   sprinklerCount.textContent = `${visibleSprinklers.length} sprinkler${visibleSprinklers.length === 1 ? '' : 's'}${zone ? ` in ${zone.name}` : ''}`;
 

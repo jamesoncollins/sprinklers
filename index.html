@@ -131,18 +131,15 @@
             <p class="status-text">Non-pressure-regulating heads are scaled by each zone's actual pressure. Pressure-regulating heads keep their rated flow and throw.</p>
           </details>
 
-          <details class="analysis-panel panel-menu">
-            <summary class="panel-summary">Analysis Summary</summary>
+          <details class="panel-menu" open>
+            <summary class="panel-summary">Analysis</summary>
             <div id="analysis-summary" class="analysis-grid"></div>
           </details>
         </aside>
 
         <section class="canvas-panel" aria-label="Map canvas">
           <div class="canvas-toolbar">
-            <div>
-              <h2>Planning Canvas</h2>
-              <p>Click to add sprinklers. Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.</p>
-            </div>
+            <h2>Planning Canvas</h2>
             <div class="canvas-toolbar-actions">
               <div class="canvas-zone-controls" aria-label="Canvas zone selection">
                 <select id="zone-inspector-select" class="canvas-zone-select" aria-label="Zone"></select>
@@ -193,7 +190,10 @@
               <div id="calibration-layer" class="calibration-layer" data-canvas-layer data-layer-label="Measurements" data-layer-description="Distance calibration points, lines, and labels." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="sprinkler-layer" class="sprinkler-layer" data-canvas-layer data-layer-label="Sprinklers" data-layer-description="Clickable sprinkler head markers." data-layer-default-visible="true"></div>
             </div>
-            <div id="empty-canvas-hint" class="empty-canvas-hint">Click anywhere to place your first sprinkler.</div>
+            <div id="empty-canvas-hint" class="empty-canvas-hint">
+              <strong>Click anywhere to place your first sprinkler.</strong>
+              <span>Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.</span>
+            </div>
             <div id="sprinkler-context-menu" class="context-menu hidden" role="menu" aria-label="Sprinkler actions">
               <label class="context-menu-label" for="context-zone-select">Zone</label>
               <select id="context-zone-select" class="context-menu-select" aria-label="Change sprinkler zone"></select>
