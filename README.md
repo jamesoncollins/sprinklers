@@ -34,7 +34,7 @@ Optional later backend (not required for MVP):
    - Add/edit sprinkler points.
    - Assign head model, nozzle model, rated pressure, pressure-regulation behavior, arc, and zone-level operating pressure / measured supply flow / water share factor.
 3. **Coverage visualization**
-   - Draw throw arcs/circles from nozzle radius and arc angle. The orientation control sets the left-hand lock angle, so editing arc size extends or retracts only the right-hand side of the spray pattern.
+   - Draw throw arcs/circles from nozzle radius and arc angle, plus rectangular nozzle throws from catalog width x length data and head-location offsets. The orientation control sets the left-hand lock angle for arcs and the forward rectangle direction for rectangular throws.
 4. **Precipitation analysis**
    - Per-sprinkler precipitation estimate using zone-pressure-adjusted flow and throw for non-pressure-regulating heads.
    - Zone aggregate precipitation estimate, including a zone water share factor for intentionally longer or shorter runtimes.
@@ -53,9 +53,9 @@ For uploaded images or blank sketches, use **Calibrate by Two Points** in the Di
 
 ## Default CSV catalogs
 
-The repository keeps one growing built-in CSV catalog at `data/default-catalogs/default_sprinkler_catalog.csv`. It currently contains Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`), Rain Bird R-VAN arc-pattern adjustable rotary nozzle performance data from Rain Bird's R-VAN Tech Spec PDF (`https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf`), and Rain Bird 5004-PLPC-R rotor entries for the 5000-MPR-25/30/35 matched precipitation nozzle families from the Sprinkler Warehouse performance chart (`https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/`). Strip nozzles are intentionally omitted until the planner supports non-arc strip geometry.
+The repository keeps one growing built-in CSV catalog at `data/default-catalogs/default_sprinkler_catalog.csv`. It currently contains Hunter PGP-ADJ rotor nozzle performance data from Hunter Industries' PGP-ADJ PDF (`https://www.hunterirrigation.com/print/pdf/node/861`), Rain Bird R-VAN arc-pattern adjustable rotary nozzle performance data from Rain Bird's R-VAN Tech Spec PDF (`https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf`), Rain Bird 5004-PLPC-R rotor entries for the 5000-MPR-25/30/35 matched precipitation nozzle families from the Sprinkler Warehouse performance chart (`https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/`), and Rain Bird 1800 MPR rectangular strip nozzles from Rain Bird's MPR spray nozzle performance charts (`https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf`).
 
-The web app auto-loads this built-in catalog on startup. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, including `pressure_regulating` (`true`/`false`) so pressure-regulated models hold rated flow/throw while non-regulating models scale by zone pressure. Optional manufacturer precipitation columns such as `precip_in_hr`, `precip_square_in_hr`, and `precip_triangle_in_hr` are preserved as nominal reference metadata for lookup display, but analysis uses calculated precipitation from effective flow and actual coverage area.
+The web app auto-loads this built-in catalog on startup. Users can still add or replace catalog data by importing their own CSV files. CSV columns follow the v1 import schema, including `pressure_regulating` (`true`/`false`) so pressure-regulated models hold rated flow/throw while non-regulating models scale by zone pressure. Optional `pattern_type=rectangle`, `width_ft`, `head_offset_x`, and `head_offset_y` columns support rectangular strip nozzles; for rectangle rows, `radius_ft` stores the rectangle length, `width_ft` stores the rectangle width, and offsets locate the sprinkler head inside the rectangle as 0-1 fractions from the back-left corner. Optional manufacturer precipitation columns such as `precip_in_hr`, `precip_square_in_hr`, and `precip_triangle_in_hr` are preserved as nominal reference metadata for lookup display, but analysis uses calculated precipitation from effective flow and actual coverage area.
 
 ## Data Strategy
 
@@ -92,7 +92,8 @@ Per-head contribution can be estimated by sector-adjusted area:
 - `pressure_scale = 1` for pressure-regulating heads, otherwise `sqrt(zone_pressure_psi / rated_pressure_psi)`
 - `effective_flow_gpm = rated_flow_gpm * pressure_scale`
 - `effective_radius_ft = rated_radius_ft * pressure_scale`
-- `throw_area_sqft = (arc_degrees / 360) * π * effective_radius_ft^2`
+- Arc throw: `throw_area_sqft = (arc_degrees / 360) * π * effective_radius_ft^2`
+- Rectangle throw: `throw_area_sqft = effective_length_ft * effective_width_ft`
 - `head_pr_in_hr = (96.3 * effective_flow_gpm) / throw_area_sqft`
 - `zone_adjusted_pr_in_hr = zone_base_pr_in_hr * zone_water_share_factor`
 - `overall_pr_in_hr = (96.3 * sum(zone_effective_flow_gpm * zone_water_share_factor)) / total_irrigated_area_sqft`
