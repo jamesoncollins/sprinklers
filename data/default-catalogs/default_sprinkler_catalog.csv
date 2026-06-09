@@ -1,267 +1,287 @@
-manufacturer,head_model,nozzle_model,pressure_psi,flow_gpm,radius_ft,pressure_regulating,arc_degrees,precip_square_in_hr,precip_triangle_in_hr,notes
-Hunter,PGP-ADJ,Blue-1.5,25,1.2,29,false,180,0.27,0.32,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-1.5,35,1.4,31,false,180,0.28,0.32,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-1.5,45,1.5,31,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-1.5,55,1.8,32,false,180,0.34,0.39,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-1.5,65,1.9,32,false,180,0.36,0.41,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.0,25,1.4,33,false,180,0.25,0.29,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.0,35,1.7,33,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.0,45,2.0,34,false,180,0.33,0.38,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.0,55,2.1,34,false,180,0.35,0.4,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.0,65,2.3,34,false,180,0.38,0.44,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.5,25,1.7,33,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.5,35,2.1,35,false,180,0.33,0.38,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.5,45,2.5,35,false,180,0.39,0.45,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.5,55,2.6,35,false,180,0.41,0.47,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-2.5,65,2.9,35,false,180,0.46,0.53,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-3.0,25,2.2,35,false,180,0.35,0.4,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-3.0,35,2.7,36,false,180,0.4,0.46,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-3.0,45,3.0,38,false,180,0.4,0.46,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-3.0,55,3.4,39,false,180,0.43,0.5,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-3.0,65,3.7,39,false,180,0.47,0.54,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-4.0,25,3.0,37,false,180,0.42,0.49,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-4.0,35,3.5,39,false,180,0.44,0.51,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-4.0,45,4.0,40,false,180,0.48,0.56,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-4.0,55,4.5,41,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-4.0,65,4.8,41,false,180,0.55,0.63,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-5.0,25,3.7,37,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-5.0,35,4.5,39,false,180,0.57,0.66,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-5.0,45,5.0,42,false,180,0.55,0.63,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-5.0,55,5.7,42,false,180,0.62,0.72,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-5.0,65,6.2,42,false,180,0.68,0.78,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-6.0,25,4.3,38,false,180,0.57,0.66,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-6.0,35,5.6,40,false,180,0.67,0.78,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-6.0,45,6.0,43,false,180,0.62,0.72,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-6.0,55,6.7,44,false,180,0.67,0.77,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-6.0,65,7.3,44,false,180,0.73,0.84,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-8.0,25,6.0,37,false,180,0.84,0.97,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-8.0,35,7.0,41,false,180,0.8,0.93,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-8.0,45,8.0,44,false,180,0.8,0.92,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-8.0,55,9.0,46,false,180,0.82,0.95,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Blue-8.0,65,9.8,46,false,180,0.89,1.03,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-1,30,0.5,28,false,180,0.12,0.14,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-1,40,0.6,29,false,180,0.14,0.16,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-1,50,0.7,29,false,180,0.16,0.19,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-1,60,0.8,30,false,180,0.17,0.2,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-2,30,0.7,29,false,180,0.16,0.19,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-2,40,0.8,30,false,180,0.17,0.2,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-2,50,0.9,30,false,180,0.19,0.22,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-2,60,1.0,31,false,180,0.2,0.23,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-3,30,0.9,30,false,180,0.19,0.22,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-3,40,1.0,31,false,180,0.2,0.23,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-3,50,1.2,31,false,180,0.24,0.28,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-3,60,1.3,32,false,180,0.24,0.28,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-4,30,1.2,32,false,180,0.23,0.26,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-4,40,1.4,33,false,180,0.25,0.29,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-4,50,1.6,34,false,180,0.27,0.31,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-4,60,1.8,34,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-5,30,1.6,32,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-5,40,1.8,36,false,180,0.27,0.31,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-5,50,2.0,38,false,180,0.27,0.31,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-5,60,2.2,38,false,180,0.29,0.34,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-6,30,2.0,34,false,180,0.33,0.38,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-6,40,2.4,36,false,180,0.36,0.41,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-6,50,2.7,38,false,180,0.36,0.42,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-6,60,2.9,38,false,180,0.39,0.45,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-7,30,2.6,34,false,180,0.43,0.5,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-7,40,3.0,38,false,180,0.4,0.46,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-7,50,3.4,40,false,180,0.41,0.47,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-7,60,3.7,40,false,180,0.45,0.51,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-8,30,3.2,37,false,180,0.45,0.52,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-8,40,3.7,39,false,180,0.47,0.54,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-8,50,3.9,41,false,180,0.45,0.52,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-8,60,4.6,42,false,180,0.5,0.58,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-9,30,3.6,38,false,180,0.48,0.55,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-9,40,4.3,41,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-9,50,5.2,44,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-9,60,5.5,45,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-10,40,6.0,44,false,180,0.6,0.69,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-10,50,6.8,46,false,180,0.62,0.71,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-10,60,7.6,47,false,180,0.66,0.76,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-10,70,8.2,49,false,180,0.66,0.76,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-11,40,8.0,46,false,180,0.73,0.84,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-11,50,8.9,48,false,180,0.74,0.86,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-11,60,9.8,50,false,180,0.75,0.87,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-11,70,10.5,51,false,180,0.78,0.9,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-12,40,10.5,46,false,180,0.96,1.1,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-12,50,11.9,48,false,180,0.99,1.15,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-12,60,12.7,50,false,180,0.98,1.13,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Red-12,70,14.1,52,false,180,1.0,1.16,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-4-LA,30,1.4,22,false,180,0.56,0.64,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-4-LA,40,1.7,24,false,180,0.57,0.66,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-4-LA,50,1.8,26,false,180,0.51,0.59,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-4-LA,60,2.0,28,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-5-LA,30,1.6,25,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-5-LA,40,1.9,27,false,180,0.5,0.58,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-5-LA,50,2.1,28,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-5-LA,60,2.3,30,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-6-LA,30,2.1,27,false,180,0.55,0.64,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-6-LA,40,2.5,30,false,180,0.53,0.62,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-6-LA,50,2.8,33,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-6-LA,60,3.0,35,false,180,0.47,0.54,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-7-LA,30,2.8,29,false,180,0.64,0.74,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-7-LA,40,3.1,32,false,180,0.58,0.67,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-7-LA,50,3.5,35,false,180,0.55,0.64,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-7-LA,60,3.8,37,false,180,0.53,0.62,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-8-LA,30,3.4,31,false,180,0.68,0.79,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-8-LA,40,3.9,34,false,180,0.65,0.75,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-8-LA,50,4.4,37,false,180,0.62,0.71,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-8-LA,60,4.7,38,false,180,0.63,0.72,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-9-LA,30,4.3,33,false,180,0.76,0.88,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-9-LA,40,5.0,37,false,180,0.7,0.81,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-9-LA,50,5.6,40,false,180,0.67,0.78,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-9-LA,60,6.1,42,false,180,0.67,0.77,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-10-LA,40,6.5,38,false,180,0.87,1.0,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-10-LA,50,7.3,40,false,180,0.88,1.01,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-10-LA,60,8.0,42,false,180,0.87,1.01,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Hunter,PGP-ADJ,Grey-10-LA,70,8.6,44,false,180,0.86,0.99,Source: https://www.hunterirrigation.com/print/pdf/node/861
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,30,0.84,13,false,270,0.64,0.76,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,35,0.87,13,false,270,0.66,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,40,0.92,14,false,270,0.6,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,45,0.94,14,false,270,0.62,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,50,1.11,15,false,270,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,55,1.17,15,false,270,0.67,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,30,0.65,13,false,210,0.64,0.76,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,35,0.68,13,false,210,0.66,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,40,0.72,14,false,210,0.6,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,45,0.73,14,false,210,0.62,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,50,0.86,15,false,210,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,55,0.91,15,false,210,0.67,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,30,0.56,13,false,180,0.64,0.76,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,35,0.58,13,false,180,0.66,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,40,0.61,14,false,180,0.6,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,45,0.63,14,false,180,0.62,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,50,0.74,15,false,180,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,55,0.78,15,false,180,0.67,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,30,0.28,13,false,90,0.64,0.76,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,35,0.29,13,false,90,0.66,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,40,0.31,14,false,90,0.62,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,45,0.32,14,false,90,0.61,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,50,0.37,15,false,90,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,55,0.39,15,false,90,0.67,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,30,1.1,13,false,360,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,35,1.12,13,false,360,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,40,1.22,14,false,360,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,45,1.27,14,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,50,1.41,15,false,360,0.6,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,55,1.45,15,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,30,1.26,16,false,270,0.65,0.75,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,35,1.35,16,false,270,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,40,1.42,17,false,270,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,45,1.51,17,false,270,0.64,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,50,1.57,18,false,270,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,55,1.62,18,false,270,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,30,0.98,16,false,210,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,35,1.05,16,false,210,0.68,0.78,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,40,1.1,17,false,210,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,45,1.17,17,false,210,0.64,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,50,1.22,18,false,210,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,55,1.26,18,false,210,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,30,0.85,16,false,180,0.65,0.75,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,35,0.91,16,false,180,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,40,0.98,17,false,180,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,45,1.01,17,false,180,0.64,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,50,1.07,18,false,180,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,55,1.09,18,false,180,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,30,0.42,16,false,90,0.65,0.75,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,35,0.47,16,false,90,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,40,0.5,17,false,90,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,45,0.5,17,false,90,0.64,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,50,0.54,18,false,90,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,55,0.58,18,false,90,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,30,1.65,16,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,35,1.67,16,false,360,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,40,1.8,17,false,360,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,45,1.85,17,false,360,0.62,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,50,2.05,18,false,360,0.61,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,55,2.11,18,false,360,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,30,1.8,19,false,270,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,35,1.95,20,false,270,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,40,2.31,22,false,270,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,45,2.52,23,false,270,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,50,2.82,24,false,270,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,55,2.88,24,false,270,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,30,1.4,19,false,210,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,35,1.52,20,false,210,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,40,1.8,22,false,210,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,45,1.96,23,false,210,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,50,2.19,24,false,210,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,55,2.24,24,false,210,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,30,1.2,19,false,180,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,35,1.3,20,false,180,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,40,1.54,22,false,180,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,45,1.68,23,false,180,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,50,1.88,24,false,180,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,55,1.92,24,false,180,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,30,0.6,19,false,90,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,35,0.65,20,false,90,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,40,0.77,22,false,90,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,45,0.84,23,false,90,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,50,0.94,24,false,90,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,55,0.96,24,false,90,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,30,2.35,19,false,360,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,35,2.52,20,false,360,0.61,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,40,3.13,22,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,45,3.48,23,false,360,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,50,3.61,24,false,360,0.6,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,55,3.74,24,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
-Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),25,0.74,23,true,90,0.54,0.62,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),35,0.88,24,true,90,0.59,0.68,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),45,1.0,25,true,90,0.62,0.71,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),55,1.11,25,true,90,0.68,0.79,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),65,1.21,25,true,90,0.75,0.86,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),25,1.0,23,true,120,0.55,0.63,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),35,1.21,24,true,120,0.61,0.7,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),45,1.38,25,true,120,0.64,0.74,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),55,1.53,25,true,120,0.71,0.82,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),65,1.67,25,true,120,0.77,0.89,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),25,1.44,23,true,180,0.52,0.61,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),35,1.73,24,true,180,0.58,0.67,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),45,1.98,25,true,180,0.61,0.7,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),55,2.21,25,true,180,0.68,0.79,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),65,2.41,25,true,180,0.74,0.86,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),25,2.78,23,true,360,0.51,0.58,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),35,3.34,24,true,360,0.56,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),45,3.82,25,true,360,0.59,0.68,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),55,4.25,25,true,360,0.65,0.76,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),65,4.63,25,true,360,0.71,0.82,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),25,1.03,29,true,90,0.47,0.54,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),35,1.23,30,true,90,0.53,0.61,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),45,1.4,30,true,90,0.6,0.69,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),55,1.56,30,true,90,0.67,0.77,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),65,1.69,30,true,90,0.72,0.83,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),25,1.34,29,true,120,0.46,0.53,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),35,1.62,30,true,120,0.52,0.6,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),45,1.85,30,true,120,0.59,0.69,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),55,2.06,30,true,120,0.66,0.76,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),65,2.24,30,true,120,0.72,0.83,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),25,2.15,29,true,180,0.49,0.57,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),35,2.59,30,true,180,0.55,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),45,2.96,30,true,180,0.63,0.73,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),55,3.3,30,true,180,0.71,0.82,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),65,3.6,30,true,180,0.77,0.89,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),25,4.24,29,true,360,0.49,0.56,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),35,5.08,30,true,360,0.54,0.63,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),45,5.78,30,true,360,0.62,0.71,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),55,6.39,30,true,360,0.68,0.79,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),65,6.92,30,true,360,0.74,0.85,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),25,1.4,32,true,90,0.53,0.61,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),35,1.67,34,true,90,0.56,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),45,1.92,35,true,90,0.6,0.7,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),55,2.13,35,true,90,0.67,0.77,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),65,2.31,35,true,90,0.73,0.84,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),25,1.77,32,true,120,0.5,0.58,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),35,2.15,34,true,120,0.54,0.62,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),45,2.46,35,true,120,0.58,0.67,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),55,2.74,35,true,120,0.65,0.75,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),65,2.99,35,true,120,0.7,0.81,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),25,2.75,32,true,180,0.52,0.6,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),35,3.33,34,true,180,0.55,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),45,3.81,35,true,180,0.6,0.69,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),55,4.23,35,true,180,0.66,0.77,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),65,4.62,35,true,180,0.73,0.84,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),25,5.36,32,true,360,0.5,0.58,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),35,6.62,34,true,360,0.55,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),45,7.58,35,true,360,0.6,0.69,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),55,8.43,35,true,360,0.66,0.76,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
-Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),65,9.18,35,true,360,0.72,0.83,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+manufacturer,head_model,nozzle_model,pressure_psi,flow_gpm,radius_ft,pattern_type,width_ft,head_offset_x,head_offset_y,pressure_regulating,arc_degrees,precip_square_in_hr,precip_triangle_in_hr,notes
+Hunter,PGP-ADJ,Blue-1.5,25,1.2,29,,,,,false,180,0.27,0.32,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-1.5,35,1.4,31,,,,,false,180,0.28,0.32,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-1.5,45,1.5,31,,,,,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-1.5,55,1.8,32,,,,,false,180,0.34,0.39,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-1.5,65,1.9,32,,,,,false,180,0.36,0.41,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.0,25,1.4,33,,,,,false,180,0.25,0.29,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.0,35,1.7,33,,,,,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.0,45,2.0,34,,,,,false,180,0.33,0.38,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.0,55,2.1,34,,,,,false,180,0.35,0.4,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.0,65,2.3,34,,,,,false,180,0.38,0.44,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.5,25,1.7,33,,,,,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.5,35,2.1,35,,,,,false,180,0.33,0.38,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.5,45,2.5,35,,,,,false,180,0.39,0.45,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.5,55,2.6,35,,,,,false,180,0.41,0.47,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-2.5,65,2.9,35,,,,,false,180,0.46,0.53,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-3.0,25,2.2,35,,,,,false,180,0.35,0.4,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-3.0,35,2.7,36,,,,,false,180,0.4,0.46,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-3.0,45,3.0,38,,,,,false,180,0.4,0.46,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-3.0,55,3.4,39,,,,,false,180,0.43,0.5,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-3.0,65,3.7,39,,,,,false,180,0.47,0.54,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-4.0,25,3.0,37,,,,,false,180,0.42,0.49,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-4.0,35,3.5,39,,,,,false,180,0.44,0.51,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-4.0,45,4.0,40,,,,,false,180,0.48,0.56,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-4.0,55,4.5,41,,,,,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-4.0,65,4.8,41,,,,,false,180,0.55,0.63,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-5.0,25,3.7,37,,,,,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-5.0,35,4.5,39,,,,,false,180,0.57,0.66,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-5.0,45,5.0,42,,,,,false,180,0.55,0.63,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-5.0,55,5.7,42,,,,,false,180,0.62,0.72,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-5.0,65,6.2,42,,,,,false,180,0.68,0.78,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-6.0,25,4.3,38,,,,,false,180,0.57,0.66,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-6.0,35,5.6,40,,,,,false,180,0.67,0.78,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-6.0,45,6.0,43,,,,,false,180,0.62,0.72,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-6.0,55,6.7,44,,,,,false,180,0.67,0.77,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-6.0,65,7.3,44,,,,,false,180,0.73,0.84,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-8.0,25,6.0,37,,,,,false,180,0.84,0.97,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-8.0,35,7.0,41,,,,,false,180,0.8,0.93,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-8.0,45,8.0,44,,,,,false,180,0.8,0.92,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-8.0,55,9.0,46,,,,,false,180,0.82,0.95,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Blue-8.0,65,9.8,46,,,,,false,180,0.89,1.03,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-1,30,0.5,28,,,,,false,180,0.12,0.14,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-1,40,0.6,29,,,,,false,180,0.14,0.16,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-1,50,0.7,29,,,,,false,180,0.16,0.19,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-1,60,0.8,30,,,,,false,180,0.17,0.2,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-2,30,0.7,29,,,,,false,180,0.16,0.19,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-2,40,0.8,30,,,,,false,180,0.17,0.2,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-2,50,0.9,30,,,,,false,180,0.19,0.22,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-2,60,1.0,31,,,,,false,180,0.2,0.23,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-3,30,0.9,30,,,,,false,180,0.19,0.22,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-3,40,1.0,31,,,,,false,180,0.2,0.23,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-3,50,1.2,31,,,,,false,180,0.24,0.28,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-3,60,1.3,32,,,,,false,180,0.24,0.28,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-4,30,1.2,32,,,,,false,180,0.23,0.26,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-4,40,1.4,33,,,,,false,180,0.25,0.29,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-4,50,1.6,34,,,,,false,180,0.27,0.31,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-4,60,1.8,34,,,,,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-5,30,1.6,32,,,,,false,180,0.3,0.35,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-5,40,1.8,36,,,,,false,180,0.27,0.31,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-5,50,2.0,38,,,,,false,180,0.27,0.31,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-5,60,2.2,38,,,,,false,180,0.29,0.34,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-6,30,2.0,34,,,,,false,180,0.33,0.38,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-6,40,2.4,36,,,,,false,180,0.36,0.41,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-6,50,2.7,38,,,,,false,180,0.36,0.42,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-6,60,2.9,38,,,,,false,180,0.39,0.45,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-7,30,2.6,34,,,,,false,180,0.43,0.5,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-7,40,3.0,38,,,,,false,180,0.4,0.46,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-7,50,3.4,40,,,,,false,180,0.41,0.47,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-7,60,3.7,40,,,,,false,180,0.45,0.51,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-8,30,3.2,37,,,,,false,180,0.45,0.52,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-8,40,3.7,39,,,,,false,180,0.47,0.54,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-8,50,3.9,41,,,,,false,180,0.45,0.52,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-8,60,4.6,42,,,,,false,180,0.5,0.58,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-9,30,3.6,38,,,,,false,180,0.48,0.55,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-9,40,4.3,41,,,,,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-9,50,5.2,44,,,,,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-9,60,5.5,45,,,,,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-10,40,6.0,44,,,,,false,180,0.6,0.69,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-10,50,6.8,46,,,,,false,180,0.62,0.71,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-10,60,7.6,47,,,,,false,180,0.66,0.76,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-10,70,8.2,49,,,,,false,180,0.66,0.76,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-11,40,8.0,46,,,,,false,180,0.73,0.84,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-11,50,8.9,48,,,,,false,180,0.74,0.86,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-11,60,9.8,50,,,,,false,180,0.75,0.87,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-11,70,10.5,51,,,,,false,180,0.78,0.9,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-12,40,10.5,46,,,,,false,180,0.96,1.1,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-12,50,11.9,48,,,,,false,180,0.99,1.15,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-12,60,12.7,50,,,,,false,180,0.98,1.13,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Red-12,70,14.1,52,,,,,false,180,1.0,1.16,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-4-LA,30,1.4,22,,,,,false,180,0.56,0.64,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-4-LA,40,1.7,24,,,,,false,180,0.57,0.66,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-4-LA,50,1.8,26,,,,,false,180,0.51,0.59,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-4-LA,60,2.0,28,,,,,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-5-LA,30,1.6,25,,,,,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-5-LA,40,1.9,27,,,,,false,180,0.5,0.58,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-5-LA,50,2.1,28,,,,,false,180,0.52,0.6,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-5-LA,60,2.3,30,,,,,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-6-LA,30,2.1,27,,,,,false,180,0.55,0.64,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-6-LA,40,2.5,30,,,,,false,180,0.53,0.62,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-6-LA,50,2.8,33,,,,,false,180,0.49,0.57,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-6-LA,60,3.0,35,,,,,false,180,0.47,0.54,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-7-LA,30,2.8,29,,,,,false,180,0.64,0.74,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-7-LA,40,3.1,32,,,,,false,180,0.58,0.67,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-7-LA,50,3.5,35,,,,,false,180,0.55,0.64,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-7-LA,60,3.8,37,,,,,false,180,0.53,0.62,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-8-LA,30,3.4,31,,,,,false,180,0.68,0.79,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-8-LA,40,3.9,34,,,,,false,180,0.65,0.75,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-8-LA,50,4.4,37,,,,,false,180,0.62,0.71,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-8-LA,60,4.7,38,,,,,false,180,0.63,0.72,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-9-LA,30,4.3,33,,,,,false,180,0.76,0.88,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-9-LA,40,5.0,37,,,,,false,180,0.7,0.81,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-9-LA,50,5.6,40,,,,,false,180,0.67,0.78,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-9-LA,60,6.1,42,,,,,false,180,0.67,0.77,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-10-LA,40,6.5,38,,,,,false,180,0.87,1.0,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-10-LA,50,7.3,40,,,,,false,180,0.88,1.01,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-10-LA,60,8.0,42,,,,,false,180,0.87,1.01,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Hunter,PGP-ADJ,Grey-10-LA,70,8.6,44,,,,,false,180,0.86,0.99,Source: https://www.hunterirrigation.com/print/pdf/node/861
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,30,0.84,13,,,,,false,270,0.64,0.76,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,35,0.87,13,,,,,false,270,0.66,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,40,0.92,14,,,,,false,270,0.6,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,45,0.94,14,,,,,false,270,0.62,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,50,1.11,15,,,,,false,270,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-270,55,1.17,15,,,,,false,270,0.67,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,30,0.65,13,,,,,false,210,0.64,0.76,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,35,0.68,13,,,,,false,210,0.66,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,40,0.72,14,,,,,false,210,0.6,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,45,0.73,14,,,,,false,210,0.62,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,50,0.86,15,,,,,false,210,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-210,55,0.91,15,,,,,false,210,0.67,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,30,0.56,13,,,,,false,180,0.64,0.76,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,35,0.58,13,,,,,false,180,0.66,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,40,0.61,14,,,,,false,180,0.6,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,45,0.63,14,,,,,false,180,0.62,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,50,0.74,15,,,,,false,180,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-180,55,0.78,15,,,,,false,180,0.67,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,30,0.28,13,,,,,false,90,0.64,0.76,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,35,0.29,13,,,,,false,90,0.66,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,40,0.31,14,,,,,false,90,0.62,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,45,0.32,14,,,,,false,90,0.61,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,50,0.37,15,,,,,false,90,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-90,55,0.39,15,,,,,false,90,0.67,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,30,1.1,13,,,,,false,360,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,35,1.12,13,,,,,false,360,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,40,1.22,14,,,,,false,360,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,45,1.27,14,,,,,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,50,1.41,15,,,,,false,360,0.6,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN14-360,55,1.45,15,,,,,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,30,1.26,16,,,,,false,270,0.65,0.75,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,35,1.35,16,,,,,false,270,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,40,1.42,17,,,,,false,270,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,45,1.51,17,,,,,false,270,0.64,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,50,1.57,18,,,,,false,270,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-270,55,1.62,18,,,,,false,270,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,30,0.98,16,,,,,false,210,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,35,1.05,16,,,,,false,210,0.68,0.78,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,40,1.1,17,,,,,false,210,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,45,1.17,17,,,,,false,210,0.64,0.77,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,50,1.22,18,,,,,false,210,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-210,55,1.26,18,,,,,false,210,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,30,0.85,16,,,,,false,180,0.65,0.75,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,35,0.91,16,,,,,false,180,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,40,0.98,17,,,,,false,180,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,45,1.01,17,,,,,false,180,0.64,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,50,1.07,18,,,,,false,180,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-180,55,1.09,18,,,,,false,180,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,30,0.42,16,,,,,false,90,0.65,0.75,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,35,0.47,16,,,,,false,90,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,40,0.5,17,,,,,false,90,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,45,0.5,17,,,,,false,90,0.64,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,50,0.54,18,,,,,false,90,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-90,55,0.58,18,,,,,false,90,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,30,1.65,16,,,,,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,35,1.67,16,,,,,false,360,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,40,1.8,17,,,,,false,360,0.6,0.69,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,45,1.85,17,,,,,false,360,0.62,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,50,2.05,18,,,,,false,360,0.61,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN18-360,55,2.11,18,,,,,false,360,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,30,1.8,19,,,,,false,270,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,35,1.95,20,,,,,false,270,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,40,2.31,22,,,,,false,270,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,45,2.52,23,,,,,false,270,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,50,2.82,24,,,,,false,270,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-270,55,2.88,24,,,,,false,270,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,30,1.4,19,,,,,false,210,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,35,1.52,20,,,,,false,210,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,40,1.8,22,,,,,false,210,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,45,1.96,23,,,,,false,210,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,50,2.19,24,,,,,false,210,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-210,55,2.24,24,,,,,false,210,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,30,1.2,19,,,,,false,180,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,35,1.3,20,,,,,false,180,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,40,1.54,22,,,,,false,180,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,45,1.68,23,,,,,false,180,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,50,1.88,24,,,,,false,180,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-180,55,1.92,24,,,,,false,180,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,30,0.6,19,,,,,false,90,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,35,0.65,20,,,,,false,90,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,40,0.77,22,,,,,false,90,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,45,0.84,23,,,,,false,90,0.61,0.71,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,50,0.94,24,,,,,false,90,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-90,55,0.96,24,,,,,false,90,0.64,0.74,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,30,2.35,19,,,,,false,360,0.63,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,35,2.52,20,,,,,false,360,0.61,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,40,3.13,22,,,,,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,45,3.48,23,,,,,false,360,0.63,0.73,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,50,3.61,24,,,,,false,360,0.6,0.7,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,R-VAN Adjustable Rotary Nozzles,R-VAN24-360,55,3.74,24,,,,,false,360,0.62,0.72,Source: https://www.rainbird.com/sites/default/files/media/documents/2018-10/R-VAN-TechSpec-27AUG18.pdf
+Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),25,0.74,23,,,,,true,90,0.54,0.62,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),35,0.88,24,,,,,true,90,0.59,0.68,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),45,1.0,25,,,,,true,90,0.62,0.71,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),55,1.11,25,,,,,true,90,0.68,0.79,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Quarter (Red),65,1.21,25,,,,,true,90,0.75,0.86,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),25,1.0,23,,,,,true,120,0.55,0.63,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),35,1.21,24,,,,,true,120,0.61,0.7,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),45,1.38,25,,,,,true,120,0.64,0.74,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),55,1.53,25,,,,,true,120,0.71,0.82,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Third (Red),65,1.67,25,,,,,true,120,0.77,0.89,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),25,1.44,23,,,,,true,180,0.52,0.61,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),35,1.73,24,,,,,true,180,0.58,0.67,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),45,1.98,25,,,,,true,180,0.61,0.7,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),55,2.21,25,,,,,true,180,0.68,0.79,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Half (Red),65,2.41,25,,,,,true,180,0.74,0.86,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),25,2.78,23,,,,,true,360,0.51,0.58,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),35,3.34,24,,,,,true,360,0.56,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),45,3.82,25,,,,,true,360,0.59,0.68,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),55,4.25,25,,,,,true,360,0.65,0.76,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-25-Full (Red),65,4.63,25,,,,,true,360,0.71,0.82,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),25,1.03,29,,,,,true,90,0.47,0.54,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),35,1.23,30,,,,,true,90,0.53,0.61,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),45,1.4,30,,,,,true,90,0.6,0.69,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),55,1.56,30,,,,,true,90,0.67,0.77,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Quarter (Green),65,1.69,30,,,,,true,90,0.72,0.83,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),25,1.34,29,,,,,true,120,0.46,0.53,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),35,1.62,30,,,,,true,120,0.52,0.6,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),45,1.85,30,,,,,true,120,0.59,0.69,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),55,2.06,30,,,,,true,120,0.66,0.76,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Third (Green),65,2.24,30,,,,,true,120,0.72,0.83,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),25,2.15,29,,,,,true,180,0.49,0.57,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),35,2.59,30,,,,,true,180,0.55,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),45,2.96,30,,,,,true,180,0.63,0.73,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),55,3.3,30,,,,,true,180,0.71,0.82,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Half (Green),65,3.6,30,,,,,true,180,0.77,0.89,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),25,4.24,29,,,,,true,360,0.49,0.56,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),35,5.08,30,,,,,true,360,0.54,0.63,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),45,5.78,30,,,,,true,360,0.62,0.71,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),55,6.39,30,,,,,true,360,0.68,0.79,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-30-Full (Green),65,6.92,30,,,,,true,360,0.74,0.85,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),25,1.4,32,,,,,true,90,0.53,0.61,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),35,1.67,34,,,,,true,90,0.56,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),45,1.92,35,,,,,true,90,0.6,0.7,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),55,2.13,35,,,,,true,90,0.67,0.77,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Quarter (Beige),65,2.31,35,,,,,true,90,0.73,0.84,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),25,1.77,32,,,,,true,120,0.5,0.58,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),35,2.15,34,,,,,true,120,0.54,0.62,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),45,2.46,35,,,,,true,120,0.58,0.67,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),55,2.74,35,,,,,true,120,0.65,0.75,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Third (Beige),65,2.99,35,,,,,true,120,0.7,0.81,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),25,2.75,32,,,,,true,180,0.52,0.6,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),35,3.33,34,,,,,true,180,0.55,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),45,3.81,35,,,,,true,180,0.6,0.69,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),55,4.23,35,,,,,true,180,0.66,0.77,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Half (Beige),65,4.62,35,,,,,true,180,0.73,0.84,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),25,5.36,32,,,,,true,360,0.5,0.58,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),35,6.62,34,,,,,true,360,0.55,0.64,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),45,7.58,35,,,,,true,360,0.6,0.69,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),55,8.43,35,,,,,true,360,0.66,0.76,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,5004-PLPC-R,5000-MPR-35-Full (Beige),65,9.18,35,,,,,true,360,0.72,0.83,Source: https://www.sprinklerwarehouse.com/amfile/file/download/file/8EpKjmbyVYStRJFlTdtm02QSTOdgyKpV/product/28260/; product: https://www.sprinklerwarehouse.com/catalog/product/view/id/28260; PRS regulates to 45 psi; MPR precipitation based on half-circle operation
+Rain Bird,1800 MPR Spray Nozzle,15CST Center Strip,15,0.89,26,rectangle,4,0.5,0.5,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15CST Center Strip,20,1.0,28,rectangle,4,0.5,0.5,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15CST Center Strip,25,1.11,28,rectangle,4,0.5,0.5,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15CST Center Strip,30,1.21,30,rectangle,4,0.5,0.5,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15SST Side Strip,15,0.89,26,rectangle,4,0.5,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15SST Side Strip,20,1.0,28,rectangle,4,0.5,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15SST Side Strip,25,1.11,28,rectangle,4,0.5,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15SST Side Strip,30,1.21,30,rectangle,4,0.5,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15LCS Left Corner Strip,15,0.35,11,rectangle,3,1,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15LCS Left Corner Strip,20,0.4,12,rectangle,3,1,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15LCS Left Corner Strip,25,0.45,14,rectangle,4,1,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15LCS Left Corner Strip,30,0.49,15,rectangle,4,1,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15RCS Right Corner Strip,15,0.35,11,rectangle,3,0,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15RCS Right Corner Strip,20,0.4,12,rectangle,3,0,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15RCS Right Corner Strip,25,0.45,14,rectangle,4,0,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,15RCS Right Corner Strip,30,0.49,15,rectangle,4,0,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,9SST Side Strip,15,1.34,15,rectangle,9,0.5,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,9SST Side Strip,20,1.47,16,rectangle,9,0.5,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,9SST Side Strip,25,1.6,18,rectangle,9,0.5,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"
+Rain Bird,1800 MPR Spray Nozzle,9SST Side Strip,30,1.73,18,rectangle,9,0.5,0,false,360,,,"Source: https://www.rainbird.com/sites/default/files/media/documents/2020-09/mpr-spray-nozzle-performance-charts_0.pdf; W x L rectangular strip pattern; pattern_type=rectangle; radius_ft stores length, width_ft stores width, and head offsets locate the sprinkler within the rectangle"

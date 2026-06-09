@@ -62,7 +62,7 @@
 }
 ```
 
-`orientationDegrees` stores the sprinkler's left-hand lock angle. `arcDegrees` extends clockwise from that fixed left edge, so increasing or decreasing an arc changes only the right-hand side of the spray pattern.
+`orientationDegrees` stores the sprinkler's left-hand lock angle for arc patterns. `arcDegrees` extends clockwise from that fixed left edge, so increasing or decreasing an arc changes only the right-hand side of the spray pattern. For rectangular patterns, `orientationDegrees` is the forward rectangle direction. The rectangle geometry stores its size plus the sprinkler head's relative location inside the rectangle, so side, center, and corner strip nozzles are all represented by the same generic rectangle model.
 
 ## Catalog CSV schema (v1)
 
@@ -73,12 +73,15 @@
 - `flow_gpm`
 - `radius_ft`
 - `arc_degrees` (optional nominal test arc)
+- `pattern_type` (optional; defaults to `arc`; use `rectangle` for rectangular throws)
+- `width_ft` (required for rectangle patterns; `radius_ft` is interpreted as rectangle length)
+- `head_offset_x` / `head_offset_y` (required for rectangle patterns; 0-1 relative head location from the rectangle's back-left corner, where x runs left-to-right along length and y runs back-to-front along width)
 - `precip_in_hr` / `precipitation_in_hr` / `precip_default_in_hr` (optional manufacturer nominal PR reference)
 - `precip_square_in_hr` / `precip_square` / `square_spacing_pr_in_hr` (optional manufacturer square-spacing PR reference)
 - `precip_triangle_in_hr` / `precip_triangular_in_hr` / `triangular_spacing_pr_in_hr` (optional manufacturer triangular-spacing PR reference)
 - `notes`
 
-Optional manufacturer PR fields are preserved as catalog metadata for display and sanity checks. They do not replace calculated precipitation, which is derived from effective flow and actual sector-adjusted coverage area.
+Optional manufacturer PR fields are preserved as catalog metadata for display and sanity checks. They do not replace calculated precipitation, which is derived from effective flow and actual sector-adjusted or rectangular coverage area.
 
 ## Interpolation approach
 
@@ -86,7 +89,7 @@ For selected `(manufacturer, head_model, nozzle_model)`:
 
 - Find nearest lower and upper rows around input pressure.
 - If exact pressure exists, use exact row values.
-- If bounds exist, linearly interpolate for `flow_gpm`, `radius_ft`, and optional nominal precipitation metadata when both bounds provide the same metadata field.
+- If bounds exist, linearly interpolate for `flow_gpm`, `radius_ft`, `width_ft` when present, and optional nominal precipitation metadata when both bounds provide the same metadata field.
 - If out of range, clamp to nearest pressure row and flag warning.
 
 ## Future enhancements
