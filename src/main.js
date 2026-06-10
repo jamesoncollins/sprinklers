@@ -9,13 +9,11 @@ const maxPrecipitationGridCellFeet = 5;
 const precipitationGridCellFeetStep = 0.5;
 const minPrecipitationGridCellPx = 1;
 const precipitationColorStops = [
-  { value: 0, color: [247, 252, 245] },
-  { value: 0.25, color: [199, 233, 192] },
-  { value: 0.5, color: [116, 196, 118] },
-  { value: 0.75, color: [49, 163, 84] },
+  { value: 0, color: [215, 48, 31] },
+  { value: 0.5, color: [253, 141, 60] },
   { value: 1, color: [255, 232, 120] },
-  { value: 1.5, color: [253, 141, 60] },
-  { value: 2, color: [215, 48, 31] },
+  { value: 1.5, color: [116, 196, 118] },
+  { value: 2, color: [49, 163, 84] },
 ];
 const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
 const minPrecipitationContourInterval = 0.05;
