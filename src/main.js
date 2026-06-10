@@ -16,15 +16,10 @@ const precipitationColorStops = [
   { value: 2, color: [49, 163, 84] },
 ];
 const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
-const rotorRadialDistributionSamples = [
-  { radiusRatio: 0, multiplier: 0.15 },
-  { radiusRatio: 0.15, multiplier: 0.35 },
-  { radiusRatio: 0.35, multiplier: 0.75 },
-  { radiusRatio: 0.65, multiplier: 1.35 },
-  { radiusRatio: 0.9, multiplier: 1.25 },
-  { radiusRatio: 1, multiplier: 0.6 },
-];
-const rotorRadialDistributionNormalization = calculateRadialDistributionAreaMean(rotorRadialDistributionSamples);
+const minRadialSpreadRadiusRatio = 0.08;
+const rotorRadialSpreadAreaMean = 1 - minRadialSpreadRadiusRatio / 2;
+const rectangleSpreadNormalizationSampleCount = 32;
+const rectangleSpreadNormalizationCache = new Map();
 const minPrecipitationContourInterval = 0.05;
 const maxPrecipitationContourInterval = 1;
 const precipitationContourIntervalStep = 0.05;
@@ -472,7 +467,7 @@ function formatNominalPrecipitation(precipitation) {
   if (precipitation.catalog !== null && precipitation.catalog !== undefined) parts.push(`${formatNumber(precipitation.catalog)} catalog`);
   if (precipitation.square !== null && precipitation.square !== undefined) parts.push(`${formatNumber(precipitation.square)} square`);
   if (precipitation.triangular !== null && precipitation.triangular !== undefined) parts.push(`${formatNumber(precipitation.triangular)} triangular`);
-  return parts.length ? ` Manufacturer nominal PR: ${parts.join(' / ')} in/hr; calculated PR still uses effective flow, actual coverage area, and the point-sampled distribution model.` : '';
+  return parts.length ? ` Manufacturer nominal PR: ${parts.join(' / ')} in/hr; calculated PR still uses effective flow, actual coverage area, and the point-sampled 1/r distance-spreading model.` : '';
 }
 
 function buildCatalog(rows) {
@@ -1275,42 +1270,57 @@ function sprinklerPr(sprinkler) {
   return (96.3 * flow) / area;
 }
 
-function interpolateRadialDistributionMultiplier(samples, radiusRatio) {
-  const boundedRadiusRatio = Math.min(1, Math.max(0, radiusRatio));
-  const first = samples[0];
-  const last = samples[samples.length - 1];
-  if (!first || !last) return 1;
-  if (boundedRadiusRatio <= first.radiusRatio) return first.multiplier;
-
-  for (let index = 1; index < samples.length; index += 1) {
-    const previous = samples[index - 1];
-    const next = samples[index];
-    if (boundedRadiusRatio > next.radiusRatio) continue;
-    const span = Math.max(0.001, next.radiusRatio - previous.radiusRatio);
-    const t = (boundedRadiusRatio - previous.radiusRatio) / span;
-    return previous.multiplier + (next.multiplier - previous.multiplier) * t;
-  }
-
-  return last.multiplier;
-}
-
-function calculateRadialDistributionAreaMean(samples) {
-  const sampleCount = 512;
-  let weightedTotal = 0;
-
-  for (let index = 0; index < sampleCount; index += 1) {
-    const innerRadiusRatio = index / sampleCount;
-    const outerRadiusRatio = (index + 1) / sampleCount;
-    const midpointRadiusRatio = (innerRadiusRatio + outerRadiusRatio) / 2;
-    const annularAreaShare = outerRadiusRatio ** 2 - innerRadiusRatio ** 2;
-    weightedTotal += interpolateRadialDistributionMultiplier(samples, midpointRadiusRatio) * annularAreaShare;
-  }
-
-  return weightedTotal > 0 ? weightedTotal : 1;
+function radialSpreadIntensity(distance, minimumDistance) {
+  return 1 / Math.max(distance, minimumDistance);
 }
 
 function rotorRadialPrecipitationMultiplier(radiusRatio) {
-  return interpolateRadialDistributionMultiplier(rotorRadialDistributionSamples, radiusRatio) / rotorRadialDistributionNormalization;
+  const boundedRadiusRatio = Math.min(1, Math.max(0, radiusRatio));
+  const spreadRadiusRatio = Math.max(boundedRadiusRatio, minRadialSpreadRadiusRatio);
+
+  // Rotor streams sweep an arc whose circumference grows with radius, so a fixed
+  // stream width spreads the same flow over roughly 1/r more area as it travels
+  // outward. Cap the innermost few percent to avoid an infinite value at the
+  // head, then normalize by area so each head still averages to sprinklerPr().
+  return (1 / (2 * spreadRadiusRatio)) / rotorRadialSpreadAreaMean;
+}
+
+function rectangleSpreadMinimumDistanceFt(lengthFt, widthFt) {
+  return Math.max(lengthFt, widthFt) * minRadialSpreadRadiusRatio;
+}
+
+function rectangleSpreadNormalization(lengthFt, widthFt, headOffsetX, headOffsetY) {
+  if (lengthFt <= 0 || widthFt <= 0) return 1;
+
+  const key = [lengthFt, widthFt, headOffsetX, headOffsetY]
+    .map((value) => Number(value).toFixed(4))
+    .join(':');
+  const cached = rectangleSpreadNormalizationCache.get(key);
+  if (cached) return cached;
+
+  const sampleCount = rectangleSpreadNormalizationSampleCount;
+  const headX = headOffsetX * lengthFt;
+  const headY = headOffsetY * widthFt;
+  const minimumDistanceFt = rectangleSpreadMinimumDistanceFt(lengthFt, widthFt);
+  let total = 0;
+
+  for (let row = 0; row < sampleCount; row += 1) {
+    const sampleY = ((row + 0.5) / sampleCount) * widthFt;
+    for (let column = 0; column < sampleCount; column += 1) {
+      const sampleX = ((column + 0.5) / sampleCount) * lengthFt;
+      total += radialSpreadIntensity(Math.hypot(sampleX - headX, sampleY - headY), minimumDistanceFt);
+    }
+  }
+
+  const normalization = total > 0 ? total / (sampleCount * sampleCount) : 1;
+  rectangleSpreadNormalizationCache.set(key, normalization);
+  return normalization;
+}
+
+function rectangleRadialPrecipitationMultiplier(lengthFt, widthFt, headOffsetX, headOffsetY, distanceFt) {
+  const minimumDistanceFt = rectangleSpreadMinimumDistanceFt(lengthFt, widthFt);
+  return radialSpreadIntensity(distanceFt, minimumDistanceFt)
+    / rectangleSpreadNormalization(lengthFt, widthFt, headOffsetX, headOffsetY);
 }
 
 function sprinklerPrecipitationStats(sprinklers) {
@@ -1976,10 +1986,10 @@ function colorForPrecipitationRate(rate, maxRate) {
   return `rgba(${r}, ${g}, ${b}, 0.68)`;
 }
 
-function pointInRectanglePattern(sprinkler, point, feetPerPixel) {
+function rectanglePatternCoverageAtPoint(sprinkler, point, feetPerPixel) {
   const lengthFt = effectiveRadiusFt(sprinkler);
   const widthFt = effectiveWidthFt(sprinkler);
-  if (lengthFt <= 0 || widthFt <= 0) return false;
+  if (lengthFt <= 0 || widthFt <= 0) return null;
 
   const center = localPointFromPercent(sprinkler);
   const dx = point.x - center.x;
@@ -1992,7 +2002,19 @@ function pointInRectanglePattern(sprinkler, point, feetPerPixel) {
   const rectangleX = headOffsetX * lengthFt + alongLengthFt;
   const rectangleY = headOffsetY * widthFt + alongWidthFt;
 
-  return rectangleX >= 0 && rectangleX <= lengthFt && rectangleY >= 0 && rectangleY <= widthFt;
+  if (rectangleX < 0 || rectangleX > lengthFt || rectangleY < 0 || rectangleY > widthFt) return null;
+
+  return {
+    distanceFt: Math.hypot(alongLengthFt, alongWidthFt),
+    headOffsetX,
+    headOffsetY,
+    lengthFt,
+    widthFt,
+  };
+}
+
+function pointInRectanglePattern(sprinkler, point, feetPerPixel) {
+  return Boolean(rectanglePatternCoverageAtPoint(sprinkler, point, feetPerPixel));
 }
 
 function sprinklerCoversLocalPoint(sprinkler, point, feetPerPixel) {
@@ -2027,7 +2049,16 @@ function sprinklerPrecipitationAtPoint(sprinkler, point, feetPerPixel) {
   if (averagePr <= 0) return 0;
 
   if (isRectanglePattern(sprinkler)) {
-    return pointInRectanglePattern(sprinkler, point, feetPerPixel) ? averagePr : 0;
+    const coverage = rectanglePatternCoverageAtPoint(sprinkler, point, feetPerPixel);
+    return coverage
+      ? averagePr * rectangleRadialPrecipitationMultiplier(
+        coverage.lengthFt,
+        coverage.widthFt,
+        coverage.headOffsetX,
+        coverage.headOffsetY,
+        coverage.distanceFt,
+      )
+      : 0;
   }
 
   const coverage = arcSprinklerCoverageAtPoint(sprinkler, point, feetPerPixel);
