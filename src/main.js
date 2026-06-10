@@ -16,6 +16,8 @@ const precipitationColorStops = [
   { value: 2, color: [49, 163, 84] },
 ];
 const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
+const rotorRadialDistributionMinimumRadiusRatio = 0.25;
+const rotorRadialDistributionNormalization = 2 - rotorRadialDistributionMinimumRadiusRatio;
 const minPrecipitationContourInterval = 0.05;
 const maxPrecipitationContourInterval = 1;
 const precipitationContourIntervalStep = 0.05;
@@ -463,7 +465,7 @@ function formatNominalPrecipitation(precipitation) {
   if (precipitation.catalog !== null && precipitation.catalog !== undefined) parts.push(`${formatNumber(precipitation.catalog)} catalog`);
   if (precipitation.square !== null && precipitation.square !== undefined) parts.push(`${formatNumber(precipitation.square)} square`);
   if (precipitation.triangular !== null && precipitation.triangular !== undefined) parts.push(`${formatNumber(precipitation.triangular)} triangular`);
-  return parts.length ? ` Manufacturer nominal PR: ${parts.join(' / ')} in/hr; calculated PR still uses effective flow and actual coverage area.` : '';
+  return parts.length ? ` Manufacturer nominal PR: ${parts.join(' / ')} in/hr; calculated PR still uses effective flow, actual coverage area, and the point-sampled distribution model.` : '';
 }
 
 function buildCatalog(rows) {
@@ -1266,6 +1268,12 @@ function sprinklerPr(sprinkler) {
   return (96.3 * flow) / area;
 }
 
+function rotorRadialPrecipitationMultiplier(radiusRatio) {
+  const boundedRadiusRatio = Math.min(1, Math.max(0, radiusRatio));
+  const spreadingRadiusRatio = Math.max(rotorRadialDistributionMinimumRadiusRatio, boundedRadiusRatio);
+  return (1 / spreadingRadiusRatio) / rotorRadialDistributionNormalization;
+}
+
 function sprinklerPrecipitationStats(sprinklers) {
   const rates = sprinklers
     .map((sprinkler) => sprinklerPr(sprinkler))
@@ -1951,28 +1959,46 @@ function pointInRectanglePattern(sprinkler, point, feetPerPixel) {
 function sprinklerCoversLocalPoint(sprinkler, point, feetPerPixel) {
   if (isRectanglePattern(sprinkler)) return pointInRectanglePattern(sprinkler, point, feetPerPixel);
 
+  return Boolean(arcSprinklerCoverageAtPoint(sprinkler, point, feetPerPixel));
+}
+
+function arcSprinklerCoverageAtPoint(sprinkler, point, feetPerPixel) {
   const radiusFt = effectiveRadiusFt(sprinkler);
-  if (radiusFt <= 0) return false;
+  if (radiusFt <= 0) return null;
 
   const center = localPointFromPercent(sprinkler);
   const dx = point.x - center.x;
   const dy = point.y - center.y;
   const distanceFt = Math.hypot(dx, dy) * feetPerPixel;
-  if (distanceFt > radiusFt) return false;
+  if (distanceFt > radiusFt) return null;
 
   const arc = clampArcDegrees(sprinkler.arcDegrees);
-  if (arc >= 360) return true;
+  if (arc < 360) {
+    const pointAngle = normalizeDegrees((Math.atan2(dx, -dy) * 180) / Math.PI);
+    const leftHandLock = normalizeDegrees(sprinkler.orientationDegrees);
+    const clockwiseSweep = normalizeDegrees(pointAngle - leftHandLock);
+    if (clockwiseSweep > arc) return null;
+  }
 
-  const pointAngle = normalizeDegrees((Math.atan2(dx, -dy) * 180) / Math.PI);
-  const leftHandLock = normalizeDegrees(sprinkler.orientationDegrees);
-  const clockwiseSweep = normalizeDegrees(pointAngle - leftHandLock);
-  return clockwiseSweep <= arc;
+  return { distanceFt, radiusRatio: distanceFt / radiusFt };
+}
+
+function sprinklerPrecipitationAtPoint(sprinkler, point, feetPerPixel) {
+  const averagePr = sprinklerPr(sprinkler);
+  if (averagePr <= 0) return 0;
+
+  if (isRectanglePattern(sprinkler)) {
+    return pointInRectanglePattern(sprinkler, point, feetPerPixel) ? averagePr : 0;
+  }
+
+  const coverage = arcSprinklerCoverageAtPoint(sprinkler, point, feetPerPixel);
+  return coverage ? averagePr * rotorRadialPrecipitationMultiplier(coverage.radiusRatio) : 0;
 }
 
 function combinedPrecipitationAtPoint(point, feetPerPixel) {
   return project.sprinklers.reduce((total, sprinkler) => {
     if (!effectiveFlowGpm(sprinkler) || !effectiveRadiusFt(sprinkler)) return total;
-    return sprinklerCoversLocalPoint(sprinkler, point, feetPerPixel) ? total + sprinklerPr(sprinkler) : total;
+    return total + sprinklerPrecipitationAtPoint(sprinkler, point, feetPerPixel);
   }, 0);
 }
 
