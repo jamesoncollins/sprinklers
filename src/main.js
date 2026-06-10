@@ -16,8 +16,10 @@ const precipitationColorStops = [
   { value: 2, color: [49, 163, 84] },
 ];
 const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
-const minRotorRadialSpreadRadiusRatio = 0.08;
-const rotorRadialSpreadAreaMean = 1 - minRotorRadialSpreadRadiusRatio / 2;
+const minRadialSpreadRadiusRatio = 0.08;
+const rotorRadialSpreadAreaMean = 1 - minRadialSpreadRadiusRatio / 2;
+const rectangleSpreadNormalizationSampleCount = 32;
+const rectangleSpreadNormalizationCache = new Map();
 const minPrecipitationContourInterval = 0.05;
 const maxPrecipitationContourInterval = 1;
 const precipitationContourIntervalStep = 0.05;
@@ -465,7 +467,7 @@ function formatNominalPrecipitation(precipitation) {
   if (precipitation.catalog !== null && precipitation.catalog !== undefined) parts.push(`${formatNumber(precipitation.catalog)} catalog`);
   if (precipitation.square !== null && precipitation.square !== undefined) parts.push(`${formatNumber(precipitation.square)} square`);
   if (precipitation.triangular !== null && precipitation.triangular !== undefined) parts.push(`${formatNumber(precipitation.triangular)} triangular`);
-  return parts.length ? ` Manufacturer nominal PR: ${parts.join(' / ')} in/hr; calculated PR still uses effective flow, actual coverage area, and the point-sampled 1/r spreading model.` : '';
+  return parts.length ? ` Manufacturer nominal PR: ${parts.join(' / ')} in/hr; calculated PR still uses effective flow, actual coverage area, and the point-sampled 1/r distance-spreading model.` : '';
 }
 
 function buildCatalog(rows) {
@@ -1268,15 +1270,57 @@ function sprinklerPr(sprinkler) {
   return (96.3 * flow) / area;
 }
 
+function radialSpreadIntensity(distance, minimumDistance) {
+  return 1 / Math.max(distance, minimumDistance);
+}
+
 function rotorRadialPrecipitationMultiplier(radiusRatio) {
   const boundedRadiusRatio = Math.min(1, Math.max(0, radiusRatio));
-  const spreadRadiusRatio = Math.max(boundedRadiusRatio, minRotorRadialSpreadRadiusRatio);
+  const spreadRadiusRatio = Math.max(boundedRadiusRatio, minRadialSpreadRadiusRatio);
 
   // Rotor streams sweep an arc whose circumference grows with radius, so a fixed
   // stream width spreads the same flow over roughly 1/r more area as it travels
   // outward. Cap the innermost few percent to avoid an infinite value at the
   // head, then normalize by area so each head still averages to sprinklerPr().
   return (1 / (2 * spreadRadiusRatio)) / rotorRadialSpreadAreaMean;
+}
+
+function rectangleSpreadMinimumDistanceFt(lengthFt, widthFt) {
+  return Math.max(lengthFt, widthFt) * minRadialSpreadRadiusRatio;
+}
+
+function rectangleSpreadNormalization(lengthFt, widthFt, headOffsetX, headOffsetY) {
+  if (lengthFt <= 0 || widthFt <= 0) return 1;
+
+  const key = [lengthFt, widthFt, headOffsetX, headOffsetY]
+    .map((value) => Number(value).toFixed(4))
+    .join(':');
+  const cached = rectangleSpreadNormalizationCache.get(key);
+  if (cached) return cached;
+
+  const sampleCount = rectangleSpreadNormalizationSampleCount;
+  const headX = headOffsetX * lengthFt;
+  const headY = headOffsetY * widthFt;
+  const minimumDistanceFt = rectangleSpreadMinimumDistanceFt(lengthFt, widthFt);
+  let total = 0;
+
+  for (let row = 0; row < sampleCount; row += 1) {
+    const sampleY = ((row + 0.5) / sampleCount) * widthFt;
+    for (let column = 0; column < sampleCount; column += 1) {
+      const sampleX = ((column + 0.5) / sampleCount) * lengthFt;
+      total += radialSpreadIntensity(Math.hypot(sampleX - headX, sampleY - headY), minimumDistanceFt);
+    }
+  }
+
+  const normalization = total > 0 ? total / (sampleCount * sampleCount) : 1;
+  rectangleSpreadNormalizationCache.set(key, normalization);
+  return normalization;
+}
+
+function rectangleRadialPrecipitationMultiplier(lengthFt, widthFt, headOffsetX, headOffsetY, distanceFt) {
+  const minimumDistanceFt = rectangleSpreadMinimumDistanceFt(lengthFt, widthFt);
+  return radialSpreadIntensity(distanceFt, minimumDistanceFt)
+    / rectangleSpreadNormalization(lengthFt, widthFt, headOffsetX, headOffsetY);
 }
 
 function sprinklerPrecipitationStats(sprinklers) {
@@ -1942,10 +1986,10 @@ function colorForPrecipitationRate(rate, maxRate) {
   return `rgba(${r}, ${g}, ${b}, 0.68)`;
 }
 
-function pointInRectanglePattern(sprinkler, point, feetPerPixel) {
+function rectanglePatternCoverageAtPoint(sprinkler, point, feetPerPixel) {
   const lengthFt = effectiveRadiusFt(sprinkler);
   const widthFt = effectiveWidthFt(sprinkler);
-  if (lengthFt <= 0 || widthFt <= 0) return false;
+  if (lengthFt <= 0 || widthFt <= 0) return null;
 
   const center = localPointFromPercent(sprinkler);
   const dx = point.x - center.x;
@@ -1958,7 +2002,19 @@ function pointInRectanglePattern(sprinkler, point, feetPerPixel) {
   const rectangleX = headOffsetX * lengthFt + alongLengthFt;
   const rectangleY = headOffsetY * widthFt + alongWidthFt;
 
-  return rectangleX >= 0 && rectangleX <= lengthFt && rectangleY >= 0 && rectangleY <= widthFt;
+  if (rectangleX < 0 || rectangleX > lengthFt || rectangleY < 0 || rectangleY > widthFt) return null;
+
+  return {
+    distanceFt: Math.hypot(alongLengthFt, alongWidthFt),
+    headOffsetX,
+    headOffsetY,
+    lengthFt,
+    widthFt,
+  };
+}
+
+function pointInRectanglePattern(sprinkler, point, feetPerPixel) {
+  return Boolean(rectanglePatternCoverageAtPoint(sprinkler, point, feetPerPixel));
 }
 
 function sprinklerCoversLocalPoint(sprinkler, point, feetPerPixel) {
@@ -1993,7 +2049,16 @@ function sprinklerPrecipitationAtPoint(sprinkler, point, feetPerPixel) {
   if (averagePr <= 0) return 0;
 
   if (isRectanglePattern(sprinkler)) {
-    return pointInRectanglePattern(sprinkler, point, feetPerPixel) ? averagePr : 0;
+    const coverage = rectanglePatternCoverageAtPoint(sprinkler, point, feetPerPixel);
+    return coverage
+      ? averagePr * rectangleRadialPrecipitationMultiplier(
+        coverage.lengthFt,
+        coverage.widthFt,
+        coverage.headOffsetX,
+        coverage.headOffsetY,
+        coverage.distanceFt,
+      )
+      : 0;
   }
 
   const coverage = arcSprinklerCoverageAtPoint(sprinkler, point, feetPerPixel);
