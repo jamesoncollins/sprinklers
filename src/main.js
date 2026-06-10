@@ -16,8 +16,15 @@ const precipitationColorStops = [
   { value: 2, color: [49, 163, 84] },
 ];
 const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
-const rotorRadialDistributionMinimumRadiusRatio = 0.25;
-const rotorRadialDistributionNormalization = 2 - rotorRadialDistributionMinimumRadiusRatio;
+const rotorRadialDistributionSamples = [
+  { radiusRatio: 0, multiplier: 0.15 },
+  { radiusRatio: 0.15, multiplier: 0.35 },
+  { radiusRatio: 0.35, multiplier: 0.75 },
+  { radiusRatio: 0.65, multiplier: 1.35 },
+  { radiusRatio: 0.9, multiplier: 1.25 },
+  { radiusRatio: 1, multiplier: 0.6 },
+];
+const rotorRadialDistributionNormalization = calculateRadialDistributionAreaMean(rotorRadialDistributionSamples);
 const minPrecipitationContourInterval = 0.05;
 const maxPrecipitationContourInterval = 1;
 const precipitationContourIntervalStep = 0.05;
@@ -1268,10 +1275,42 @@ function sprinklerPr(sprinkler) {
   return (96.3 * flow) / area;
 }
 
-function rotorRadialPrecipitationMultiplier(radiusRatio) {
+function interpolateRadialDistributionMultiplier(samples, radiusRatio) {
   const boundedRadiusRatio = Math.min(1, Math.max(0, radiusRatio));
-  const spreadingRadiusRatio = Math.max(rotorRadialDistributionMinimumRadiusRatio, boundedRadiusRatio);
-  return (1 / spreadingRadiusRatio) / rotorRadialDistributionNormalization;
+  const first = samples[0];
+  const last = samples[samples.length - 1];
+  if (!first || !last) return 1;
+  if (boundedRadiusRatio <= first.radiusRatio) return first.multiplier;
+
+  for (let index = 1; index < samples.length; index += 1) {
+    const previous = samples[index - 1];
+    const next = samples[index];
+    if (boundedRadiusRatio > next.radiusRatio) continue;
+    const span = Math.max(0.001, next.radiusRatio - previous.radiusRatio);
+    const t = (boundedRadiusRatio - previous.radiusRatio) / span;
+    return previous.multiplier + (next.multiplier - previous.multiplier) * t;
+  }
+
+  return last.multiplier;
+}
+
+function calculateRadialDistributionAreaMean(samples) {
+  const sampleCount = 512;
+  let weightedTotal = 0;
+
+  for (let index = 0; index < sampleCount; index += 1) {
+    const innerRadiusRatio = index / sampleCount;
+    const outerRadiusRatio = (index + 1) / sampleCount;
+    const midpointRadiusRatio = (innerRadiusRatio + outerRadiusRatio) / 2;
+    const annularAreaShare = outerRadiusRatio ** 2 - innerRadiusRatio ** 2;
+    weightedTotal += interpolateRadialDistributionMultiplier(samples, midpointRadiusRatio) * annularAreaShare;
+  }
+
+  return weightedTotal > 0 ? weightedTotal : 1;
+}
+
+function rotorRadialPrecipitationMultiplier(radiusRatio) {
+  return interpolateRadialDistributionMultiplier(rotorRadialDistributionSamples, radiusRatio) / rotorRadialDistributionNormalization;
 }
 
 function sprinklerPrecipitationStats(sprinklers) {
