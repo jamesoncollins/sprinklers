@@ -1940,12 +1940,12 @@ function pointInRectanglePattern(sprinkler, point, feetPerPixel) {
   const dx = point.x - center.x;
   const dy = point.y - center.y;
   const angle = (normalizeDegrees(sprinkler.orientationDegrees) * Math.PI) / 180;
-  const forwardFt = (dx * Math.sin(angle) + dy * -Math.cos(angle)) * feetPerPixel;
-  const rightFt = (dx * Math.cos(angle) + dy * Math.sin(angle)) * feetPerPixel;
+  const alongLengthFt = (dx * Math.cos(angle) + dy * Math.sin(angle)) * feetPerPixel;
+  const alongWidthFt = (-dx * Math.sin(angle) + dy * Math.cos(angle)) * feetPerPixel;
   const headOffsetX = normalizeRectangleHeadOffset(sprinkler.headOffsetX, 0.5);
   const headOffsetY = normalizeRectangleHeadOffset(sprinkler.headOffsetY, 0.5);
-  const rectangleX = headOffsetX * lengthFt + rightFt;
-  const rectangleY = headOffsetY * widthFt + forwardFt;
+  const rectangleX = headOffsetX * lengthFt + alongLengthFt;
+  const rectangleY = headOffsetY * widthFt + alongWidthFt;
 
   return rectangleX >= 0 && rectangleX <= lengthFt && rectangleY >= 0 && rectangleY <= widthFt;
 }
