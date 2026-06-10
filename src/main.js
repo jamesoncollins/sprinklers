@@ -2155,13 +2155,8 @@ function renderRectangleCoverage(sprinkler, color) {
   coverage.style.width = `${lengthPx}px`;
   coverage.style.height = `${widthPx}px`;
   coverage.style.color = color;
-  // Rectangle geometry treats positive local Y as the sprinkler's forward throw direction.
-  // In screen space, the unrotated forward direction is upward, so invert the stored
-  // head Y offset when anchoring the DOM rectangle to keep rendering and precipitation
-  // sampling aligned with the same coordinate system.
-  const headAnchorY = 1 - headOffsetY;
-  coverage.style.transform = `translate(${-headOffsetX * 100}%, ${-headAnchorY * 100}%) rotate(${normalizeDegrees(sprinkler.orientationDegrees)}deg)`;
-  coverage.style.transformOrigin = `${headOffsetX * 100}% ${headAnchorY * 100}%`;
+  coverage.style.transform = `translate(${-headOffsetX * 100}%, ${-headOffsetY * 100}%) rotate(${normalizeDegrees(sprinkler.orientationDegrees)}deg)`;
+  coverage.style.transformOrigin = `${headOffsetX * 100}% ${headOffsetY * 100}%`;
   coverageLayer.appendChild(coverage);
   return coverage;
 }
