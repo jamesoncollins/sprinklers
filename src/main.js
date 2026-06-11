@@ -1,4 +1,5 @@
 import { radialPrecipitationRateInHr } from './precipitation-model.js';
+import { solveZoneHydraulics, sprinklerPressureScaleFactorAtPressure } from './hydraulic-model.js';
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
 const defaultFeetPerPixel = 0.25;
 const earthRadiusFeet = 20925524.9;
@@ -1149,7 +1150,7 @@ function sprinklerLabel(sprinkler) {
   const number = project.sprinklers.findIndex((candidate) => candidate.id === sprinkler.id) + 1;
   const head = sprinkler.headModel || 'Unspecified head';
   const nozzle = sprinkler.nozzleModel || 'Unspecified nozzle';
-  return `#${number} · ${head} / ${nozzle}`;
+  return `#${number} · ${head} / ${nozzle} · ${formatNumber(effectiveFlowGpm(sprinkler))} gpm actual`;
 }
 
 function currentInspectorZoneId() {
@@ -1225,12 +1226,28 @@ function zoneForSprinkler(sprinkler) {
   return project.zones.find((zone) => zone.id === sprinkler.zoneId) || project.zones[0] || normalizeZone();
 }
 
+function sprinklersForZone(zone) {
+  return project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id);
+}
+
+function zoneHydraulicSolution(zone) {
+  const zoneSprinklers = sprinklersForZone(zone);
+  const solution = solveZoneHydraulics(zone, zoneSprinklers);
+  zone.operatingPressurePsi = solution.operatingPressurePsi;
+  zone.totalFlowGpm = solution.totalFlowGpm;
+  zoneSprinklers.forEach((sprinkler, index) => {
+    sprinkler.operatingPressurePsi = solution.operatingPressurePsi;
+    sprinkler.actualFlowGpm = solution.actualFlows[index] ?? 0;
+  });
+  return solution;
+}
+
+function sprinklerOperatingPressurePsi(sprinkler) {
+  return zoneHydraulicSolution(zoneForSprinkler(sprinkler)).operatingPressurePsi;
+}
+
 function pressureScaleFactor(sprinkler) {
-  if (sprinkler.pressureRegulating) return 1;
-  const ratedPressure = Number(sprinkler.ratedPressurePsi ?? sprinkler.pressurePsi) || 0;
-  const zonePressure = Number(zoneForSprinkler(sprinkler)?.pressurePsi) || ratedPressure;
-  if (ratedPressure <= 0 || zonePressure <= 0) return 1;
-  return Math.sqrt(zonePressure / ratedPressure);
+  return sprinklerPressureScaleFactorAtPressure(sprinkler, sprinklerOperatingPressurePsi(sprinkler));
 }
 
 function effectiveFlowGpm(sprinkler) {
@@ -1325,12 +1342,13 @@ function sprinklerPrecipitationStats(sprinklers) {
 
 
 function zoneCalculatedStats(zone) {
-  const zoneSprinklers = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id);
-  const totalFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
+  const zoneSprinklers = sprinklersForZone(zone);
+  const hydraulicSolution = zoneHydraulicSolution(zone);
   const precipitationStats = sprinklerPrecipitationStats(zoneSprinklers);
   return {
     sprinklers: zoneSprinklers,
-    totalFlow,
+    totalFlow: hydraulicSolution.totalFlowGpm,
+    operatingPressurePsi: hydraulicSolution.operatingPressurePsi,
     precipitationStats,
   };
 }
@@ -1349,12 +1367,14 @@ function zoneStatCard(label, value) {
 }
 
 function renderZoneCalculatedInfo(container, zone) {
-  const { sprinklers, totalFlow, precipitationStats } = zoneCalculatedStats(zone);
+  const { sprinklers, totalFlow, operatingPressurePsi, precipitationStats } = zoneCalculatedStats(zone);
   container.replaceChildren(
+    zoneStatCard('Static pressure', `${formatNumber(Number(zone.pressurePsi) || 0, 1)} psi`),
+    zoneStatCard('Operating pressure', `${formatNumber(operatingPressurePsi, 1)} psi`),
+    zoneStatCard('Total flow', `${formatNumber(totalFlow)} gpm`),
     zoneStatCard('Min PR', precipitationStats ? `${formatNumber(precipitationStats.min)} in/hr` : '—'),
     zoneStatCard('Avg PR', precipitationStats ? `${formatNumber(precipitationStats.average)} in/hr` : '—'),
     zoneStatCard('Max PR', precipitationStats ? `${formatNumber(precipitationStats.max)} in/hr` : '—'),
-    zoneStatCard('Total flow', `${formatNumber(totalFlow)} gpm`),
   );
 
   const note = document.createElement('div');
@@ -1524,6 +1544,16 @@ function syncSprinklersFromGps() {
   });
 }
 
+function selectedActualFlowDisplay() {
+  let display = document.getElementById('selected-actual-flow');
+  if (display) return display;
+  display = document.createElement('p');
+  display.id = 'selected-actual-flow';
+  display.className = 'status-text';
+  selectedFlow.closest('.field-group')?.insertAdjacentElement('afterend', display);
+  return display;
+}
+
 function renderSprinklerSelect() {
   clearSelect(zoneSprinklerSelect);
   const zoneId = currentInspectorZoneId();
@@ -1582,7 +1612,7 @@ function renderZones() {
 
     const pressureField = document.createElement('div');
     const pressureLabel = document.createElement('label');
-    pressureLabel.textContent = 'Zone pressure PSI';
+    pressureLabel.textContent = 'Static pressure PSI';
     const pressureInputEl = document.createElement('input');
     pressureInputEl.type = 'number';
     pressureInputEl.min = '1';
@@ -1600,17 +1630,19 @@ function renderZones() {
 
     const flowField = document.createElement('div');
     const flowLabel = document.createElement('label');
-    flowLabel.textContent = 'Measured supply GPM';
+    flowLabel.textContent = 'Open-flow supply GPM';
     const flowInputEl = document.createElement('input');
     flowInputEl.type = 'number';
     flowInputEl.min = '0';
     flowInputEl.step = '0.01';
     flowInputEl.value = zone.measuredFlowGpm ?? '';
     flowInputEl.placeholder = 'Unknown';
-    flowInputEl.setAttribute('aria-label', `${zone.name} measured supply flow GPM`);
+    flowInputEl.title = 'Open-flow rate of the water source at 0 PSI, used with static pressure to solve operating pressure.';
+    flowInputEl.setAttribute('aria-label', `${zone.name} open-flow supply GPM`);
     flowInputEl.addEventListener('input', () => {
       const flow = Number(flowInputEl.value);
       zone.measuredFlowGpm = Number.isFinite(flow) && flow > 0 ? flow : null;
+      renderCanvas();
       updateZoneCalculatedInfo(zone.id);
       renderAnalysis();
     });
@@ -2319,7 +2351,7 @@ function renderCanvas() {
     setPositionFromPercent(marker, sprinkler);
     marker.style.backgroundColor = color;
     marker.style.setProperty('--marker-scale', `${1 / normalizeMapViewSettings(project.site.mapView).scale}`);
-    marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr, ${formatNumber(effectiveFlowGpm(sprinkler))} gpm effective${isRectanglePattern(sprinkler) ? `, ${formatNumber(effectiveWidthFt(sprinkler), 1)} x ${formatNumber(effectiveRadiusFt(sprinkler), 1)} ft rectangle` : ''})`;
+    marker.title = `${sprinkler.headModel || 'Sprinkler'} (${formatNumber(sprinklerPr(sprinkler), 2)} in/hr, ${formatNumber(effectiveFlowGpm(sprinkler))} gpm actual${isRectanglePattern(sprinkler) ? `, ${formatNumber(effectiveWidthFt(sprinkler), 1)} x ${formatNumber(effectiveRadiusFt(sprinkler), 1)} ft rectangle` : ''})`;
     marker.setAttribute('aria-label', `Select sprinkler ${sprinkler.headModel || sprinkler.id}`);
     marker.addEventListener('pointerdown', (event) => {
       if (event.ctrlKey || event.button !== 0) return;
@@ -2352,6 +2384,8 @@ function renderInspector() {
   const sprinkler = selectedSprinklerInCurrentZone();
   noSelection.classList.toggle('hidden', Boolean(sprinkler));
   selectedSprinklerFields.classList.toggle('hidden', !sprinkler);
+  const actualFlowDisplay = selectedActualFlowDisplay();
+  actualFlowDisplay.classList.toggle('hidden', !sprinkler);
   if (!sprinkler) return;
 
   sprinklerPanel.open = true;
@@ -2365,6 +2399,7 @@ function renderInspector() {
   selectedArc.value = sprinkler.arcDegrees ?? 360;
   selectedOrientation.value = sprinkler.orientationDegrees ?? 0;
   selectedPressureRegulating.checked = Boolean(sprinkler.pressureRegulating);
+  actualFlowDisplay.textContent = `Actual flow: ${formatNumber(effectiveFlowGpm(sprinkler))} gpm at ${formatNumber(sprinklerOperatingPressurePsi(sprinkler), 1)} psi operating pressure`;
   selectedArc.disabled = isRectanglePattern(sprinkler);
   selectedArc.title = isRectanglePattern(sprinkler) ? 'Rectangle-pattern nozzles use width x length geometry instead of arc degrees.' : '';
   selectedRadius.labels?.[0]?.replaceChildren(document.createTextNode(isRectanglePattern(sprinkler) ? 'Length (ft)' : 'Radius (ft)'));
@@ -2388,15 +2423,16 @@ function renderAnalysis() {
   addAnalysisCard('Overall PR', `${formatNumber(overallPr)} in/hr`, 'Water-share adjusted across all zones');
 
   project.zones.forEach((zone) => {
-    const zoneSprinklers = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id);
-    const zoneFlow = zoneSprinklers.reduce((sum, sprinkler) => sum + effectiveFlowGpm(sprinkler), 0);
-    const supply = Number(zone.measuredFlowGpm) || 0;
-    const warning = supply > 0 && zoneFlow > supply;
-    const nearLimit = supply > 0 && zoneFlow <= supply && zoneFlow >= supply * 0.9;
-    if (warning) {
-      addAnalysisCard('Supply warning', `${zone.name} overrun`, `Estimated head demand exceeds measured supply by ${formatNumber(zoneFlow - supply)} gpm. Actual pressure may drop as flow rises.`, true);
-    } else if (nearLimit) {
-      addAnalysisCard('Supply caution', `${zone.name} near limit`, 'Estimated demand is within 10% of measured supply; field pressure may sag under load.', true);
+    const hydraulicSolution = zoneHydraulicSolution(zone);
+    const staticPressure = Number(zone.pressurePsi) || 0;
+    const operatingPressure = hydraulicSolution.operatingPressurePsi;
+    if (staticPressure > 0 && operatingPressure < staticPressure * 0.9) {
+      addAnalysisCard(
+        'Pressure drop',
+        `${zone.name}: ${formatNumber(operatingPressure, 1)} psi`,
+        `Solved operating pressure is below static pressure (${formatNumber(staticPressure, 1)} psi) at ${formatNumber(hydraulicSolution.totalFlowGpm)} gpm.`,
+        true,
+      );
     }
   });
 
