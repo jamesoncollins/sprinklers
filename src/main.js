@@ -1,3 +1,4 @@
+import { colorForPrecipitationRate, precipitationLegendGradient } from './precipitation-colors.js';
 import { radialPrecipitationRateInHr } from './precipitation-model.js';
 import { solveZoneHydraulics, sprinklerPressureScaleFactorAtPressure } from './hydraulic-model.js';
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
@@ -10,14 +11,6 @@ const minPrecipitationGridCellFeet = 0.5;
 const maxPrecipitationGridCellFeet = 5;
 const precipitationGridCellFeetStep = 0.5;
 const minPrecipitationGridCellPx = 1;
-const precipitationColorStops = [
-  { value: 0, color: [215, 48, 31] },
-  { value: 0.5, color: [253, 141, 60] },
-  { value: 1, color: [255, 232, 120] },
-  { value: 1.5, color: [116, 196, 118] },
-  { value: 2, color: [49, 163, 84] },
-];
-const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
 const minRadialSpreadRadiusRatio = 0.08;
 const rectangleSpreadNormalizationSampleCount = 32;
 const rectangleSpreadNormalizationCache = new Map();
@@ -291,12 +284,22 @@ function createPrecipitationUi() {
     legend.innerHTML = `
       <div class="precipitation-legend-title">Combined precipitation rate</div>
       <div class="precipitation-legend-gradient"></div>
-      <div class="precipitation-legend-labels"><span>Low</span><span>High</span></div>
+      <div class="precipitation-legend-labels"><span>Dry</span><span>Wet</span></div>
       <div id="precipitation-legend-range" class="precipitation-legend-range">0 in/hr</div>
       <div id="precipitation-contour-summary" class="precipitation-legend-range"></div>
     `;
     mapCanvas.insertBefore(legend, sprinklerContextMenu);
     legendRange = legend.querySelector('#precipitation-legend-range');
+  }
+
+  const legendGradient = legend.querySelector('.precipitation-legend-gradient');
+  if (legendGradient) {
+    legendGradient.style.background = precipitationLegendGradient();
+  }
+  const legendLabels = legend.querySelectorAll('.precipitation-legend-labels span');
+  if (legendLabels.length >= 2) {
+    legendLabels[0].textContent = 'Dry';
+    legendLabels[1].textContent = 'Wet';
   }
 
   let contourSummary = legend.querySelector('#precipitation-contour-summary');
@@ -1984,27 +1987,6 @@ function addGrassAreaPoint(position) {
   if (!grassDrawingState) return;
   grassDrawingState.points.push(position);
   renderCanvas();
-}
-
-function colorForPrecipitationRate(rate, maxRate) {
-  if (rate <= 0 || maxRate <= 0) return 'rgba(0, 0, 0, 0)';
-  const normalizedRate = Math.min(1, Math.max(0, rate / maxRate));
-  const scaledRate = normalizedRate * maxPrecipitationColorStop.value;
-  const upperIndex = precipitationColorStops.findIndex((stop) => scaledRate <= stop.value);
-  if (upperIndex <= 0) {
-    const [r, g, b] = precipitationColorStops[0].color;
-    return `rgba(${r}, ${g}, ${b}, 0.5)`;
-  }
-  const upper = precipitationColorStops[upperIndex] || maxPrecipitationColorStop;
-  const lower = precipitationColorStops[upperIndex - 1] || precipitationColorStops[0];
-  const span = Math.max(0.001, upper.value - lower.value);
-  const t = Math.min(1, Math.max(0, (scaledRate - lower.value) / span));
-  const [r1, g1, b1] = lower.color;
-  const [r2, g2, b2] = upper.color;
-  const r = Math.round(r1 + (r2 - r1) * t);
-  const g = Math.round(g1 + (g2 - g1) * t);
-  const b = Math.round(b1 + (b2 - b1) * t);
-  return `rgba(${r}, ${g}, ${b}, 0.68)`;
 }
 
 function rectanglePatternCoverageAtPoint(sprinkler, point, feetPerPixel) {
