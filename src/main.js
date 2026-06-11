@@ -1,3 +1,4 @@
+import { radialPrecipitationRateInHr } from './precipitation-model.js';
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
 const defaultFeetPerPixel = 0.25;
 const earthRadiusFeet = 20925524.9;
@@ -17,7 +18,6 @@ const precipitationColorStops = [
 ];
 const maxPrecipitationColorStop = precipitationColorStops[precipitationColorStops.length - 1];
 const minRadialSpreadRadiusRatio = 0.08;
-const rotorRadialSpreadAreaMean = 1 - minRadialSpreadRadiusRatio / 2;
 const rectangleSpreadNormalizationSampleCount = 32;
 const rectangleSpreadNormalizationCache = new Map();
 const minPrecipitationContourInterval = 0.05;
@@ -467,7 +467,7 @@ function formatNominalPrecipitation(precipitation) {
   if (precipitation.catalog !== null && precipitation.catalog !== undefined) parts.push(`${formatNumber(precipitation.catalog)} catalog`);
   if (precipitation.square !== null && precipitation.square !== undefined) parts.push(`${formatNumber(precipitation.square)} square`);
   if (precipitation.triangular !== null && precipitation.triangular !== undefined) parts.push(`${formatNumber(precipitation.triangular)} triangular`);
-  return parts.length ? ` Manufacturer nominal PR: ${parts.join(' / ')} in/hr; calculated PR still uses effective flow, actual coverage area, and the point-sampled 1/r distance-spreading model.` : '';
+  return parts.length ? ` Manufacturer nominal PR: ${parts.join(' / ')} in/hr; calculated PR uses effective flow, actual coverage area, and the normalized radial distribution model.` : '';
 }
 
 function buildCatalog(rows) {
@@ -1274,17 +1274,6 @@ function radialSpreadIntensity(distance, minimumDistance) {
   return 1 / Math.max(distance, minimumDistance);
 }
 
-function rotorRadialPrecipitationMultiplier(radiusRatio) {
-  const boundedRadiusRatio = Math.min(1, Math.max(0, radiusRatio));
-  const spreadRadiusRatio = Math.max(boundedRadiusRatio, minRadialSpreadRadiusRatio);
-
-  // Rotor streams sweep an arc whose circumference grows with radius, so a fixed
-  // stream width spreads the same flow over roughly 1/r more area as it travels
-  // outward. Cap the innermost few percent to avoid an infinite value at the
-  // head, then normalize by area so each head still averages to sprinklerPr().
-  return (1 / (2 * spreadRadiusRatio)) / rotorRadialSpreadAreaMean;
-}
-
 function rectangleSpreadMinimumDistanceFt(lengthFt, widthFt) {
   return Math.max(lengthFt, widthFt) * minRadialSpreadRadiusRatio;
 }
@@ -2045,10 +2034,10 @@ function arcSprinklerCoverageAtPoint(sprinkler, point, feetPerPixel) {
 }
 
 function sprinklerPrecipitationAtPoint(sprinkler, point, feetPerPixel) {
-  const averagePr = sprinklerPr(sprinkler);
-  if (averagePr <= 0) return 0;
-
   if (isRectanglePattern(sprinkler)) {
+    const averagePr = sprinklerPr(sprinkler);
+    if (averagePr <= 0) return 0;
+
     const coverage = rectanglePatternCoverageAtPoint(sprinkler, point, feetPerPixel);
     return coverage
       ? averagePr * rectangleRadialPrecipitationMultiplier(
@@ -2062,7 +2051,20 @@ function sprinklerPrecipitationAtPoint(sprinkler, point, feetPerPixel) {
   }
 
   const coverage = arcSprinklerCoverageAtPoint(sprinkler, point, feetPerPixel);
-  return coverage ? averagePr * rotorRadialPrecipitationMultiplier(coverage.radiusRatio) : 0;
+  if (!coverage) return 0;
+
+  // Arc/sector heads use a normalized radial distribution. The shape function
+  // S(r/R) controls relative intensity, while the normalization constant is
+  // computed from ∫ S(rho) * rho d(rho) so integrating the point field over the
+  // watered sector recovers the pressure-scaled sprinkler flow exactly. This
+  // keeps overlap rendering additive without creating or losing water.
+  return radialPrecipitationRateInHr({
+    flowGpm: effectiveFlowGpm(sprinkler),
+    radiusFt: effectiveRadiusFt(sprinkler),
+    sectorAngleRadians: (clampArcDegrees(sprinkler.arcDegrees) * Math.PI) / 180,
+    distanceFt: coverage.distanceFt,
+    model: sprinkler.radialDistributionModel,
+  });
 }
 
 function combinedPrecipitationAtPoint(point, feetPerPixel) {
