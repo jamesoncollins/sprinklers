@@ -23,7 +23,8 @@
    - Renders throw sectors and zone coloring.
 
 4. **Analysis Engine**
-   - Computes per-sprinkler throw and precipitation.
+   - Solves each zone's operating pressure from static pressure, open-flow supply, and sprinkler demand.
+   - Computes per-sprinkler actual flow, throw, and precipitation from solved operating pressure.
    - Aggregates per-zone flow and precipitation.
 
 ## Suggested project JSON structure
@@ -42,7 +43,7 @@
     }
   },
   "zones": [
-    { "id": "zone-1", "name": "Front Lawn", "pressurePsi": 45, "measuredFlowGpm": 8, "waterShare": 1 }
+    { "id": "zone-1", "name": "Front Lawn", "pressurePsi": 45, "measuredFlowGpm": 8, "operatingPressurePsi": 32.7, "totalFlowGpm": 6.72, "waterShare": 1 }
   ],
   "sprinklers": [
     {
@@ -56,7 +57,8 @@
       "arcDegrees": 180,
       "orientationDegrees": 0,
       "radiusFt": 0,
-      "flowGpm": 0
+      "flowGpm": 0,
+      "actualFlowGpm": 0
     }
   ]
 }
@@ -81,7 +83,7 @@
 - `precip_triangle_in_hr` / `precip_triangular_in_hr` / `triangular_spacing_pr_in_hr` (optional manufacturer triangular-spacing PR reference)
 - `notes`
 
-Optional manufacturer PR fields are preserved as catalog metadata for display and sanity checks. Square and triangular values assume those spacing patterns, so they do not replace calculated precipitation. Area-scale PR is derived from effective flow and actual sector-adjusted or rectangular coverage area; the point-sampled precipitation heat map applies a normalized `1/r` distance-spreading profile for arc/rotor and rectangular patterns so single-head output is not treated as uniform across the throw.
+Optional manufacturer PR fields are preserved as catalog metadata for display and sanity checks. Square and triangular values assume those spacing patterns, so they do not replace calculated precipitation. Area-scale PR is derived from solved actual flow and actual sector-adjusted or rectangular coverage area; the point-sampled precipitation heat map applies a normalized `1/r` distance-spreading profile for arc/rotor and rectangular patterns so single-head output is not treated as uniform across the throw.
 
 ## Interpolation approach
 
