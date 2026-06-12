@@ -1,4 +1,4 @@
-import { colorForPrecipitationRate, precipitationLegendGradient } from './precipitation-colors.js';
+import { colorForPrecipitationRate, precipitationColorScaleMax, precipitationLegendGradient } from './precipitation-colors.js';
 import { radialPrecipitationRateInHr } from './precipitation-model.js';
 import { solveZoneHydraulics, sprinklerPressureScaleFactorAtPressure } from './hydraulic-model.js';
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
@@ -2203,6 +2203,7 @@ function renderPrecipitationLayer() {
   const columns = Math.ceil(box.width / cellSize);
   const rows = Math.ceil(box.height / cellSize);
   const rates = Array.from({ length: rows }, () => Array(columns).fill(0));
+  const positiveRates = [];
   let maxRate = 0;
 
   for (let row = 0; row < rows; row += 1) {
@@ -2215,9 +2216,11 @@ function renderPrecipitationLayer() {
       };
       const rate = localPointIsInsideGrass(sample) ? combinedPrecipitationAtPoint(sample, feetPerPixel) : 0;
       maxRate = Math.max(maxRate, rate);
+      if (rate > 0) positiveRates.push(rate);
       rates[row][column] = rate;
     }
   }
+  const colorScaleMax = precipitationColorScaleMax(positiveRates);
 
   context.save();
   applyGrassClip(context, box);
@@ -2227,7 +2230,7 @@ function renderPrecipitationLayer() {
       if (rate <= 0) continue;
       const x = column * cellSize;
       const y = row * cellSize;
-      context.fillStyle = colorForPrecipitationRate(rate, maxRate);
+      context.fillStyle = colorForPrecipitationRate(rate, colorScaleMax);
       context.fillRect(x, y, Math.min(cellSize, box.width - x), Math.min(cellSize, box.height - y));
     }
   }
@@ -2241,7 +2244,7 @@ function renderPrecipitationLayer() {
   precipitationLayer.append(canvas, contourCanvas);
   const grassScopeText = hasGrassAreas() ? ` inside ${normalizeGrassAreas(project.site.grassAreas).length} grass area${normalizeGrassAreas(project.site.grassAreas).length === 1 ? '' : 's'}` : '';
   precipitationLegendRange.textContent = maxRate > 0
-    ? `0–${formatNumber(maxRate, 2)} in/hr combined${grassScopeText} across ${completeSprinklers.length} sprinkler${completeSprinklers.length === 1 ? '' : 's'}`
+    ? `0–${formatNumber(colorScaleMax, 2)} in/hr color scale; max ${formatNumber(maxRate, 2)}${grassScopeText} across ${completeSprinklers.length} sprinkler${completeSprinklers.length === 1 ? '' : 's'}`
     : hasGrassAreas()
       ? 'No irrigated grass cells found in the current canvas view.'
       : 'No irrigated cells found in the current canvas view; draw grass areas to limit the overlay.';

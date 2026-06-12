@@ -18,6 +18,19 @@ export function precipitationLegendGradient(alpha = 0.95) {
   return `linear-gradient(90deg, ${stops.join(', ')})`;
 }
 
+export function precipitationColorScaleMax(rates, percentile = 0.9) {
+  const positiveRates = rates
+    .filter((rate) => Number.isFinite(rate) && rate > 0)
+    .sort((a, b) => a - b);
+  if (!positiveRates.length) return 0;
+  const clampedPercentile = Math.min(1, Math.max(0, percentile));
+  const index = Math.min(
+    positiveRates.length - 1,
+    Math.max(0, Math.floor((positiveRates.length - 1) * clampedPercentile)),
+  );
+  return positiveRates[index];
+}
+
 export function colorForPrecipitationRate(rate, maxRate) {
   if (rate <= 0 || maxRate <= 0) return 'rgba(0, 0, 0, 0)';
   const normalizedRate = Math.min(1, Math.max(0, rate / maxRate));
