@@ -150,6 +150,7 @@ const selectedPressureRegulating = document.getElementById('selected-pressure-re
 const applyCatalogToSelectedBtn = document.getElementById('apply-catalog-to-selected');
 const deleteSelectedBtn = document.getElementById('delete-selected');
 const sprinklerContextMenu = document.getElementById('sprinkler-context-menu');
+const contextApplyCatalogBtn = document.getElementById('context-apply-catalog');
 const contextDeleteSprinklerBtn = document.getElementById('context-delete-sprinkler');
 const contextZoneSelect = document.getElementById('context-zone-select');
 const precipitationUi = createPrecipitationUi();
@@ -2672,6 +2673,33 @@ function updateSelectedSprinklerFromForm() {
   renderAnalysis();
 }
 
+function applySelectedCatalogToSprinkler(sprinkler) {
+  const model = findSelectedModel();
+  const pressurePsi = selectedCatalogPressurePsi(model);
+  if (!sprinkler || !model || pressurePsi === null) return false;
+  const result = lookupPerformance(model, pressurePsi);
+  if (result.flowGpm == null || result.radiusFt == null) return false;
+  Object.assign(sprinkler, {
+    headModel: model.headModel,
+    nozzleModel: model.nozzleModel,
+    pressurePsi,
+    ratedPressurePsi: pressurePsi,
+    pressureRegulating: Boolean(model.pressureRegulating),
+    patternType: normalizePatternType(model.patternType),
+    headOffsetX: normalizeRectangleHeadOffset(model.headOffsetX, 0.5),
+    headOffsetY: normalizeRectangleHeadOffset(model.headOffsetY, 0.5),
+    widthFt: result.widthFt ?? 0,
+    baseWidthFt: result.widthFt ?? 0,
+    flowGpm: result.flowGpm,
+    radiusFt: result.radiusFt,
+    baseFlowGpm: result.flowGpm,
+    baseRadiusFt: result.radiusFt,
+    arcDegrees: model.defaultArcDegrees || sprinkler.arcDegrees,
+  });
+  lookupResult.textContent = `Applied ${model.headModel} / ${model.nozzleModel} to selected sprinkler (${model.pressureRegulating ? 'pressure regulating' : 'not pressure regulating'}).`;
+  return true;
+}
+
 function updateLookupResult() {
   const model = findSelectedModel();
   const pressurePsi = syncCatalogPressureInput(model);
@@ -3017,6 +3045,13 @@ contextZoneSelect.addEventListener('change', () => {
   closeSprinklerContextMenu();
   render();
 });
+contextApplyCatalogBtn.addEventListener('click', () => {
+  const sprinkler = project.sprinklers.find((candidate) => candidate.id === contextMenuSprinklerId);
+  if (!applySelectedCatalogToSprinkler(sprinkler)) return;
+  selectedSprinklerId = sprinkler.id;
+  closeSprinklerContextMenu();
+  render();
+});
 contextDeleteSprinklerBtn.addEventListener('click', () => deleteSprinklerById(contextMenuSprinklerId));
 
 sprinklerLayer.addEventListener('pointermove', (event) => {
@@ -3091,29 +3126,7 @@ if ('ResizeObserver' in window) {
 
 applyCatalogToSelectedBtn.addEventListener('click', () => {
   const sprinkler = selectedSprinkler();
-  const model = findSelectedModel();
-  const pressurePsi = selectedCatalogPressurePsi(model);
-  if (!sprinkler || !model || pressurePsi === null) return;
-  const result = lookupPerformance(model, pressurePsi);
-  if (result.flowGpm == null || result.radiusFt == null) return;
-  Object.assign(sprinkler, {
-    headModel: model.headModel,
-    nozzleModel: model.nozzleModel,
-    pressurePsi,
-    ratedPressurePsi: pressurePsi,
-    pressureRegulating: Boolean(model.pressureRegulating),
-    patternType: normalizePatternType(model.patternType),
-    headOffsetX: normalizeRectangleHeadOffset(model.headOffsetX, 0.5),
-    headOffsetY: normalizeRectangleHeadOffset(model.headOffsetY, 0.5),
-    widthFt: result.widthFt ?? 0,
-    baseWidthFt: result.widthFt ?? 0,
-    flowGpm: result.flowGpm,
-    radiusFt: result.radiusFt,
-    baseFlowGpm: result.flowGpm,
-    baseRadiusFt: result.radiusFt,
-    arcDegrees: model.defaultArcDegrees || sprinkler.arcDegrees,
-  });
-  lookupResult.textContent = `Applied ${model.headModel} / ${model.nozzleModel} to selected sprinkler (${model.pressureRegulating ? 'pressure regulating' : 'not pressure regulating'}).`;
+  if (!applySelectedCatalogToSprinkler(sprinkler)) return;
   render();
 });
 
