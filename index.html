@@ -145,6 +145,8 @@
                 <select id="zone-inspector-select" class="canvas-zone-select" aria-label="Zone"></select>
                 <button id="add-zone" type="button" class="secondary-btn">Add Zone</button>
               </div>
+              <button id="open-zones-popout" type="button" class="secondary-btn">Zones</button>
+              <button id="open-sprinklers-popout" type="button" class="secondary-btn">Sprinklers</button>
               <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
               <details class="canvas-tools-menu">
                 <summary class="canvas-tools-summary">Canvas tools</summary>
@@ -269,6 +271,31 @@
           </details>
         </aside>
       </main>
+      <div id="quick-edit-backdrop" class="quick-edit-backdrop hidden" aria-hidden="true"></div>
+      <section id="zones-popout" class="quick-edit-popout hidden" role="dialog" aria-modal="true" aria-labelledby="zones-popout-title">
+        <div class="quick-edit-header">
+          <div>
+            <h2 id="zones-popout-title">Quick Edit Zones</h2>
+            <p>Table-style zone controls for fast pressure, supply, and scheduling edits.</p>
+          </div>
+          <button id="close-zones-popout" type="button" class="quick-edit-close" aria-label="Close zones quick editor">×</button>
+        </div>
+        <div class="quick-edit-actions">
+          <button id="quick-add-zone" type="button" class="secondary-btn">Add Zone</button>
+        </div>
+        <div id="zones-quick-table" class="quick-edit-table-wrap"></div>
+      </section>
+
+      <section id="sprinklers-popout" class="quick-edit-popout quick-edit-popout-wide hidden" role="dialog" aria-modal="true" aria-labelledby="sprinklers-popout-title">
+        <div class="quick-edit-header">
+          <div>
+            <h2 id="sprinklers-popout-title">Quick Edit Sprinklers</h2>
+            <p>Change zones, apply the current catalog lookup, or copy settings from another sprinkler in this project.</p>
+          </div>
+          <button id="close-sprinklers-popout" type="button" class="quick-edit-close" aria-label="Close sprinklers quick editor">×</button>
+        </div>
+        <div id="sprinklers-quick-table" class="quick-edit-table-wrap"></div>
+      </section>
     </div>
 
     <script type="module" src="src/main.js"></script>
