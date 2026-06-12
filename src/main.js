@@ -122,6 +122,16 @@ const zoneInspectorSelect = document.getElementById('zone-inspector-select');
 const canvasZoneControls = document.querySelector('.canvas-zone-controls');
 const zoneSprinklerSelect = document.getElementById('zone-sprinkler-select');
 const addZoneBtn = document.getElementById('add-zone');
+const openZonesPopoutBtn = document.getElementById('open-zones-popout');
+const openSprinklersPopoutBtn = document.getElementById('open-sprinklers-popout');
+const quickEditBackdrop = document.getElementById('quick-edit-backdrop');
+const zonesPopout = document.getElementById('zones-popout');
+const sprinklersPopout = document.getElementById('sprinklers-popout');
+const closeZonesPopoutBtn = document.getElementById('close-zones-popout');
+const closeSprinklersPopoutBtn = document.getElementById('close-sprinklers-popout');
+const quickAddZoneBtn = document.getElementById('quick-add-zone');
+const zonesQuickTable = document.getElementById('zones-quick-table');
+const sprinklersQuickTable = document.getElementById('sprinklers-quick-table');
 const mapCanvas = document.getElementById('map-canvas');
 const mapWorld = document.getElementById('map-world');
 const satelliteLayer = document.getElementById('satellite-layer');
@@ -1595,6 +1605,19 @@ function renderZoneInspectorControls() {
   zoneInspectorSelect.value = zoneId;
 }
 
+
+function deleteZoneById(zoneId) {
+  if (project.zones.length === 1) return;
+  const fallbackZoneId = project.zones.find((candidate) => candidate.id !== zoneId)?.id;
+  project.sprinklers.forEach((sprinkler) => {
+    if (sprinkler.zoneId === zoneId) sprinkler.zoneId = fallbackZoneId;
+  });
+  project.zones = project.zones.filter((candidate) => candidate.id !== zoneId);
+  if (inspectedZoneId === zoneId) inspectedZoneId = fallbackZoneId;
+  render();
+  renderQuickEditPopouts();
+}
+
 function renderZones() {
   renderZoneInspectorControls();
   zonesList.replaceChildren();
@@ -1686,19 +1709,308 @@ function renderZones() {
     deleteBtn.type = 'button';
     deleteBtn.textContent = '×';
     deleteBtn.title = 'Delete zone';
-    deleteBtn.addEventListener('click', () => {
-      if (project.zones.length === 1) return;
-      const fallbackZoneId = project.zones.find((candidate) => candidate.id !== zone.id)?.id;
-      project.sprinklers.forEach((sprinkler) => {
-        if (sprinkler.zoneId === zone.id) sprinkler.zoneId = fallbackZoneId;
-      });
-      project.zones = project.zones.filter((candidate) => candidate.id !== zone.id);
-      render();
-    });
+    deleteBtn.addEventListener('click', () => deleteZoneById(zone.id));
 
     row.append(swatch, input, deleteBtn, settings, calculatedInfo);
     zonesList.appendChild(row);
   });
+}
+
+
+
+function quickEditPopoutsAreOpen() {
+  return !zonesPopout.classList.contains('hidden') || !sprinklersPopout.classList.contains('hidden');
+}
+
+function updateQuickEditBackdrop() {
+  quickEditBackdrop.classList.toggle('hidden', !quickEditPopoutsAreOpen());
+}
+
+function openQuickEditPopout(popout) {
+  closeSprinklerContextMenu();
+  zonesPopout.classList.toggle('hidden', popout !== zonesPopout);
+  sprinklersPopout.classList.toggle('hidden', popout !== sprinklersPopout);
+  updateQuickEditBackdrop();
+  renderQuickEditPopouts();
+}
+
+function closeQuickEditPopouts() {
+  zonesPopout.classList.add('hidden');
+  sprinklersPopout.classList.add('hidden');
+  updateQuickEditBackdrop();
+}
+
+function renderQuickEditPopouts() {
+  if (!zonesPopout.classList.contains('hidden')) renderZonesQuickTable();
+  if (!sprinklersPopout.classList.contains('hidden')) renderSprinklersQuickTable();
+}
+
+function quickInput(type, value, label, className = '') {
+  const input = document.createElement('input');
+  input.type = type;
+  input.value = value ?? '';
+  input.setAttribute('aria-label', label);
+  if (className) input.className = className;
+  return input;
+}
+
+function renderZonesQuickTable() {
+  if (project.zones.length === 0) {
+    zonesQuickTable.innerHTML = '<div class="quick-edit-empty">No zones yet. Add a zone to start quick editing.</div>';
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'quick-edit-table';
+  table.innerHTML = '<thead><tr><th>Zone</th><th>Static PSI</th><th>Open-flow GPM</th><th>Water share</th><th>Sprinklers</th><th>Actions</th></tr></thead>';
+  const body = document.createElement('tbody');
+
+  project.zones.forEach((zone, index) => {
+    const row = document.createElement('tr');
+
+    const nameCell = document.createElement('td');
+    const nameInput = quickInput('text', zone.name, `Zone ${index + 1} name`, 'quick-name-input');
+    nameInput.addEventListener('input', () => {
+      zone.name = nameInput.value || `Zone ${index + 1}`;
+      renderZoneInspectorControls();
+      renderCanvas();
+      renderInspector();
+      renderSprinklersQuickTable();
+    });
+    const swatch = document.createElement('span');
+    swatch.className = 'quick-zone-swatch';
+    swatch.style.backgroundColor = zoneColors[index % zoneColors.length];
+    nameCell.append(swatch, nameInput);
+
+    const pressureCell = document.createElement('td');
+    const pressureInputEl = quickInput('number', zone.pressurePsi ?? 45, `${zone.name} static pressure PSI`, 'quick-number-input');
+    pressureInputEl.min = '1';
+    pressureInputEl.step = '0.1';
+    pressureInputEl.addEventListener('input', () => {
+      const pressure = Number(pressureInputEl.value);
+      zone.pressurePsi = Number.isFinite(pressure) && pressure > 0 ? pressure : 45;
+      renderCanvas();
+      renderAnalysis();
+    });
+    pressureCell.appendChild(pressureInputEl);
+
+    const flowCell = document.createElement('td');
+    const flowInputEl = quickInput('number', zone.measuredFlowGpm ?? '', `${zone.name} open-flow supply GPM`, 'quick-number-input');
+    flowInputEl.min = '0';
+    flowInputEl.step = '0.01';
+    flowInputEl.placeholder = 'Unknown';
+    flowInputEl.addEventListener('input', () => {
+      const flow = Number(flowInputEl.value);
+      zone.measuredFlowGpm = Number.isFinite(flow) && flow > 0 ? flow : null;
+      renderCanvas();
+      renderAnalysis();
+    });
+    flowCell.appendChild(flowInputEl);
+
+    const waterShareCell = document.createElement('td');
+    const waterShareInputEl = quickInput('number', zone.waterShare ?? defaultZoneWaterShare, `${zone.name} water share factor`, 'quick-number-input');
+    waterShareInputEl.min = '0.01';
+    waterShareInputEl.step = '0.01';
+    waterShareInputEl.addEventListener('input', () => {
+      const waterShare = Number(waterShareInputEl.value);
+      zone.waterShare = Number.isFinite(waterShare) && waterShare > 0 ? waterShare : defaultZoneWaterShare;
+      renderAnalysis();
+    });
+    waterShareCell.appendChild(waterShareInputEl);
+
+    const countCell = document.createElement('td');
+    countCell.className = 'quick-muted';
+    const count = project.sprinklers.filter((sprinkler) => sprinkler.zoneId === zone.id).length;
+    countCell.textContent = `${count} sprinkler${count === 1 ? '' : 's'}`;
+
+    const actionCell = document.createElement('td');
+    actionCell.className = 'quick-action-cell';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'danger';
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.disabled = project.zones.length === 1;
+    deleteBtn.addEventListener('click', () => deleteZoneById(zone.id));
+    actionCell.appendChild(deleteBtn);
+
+    row.append(nameCell, pressureCell, flowCell, waterShareCell, countCell, actionCell);
+    body.appendChild(row);
+  });
+
+  table.appendChild(body);
+  zonesQuickTable.replaceChildren(table);
+}
+
+function copySprinklerSettings(target, source) {
+  if (!target || !source || target.id === source.id) return false;
+  Object.assign(target, {
+    headModel: source.headModel,
+    nozzleModel: source.nozzleModel,
+    pressurePsi: source.ratedPressurePsi ?? source.pressurePsi ?? target.pressurePsi,
+    ratedPressurePsi: source.ratedPressurePsi ?? source.pressurePsi ?? target.ratedPressurePsi,
+    pressureRegulating: Boolean(source.pressureRegulating),
+    patternType: normalizePatternType(source.patternType),
+    headOffsetX: normalizeRectangleHeadOffset(source.headOffsetX, 0.5),
+    headOffsetY: normalizeRectangleHeadOffset(source.headOffsetY, 0.5),
+    widthFt: source.baseWidthFt ?? source.widthFt ?? 0,
+    baseWidthFt: source.baseWidthFt ?? source.widthFt ?? 0,
+    flowGpm: source.baseFlowGpm ?? source.flowGpm ?? 0,
+    radiusFt: source.baseRadiusFt ?? source.radiusFt ?? 0,
+    baseFlowGpm: source.baseFlowGpm ?? source.flowGpm ?? 0,
+    baseRadiusFt: source.baseRadiusFt ?? source.radiusFt ?? 0,
+    arcDegrees: source.arcDegrees ?? target.arcDegrees,
+    orientationDegrees: source.orientationDegrees ?? target.orientationDegrees,
+  });
+  return true;
+}
+
+function renderSprinklersQuickTable() {
+  if (project.sprinklers.length === 0) {
+    sprinklersQuickTable.innerHTML = '<div class="quick-edit-empty">No sprinklers yet. Click the canvas to add sprinklers, then use this table for quick edits.</div>';
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'quick-edit-table';
+  table.innerHTML = '<thead><tr><th>Sprinkler</th><th>Zone</th><th>Head</th><th>Nozzle</th><th>PSI</th><th>Flow</th><th>Throw</th><th>Catalog</th><th>Apply existing</th></tr></thead>';
+  const body = document.createElement('tbody');
+
+  project.sprinklers.forEach((sprinkler) => {
+    const row = document.createElement('tr');
+
+    const labelCell = document.createElement('td');
+    labelCell.className = 'quick-muted';
+    const selectBtn = document.createElement('button');
+    selectBtn.type = 'button';
+    selectBtn.className = 'secondary-btn';
+    selectBtn.textContent = `#${project.sprinklers.findIndex((candidate) => candidate.id === sprinkler.id) + 1}`;
+    selectBtn.title = 'Select this sprinkler on the canvas';
+    selectBtn.addEventListener('click', () => {
+      selectedSprinklerId = sprinkler.id;
+      inspectedZoneId = sprinkler.zoneId;
+      render();
+      renderQuickEditPopouts();
+    });
+    labelCell.append(selectBtn);
+
+    const zoneCell = document.createElement('td');
+    const zoneSelect = document.createElement('select');
+    zoneSelect.setAttribute('aria-label', `Zone for ${sprinklerLabel(sprinkler)}`);
+    project.zones.forEach((zone) => {
+      const option = document.createElement('option');
+      option.value = zone.id;
+      option.textContent = zone.name;
+      zoneSelect.appendChild(option);
+    });
+    zoneSelect.value = sprinkler.zoneId;
+    zoneSelect.addEventListener('change', () => {
+      sprinkler.zoneId = zoneSelect.value;
+      if (selectedSprinklerId === sprinkler.id) inspectedZoneId = sprinkler.zoneId;
+      render();
+      renderQuickEditPopouts();
+    });
+    zoneCell.appendChild(zoneSelect);
+
+    const headCell = document.createElement('td');
+    const headInput = quickInput('text', sprinkler.headModel || '', `Head model for ${sprinklerLabel(sprinkler)}`, 'quick-name-input');
+    headInput.addEventListener('input', () => {
+      sprinkler.headModel = headInput.value;
+      renderCanvas();
+      renderInspector();
+    });
+    headCell.appendChild(headInput);
+
+    const nozzleCell = document.createElement('td');
+    const nozzleInput = quickInput('text', sprinkler.nozzleModel || '', `Nozzle model for ${sprinklerLabel(sprinkler)}`, 'quick-name-input');
+    nozzleInput.addEventListener('input', () => {
+      sprinkler.nozzleModel = nozzleInput.value;
+      renderCanvas();
+      renderInspector();
+    });
+    nozzleCell.appendChild(nozzleInput);
+
+    const pressureCell = document.createElement('td');
+    const pressureInputEl = quickInput('number', sprinkler.ratedPressurePsi ?? sprinkler.pressurePsi ?? 45, `Rated pressure for ${sprinklerLabel(sprinkler)}`, 'quick-number-input');
+    pressureInputEl.min = '1';
+    pressureInputEl.step = '0.1';
+    pressureInputEl.addEventListener('input', () => {
+      sprinkler.ratedPressurePsi = Number(pressureInputEl.value) || 0;
+      sprinkler.pressurePsi = sprinkler.ratedPressurePsi;
+      renderCanvas();
+      renderInspector();
+      renderAnalysis();
+    });
+    pressureCell.appendChild(pressureInputEl);
+
+    const flowCell = document.createElement('td');
+    const flowInput = quickInput('number', sprinkler.baseFlowGpm ?? sprinkler.flowGpm ?? 0, `Flow for ${sprinklerLabel(sprinkler)}`, 'quick-number-input');
+    flowInput.min = '0';
+    flowInput.step = '0.01';
+    flowInput.addEventListener('input', () => {
+      sprinkler.baseFlowGpm = Number(flowInput.value) || 0;
+      sprinkler.flowGpm = sprinkler.baseFlowGpm;
+      renderCanvas();
+      renderInspector();
+      renderAnalysis();
+    });
+    flowCell.appendChild(flowInput);
+
+    const throwCell = document.createElement('td');
+    const radiusInput = quickInput('number', sprinkler.baseRadiusFt ?? sprinkler.radiusFt ?? 0, isRectanglePattern(sprinkler) ? 'Length feet' : 'Radius feet', 'quick-number-input');
+    radiusInput.min = '0';
+    radiusInput.step = '0.1';
+    radiusInput.addEventListener('input', () => {
+      sprinkler.baseRadiusFt = Number(radiusInput.value) || 0;
+      sprinkler.radiusFt = sprinkler.baseRadiusFt;
+      renderCanvas();
+      renderInspector();
+      renderAnalysis();
+    });
+    throwCell.append(radiusInput);
+
+    const catalogCell = document.createElement('td');
+    catalogCell.className = 'quick-action-cell';
+    const catalogBtn = document.createElement('button');
+    catalogBtn.type = 'button';
+    catalogBtn.textContent = 'Apply lookup';
+    catalogBtn.addEventListener('click', () => {
+      if (!applySelectedCatalogToSprinkler(sprinkler)) return;
+      selectedSprinklerId = sprinkler.id;
+      inspectedZoneId = sprinkler.zoneId;
+      render();
+      renderQuickEditPopouts();
+    });
+    catalogCell.appendChild(catalogBtn);
+
+    const templateCell = document.createElement('td');
+    const templateSelect = document.createElement('select');
+    templateSelect.setAttribute('aria-label', `Apply settings from an existing sprinkler to ${sprinklerLabel(sprinkler)}`);
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Choose sprinkler';
+    templateSelect.appendChild(placeholder);
+    project.sprinklers.filter((candidate) => candidate.id !== sprinkler.id).forEach((candidate) => {
+      const option = document.createElement('option');
+      option.value = candidate.id;
+      option.textContent = sprinklerLabel(candidate);
+      templateSelect.appendChild(option);
+    });
+    templateSelect.addEventListener('change', () => {
+      const source = project.sprinklers.find((candidate) => candidate.id === templateSelect.value);
+      if (!copySprinklerSettings(sprinkler, source)) return;
+      selectedSprinklerId = sprinkler.id;
+      inspectedZoneId = sprinkler.zoneId;
+      render();
+      renderQuickEditPopouts();
+    });
+    templateCell.appendChild(templateSelect);
+
+    row.append(labelCell, zoneCell, headCell, nozzleCell, pressureCell, flowCell, throwCell, catalogCell, templateCell);
+    body.appendChild(row);
+  });
+
+  table.appendChild(body);
+  sprinklersQuickTable.replaceChildren(table);
 }
 
 
@@ -2460,6 +2772,7 @@ function render() {
   renderCanvas();
   renderInspector();
   renderAnalysis();
+  renderQuickEditPopouts();
 }
 
 function canvasPositionFromEvent(event) {
@@ -2760,6 +3073,20 @@ catalogInput.addEventListener('change', async (event) => {
   } finally {
     catalogInput.value = '';
   }
+});
+
+openZonesPopoutBtn.addEventListener('click', () => openQuickEditPopout(zonesPopout));
+openSprinklersPopoutBtn.addEventListener('click', () => openQuickEditPopout(sprinklersPopout));
+closeZonesPopoutBtn.addEventListener('click', closeQuickEditPopouts);
+closeSprinklersPopoutBtn.addEventListener('click', closeQuickEditPopouts);
+quickEditBackdrop.addEventListener('click', closeQuickEditPopouts);
+quickAddZoneBtn.addEventListener('click', () => {
+  project.zones.push(normalizeZone({ name: `Zone ${project.zones.length + 1}` }, project.zones.length));
+  render();
+  renderQuickEditPopouts();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeQuickEditPopouts();
 });
 
 async function loadDefaultCatalog() {
