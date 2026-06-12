@@ -144,6 +144,9 @@ const selectedNozzle = document.getElementById('selected-nozzle');
 const selectedPressure = document.getElementById('selected-pressure');
 const selectedFlow = document.getElementById('selected-flow');
 const selectedRadius = document.getElementById('selected-radius');
+const selectedWidthField = document.getElementById('selected-width-field');
+const selectedWidth = document.getElementById('selected-width');
+const selectedArcField = document.getElementById('selected-arc-field');
 const selectedArc = document.getElementById('selected-arc');
 const selectedOrientation = document.getElementById('selected-orientation');
 const selectedPressureRegulating = document.getElementById('selected-pressure-regulating');
@@ -2382,13 +2385,17 @@ function renderInspector() {
   selectedPressure.value = sprinkler.ratedPressurePsi ?? sprinkler.pressurePsi ?? 45;
   selectedFlow.value = sprinkler.baseFlowGpm ?? sprinkler.flowGpm ?? 0;
   selectedRadius.value = sprinkler.baseRadiusFt ?? sprinkler.radiusFt ?? 0;
+  selectedWidth.value = sprinkler.baseWidthFt ?? sprinkler.widthFt ?? 0;
   selectedArc.value = sprinkler.arcDegrees ?? 360;
   selectedOrientation.value = sprinkler.orientationDegrees ?? 0;
   selectedPressureRegulating.checked = Boolean(sprinkler.pressureRegulating);
   actualFlowDisplay.textContent = `Actual flow: ${formatNumber(effectiveFlowGpm(sprinkler))} gpm at ${formatNumber(sprinklerOperatingPressurePsi(sprinkler), 1)} psi operating pressure`;
-  selectedArc.disabled = isRectanglePattern(sprinkler);
-  selectedArc.title = isRectanglePattern(sprinkler) ? 'Rectangle-pattern nozzles use width x length geometry instead of arc degrees.' : '';
-  selectedRadius.labels?.[0]?.replaceChildren(document.createTextNode(isRectanglePattern(sprinkler) ? 'Length (ft)' : 'Radius (ft)'));
+  const rectanglePattern = isRectanglePattern(sprinkler);
+  selectedWidthField.classList.toggle('hidden', !rectanglePattern);
+  selectedArcField.classList.toggle('hidden', rectanglePattern);
+  selectedArc.disabled = rectanglePattern;
+  selectedRadius.labels?.[0]?.replaceChildren(document.createTextNode(rectanglePattern ? 'Length ft' : 'Radius ft'));
+  selectedOrientation.labels?.[0]?.replaceChildren(document.createTextNode(rectanglePattern ? 'Forward orientation °' : 'Left lock orientation °'));
 }
 
 function renderAnalysis() {
@@ -2663,7 +2670,7 @@ function updateSelectedSprinklerFromForm() {
   sprinkler.baseRadiusFt = Number(selectedRadius.value) || 0;
   sprinkler.radiusFt = sprinkler.baseRadiusFt;
   sprinkler.pressureRegulating = selectedPressureRegulating.checked;
-  if (!isRectanglePattern(sprinkler)) sprinkler.baseWidthFt = 0;
+  sprinkler.baseWidthFt = isRectanglePattern(sprinkler) ? Number(selectedWidth.value) || 0 : 0;
   sprinkler.widthFt = sprinkler.baseWidthFt || 0;
   sprinkler.arcDegrees = clampArcDegrees(selectedArc.value);
   sprinkler.orientationDegrees = normalizeDegrees(selectedOrientation.value);
@@ -3120,7 +3127,7 @@ if ('ResizeObserver' in window) {
   new ResizeObserver(scheduleCanvasResize).observe(mapCanvas);
 }
 
-[selectedZone, selectedHead, selectedNozzle, selectedPressure, selectedFlow, selectedRadius, selectedArc, selectedOrientation, selectedPressureRegulating].forEach(
+[selectedZone, selectedHead, selectedNozzle, selectedPressure, selectedFlow, selectedRadius, selectedWidth, selectedArc, selectedOrientation, selectedPressureRegulating].forEach(
   (input) => input.addEventListener('input', updateSelectedSprinklerFromForm),
 );
 
