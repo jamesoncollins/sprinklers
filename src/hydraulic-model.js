@@ -51,6 +51,7 @@ export function supplyFlowAtPressureGpm(zone = {}, pressurePsi = 0) {
 
 export function solveZoneHydraulics(zone = {}, sprinklers = [], options = {}) {
   const staticPressure = positiveNumber(zone.pressurePsi) ?? 0;
+  const measuredOperatingPressure = positiveNumber(zone.dynamicPressurePsi ?? zone.operatingPressureOverridePsi) ?? null;
   const openFlow = positiveNumber(zone.measuredFlowGpm) ?? 0;
   const activeSprinklers = Array.isArray(sprinklers) ? sprinklers : [];
 
@@ -64,6 +65,18 @@ export function solveZoneHydraulics(zone = {}, sprinklers = [], options = {}) {
     return { staticPressurePsi: 0, operatingPressurePsi: 0, totalFlowGpm: 0, actualFlows };
   }
 
+  if (measuredOperatingPressure !== null) {
+    const operatingPressurePsi = Math.min(staticPressure, measuredOperatingPressure);
+    const actualFlows = activeSprinklers.map((sprinkler) => sprinklerFlowAtPressureGpm(sprinkler, operatingPressurePsi));
+    return {
+      staticPressurePsi: staticPressure,
+      operatingPressurePsi,
+      totalFlowGpm: actualFlows.reduce((sum, flow) => sum + flow, 0),
+      actualFlows,
+      operatingPressureSource: 'measured',
+    };
+  }
+
   if (openFlow <= 0 || activeSprinklers.length === 0 || demandAt(staticPressure) <= 0) {
     const actualFlows = activeSprinklers.map((sprinkler) => sprinklerFlowAtPressureGpm(sprinkler, staticPressure));
     return {
@@ -71,6 +84,7 @@ export function solveZoneHydraulics(zone = {}, sprinklers = [], options = {}) {
       operatingPressurePsi: staticPressure,
       totalFlowGpm: actualFlows.reduce((sum, flow) => sum + flow, 0),
       actualFlows,
+      operatingPressureSource: 'static',
     };
   }
 
@@ -93,5 +107,6 @@ export function solveZoneHydraulics(zone = {}, sprinklers = [], options = {}) {
     operatingPressurePsi,
     totalFlowGpm: actualFlows.reduce((sum, flow) => sum + flow, 0),
     actualFlows,
+    operatingPressureSource: 'calculated',
   };
 }
