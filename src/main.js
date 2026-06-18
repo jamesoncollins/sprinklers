@@ -1,6 +1,7 @@
 import { colorForPrecipitationRate, precipitationColorScaleMax, precipitationLegendGradient } from './precipitation-colors.js';
 import { radialPrecipitationRateInHr } from './precipitation-model.js';
 import { solveZoneHydraulics, sprinklerPressureScaleFactorAtPressure } from './hydraulic-model.js';
+import { selectedCatalogPressurePsi } from './catalog-model.js';
 const zoneColors = ['#2f80ed', '#27ae60', '#f2994a', '#9b51e0', '#eb5757', '#00a3a3', '#6f4e37'];
 const defaultFeetPerPixel = 0.25;
 const earthRadiusFeet = 20925524.9;
@@ -568,12 +569,6 @@ function buildCatalog(rows) {
   return { models, warnings };
 }
 
-
-function selectedCatalogPressurePsi(model) {
-  if (!model?.points?.length) return null;
-  const preferredPoint = model.points.find((point) => point.pressurePsi === 45);
-  return (preferredPoint || model.points[0]).pressurePsi;
-}
 
 function syncCatalogPressureInput(model = findSelectedModel()) {
   const pressurePsi = selectedCatalogPressurePsi(model);
