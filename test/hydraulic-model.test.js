@@ -40,3 +40,18 @@ test('zone hydraulics solve operating pressure and actual flows simultaneously',
   assert.ok(Math.abs(solution.actualFlows[2] - 1.50) < 0.01, `C ${solution.actualFlows[2]}`);
   assert.ok(Math.abs(solution.totalFlowGpm - 6.72) < 0.02, `total ${solution.totalFlowGpm}`);
 });
+
+test('zone hydraulics uses measured dynamic pressure when provided', () => {
+  const zone = { pressurePsi: 60, dynamicPressurePsi: 40, measuredFlowGpm: 10 };
+  const sprinklers = [
+    { baseFlowGpm: 3.0, ratedPressurePsi: 30, pressureRegulating: false },
+    { baseFlowGpm: 1.5, ratedPressurePsi: 30, pressureRegulating: true },
+  ];
+
+  const solution = solveZoneHydraulics(zone, sprinklers);
+
+  assert.equal(solution.operatingPressurePsi, 40);
+  assert.equal(solution.operatingPressureSource, 'measured');
+  assert.ok(Math.abs(solution.actualFlows[0] - (3 * Math.sqrt(40 / 30))) < 1e-12);
+  assert.equal(solution.actualFlows[1], 1.5);
+});

@@ -695,12 +695,14 @@ function getZoneColor(zoneId) {
 function normalizeZone(zone = {}, index = 0) {
   const pressurePsi = optionalNumber(zone.pressurePsi);
   const measuredFlowGpm = optionalNumber(zone.measuredFlowGpm);
+  const dynamicPressurePsi = optionalNumber(zone.dynamicPressurePsi ?? zone.operatingPressureOverridePsi);
   const waterShare = optionalNumber(zone.waterShare);
   return {
     id: zone.id || crypto.randomUUID(),
     name: zone.name || `Zone ${index + 1}`,
     pressurePsi: pressurePsi && pressurePsi > 0 ? pressurePsi : 45,
     measuredFlowGpm: measuredFlowGpm && measuredFlowGpm > 0 ? measuredFlowGpm : null,
+    dynamicPressurePsi: dynamicPressurePsi && dynamicPressurePsi > 0 ? dynamicPressurePsi : null,
     waterShare: waterShare && waterShare > 0 ? waterShare : defaultZoneWaterShare,
   };
 }
@@ -1382,7 +1384,7 @@ function renderZoneCalculatedInfo(container, zone) {
   const { sprinklers, totalFlow, operatingPressurePsi, precipitationStats } = zoneCalculatedStats(zone);
   container.replaceChildren(
     zoneStatCard('Static pressure', `${formatNumber(Number(zone.pressurePsi) || 0, 1)} psi`),
-    zoneStatCard('Operating pressure', `${formatNumber(operatingPressurePsi, 1)} psi`),
+    zoneStatCard(zone.dynamicPressurePsi ? 'Dynamic pressure' : 'Calculated pressure', `${formatNumber(operatingPressurePsi, 1)} psi`),
     zoneStatCard('Total flow', `${formatNumber(totalFlow)} gpm`),
     zoneStatCard('Min PR', precipitationStats ? `${formatNumber(precipitationStats.min)} in/hr` : '—'),
     zoneStatCard('Avg PR', precipitationStats ? `${formatNumber(precipitationStats.average)} in/hr` : '—'),
@@ -1391,8 +1393,11 @@ function renderZoneCalculatedInfo(container, zone) {
 
   const note = document.createElement('div');
   note.className = 'zone-calculated-note';
+  const pressureNote = zone.dynamicPressurePsi
+    ? ' using the measured dynamic pressure.'
+    : ' using the calculated operating pressure.';
   note.textContent = precipitationStats
-    ? `${sprinklers.length} head${sprinklers.length === 1 ? '' : 's'} included in calculated precipitation rates.`
+    ? `${sprinklers.length} head${sprinklers.length === 1 ? '' : 's'} included in precipitation rates${pressureNote}`
     : 'Add flow, radius, and arc data to this zone to calculate precipitation rates.';
   container.appendChild(note);
 }
@@ -1673,6 +1678,26 @@ function renderZones() {
     });
     flowField.append(flowLabel, flowInputEl);
 
+    const dynamicPressureField = document.createElement('div');
+    const dynamicPressureLabel = document.createElement('label');
+    dynamicPressureLabel.textContent = 'Dynamic pressure PSI';
+    const dynamicPressureInputEl = document.createElement('input');
+    dynamicPressureInputEl.type = 'number';
+    dynamicPressureInputEl.min = '0';
+    dynamicPressureInputEl.step = '0.1';
+    dynamicPressureInputEl.value = zone.dynamicPressurePsi ?? '';
+    dynamicPressureInputEl.placeholder = 'Calculate';
+    dynamicPressureInputEl.title = 'Optional measured pressure while this zone is running. Leave blank to calculate from static pressure and open-flow supply.';
+    dynamicPressureInputEl.setAttribute('aria-label', `${zone.name} dynamic pressure PSI`);
+    dynamicPressureInputEl.addEventListener('input', () => {
+      const pressure = Number(dynamicPressureInputEl.value);
+      zone.dynamicPressurePsi = Number.isFinite(pressure) && pressure > 0 ? pressure : null;
+      renderCanvas();
+      updateZoneCalculatedInfo(zone.id);
+      renderAnalysis();
+    });
+    dynamicPressureField.append(dynamicPressureLabel, dynamicPressureInputEl);
+
     const waterShareField = document.createElement('div');
     const waterShareLabel = document.createElement('label');
     waterShareLabel.textContent = 'Water share factor';
@@ -1693,7 +1718,7 @@ function renderZones() {
 
     const settings = document.createElement('div');
     settings.className = 'zone-settings';
-    settings.append(pressureField, flowField, waterShareField);
+    settings.append(pressureField, dynamicPressureField, flowField, waterShareField);
 
     const calculatedInfo = document.createElement('div');
     calculatedInfo.className = 'zone-calculated-info';
@@ -1757,7 +1782,7 @@ function renderZonesQuickTable() {
 
   const table = document.createElement('table');
   table.className = 'quick-edit-table';
-  table.innerHTML = '<thead><tr><th>Zone</th><th>Static PSI</th><th>Open-flow GPM</th><th>Water share</th><th>Sprinklers</th><th>Actions</th></tr></thead>';
+  table.innerHTML = '<thead><tr><th>Zone</th><th>Static PSI</th><th>Dynamic PSI</th><th>Open-flow GPM</th><th>Water share</th><th>Sprinklers</th><th>Actions</th></tr></thead>';
   const body = document.createElement('tbody');
 
   project.zones.forEach((zone, index) => {
@@ -1788,6 +1813,20 @@ function renderZonesQuickTable() {
       renderAnalysis();
     });
     pressureCell.appendChild(pressureInputEl);
+
+    const dynamicPressureCell = document.createElement('td');
+    const dynamicPressureInputEl = quickInput('number', zone.dynamicPressurePsi ?? '', `${zone.name} dynamic pressure PSI`, 'quick-number-input');
+    dynamicPressureInputEl.min = '0';
+    dynamicPressureInputEl.step = '0.1';
+    dynamicPressureInputEl.placeholder = 'Calculate';
+    dynamicPressureInputEl.title = 'Optional measured pressure while this zone is running. Leave blank to calculate.';
+    dynamicPressureInputEl.addEventListener('input', () => {
+      const pressure = Number(dynamicPressureInputEl.value);
+      zone.dynamicPressurePsi = Number.isFinite(pressure) && pressure > 0 ? pressure : null;
+      renderCanvas();
+      renderAnalysis();
+    });
+    dynamicPressureCell.appendChild(dynamicPressureInputEl);
 
     const flowCell = document.createElement('td');
     const flowInputEl = quickInput('number', zone.measuredFlowGpm ?? '', `${zone.name} open-flow supply GPM`, 'quick-number-input');
@@ -1828,7 +1867,7 @@ function renderZonesQuickTable() {
     deleteBtn.addEventListener('click', () => deleteZoneById(zone.id));
     actionCell.appendChild(deleteBtn);
 
-    row.append(nameCell, pressureCell, flowCell, waterShareCell, countCell, actionCell);
+    row.append(nameCell, pressureCell, dynamicPressureCell, flowCell, waterShareCell, countCell, actionCell);
     body.appendChild(row);
   });
 
