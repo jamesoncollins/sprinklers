@@ -8,22 +8,18 @@
   </head>
   <body>
     <div id="app">
-      <header class="topbar">
-        <h1>Sprinklers Planner</h1>
-        <div class="actions">
-          <button id="new-project">New Project</button>
-          <button id="save-project">Save Project</button>
-          <label class="file-btn">
-            Load Project
-            <input id="load-project" type="file" accept="application/json" />
-          </label>
-        </div>
-      </header>
-
       <main class="layout">
         <aside class="panel left-panel">
           <details class="panel-menu">
             <summary class="panel-summary">Project</summary>
+            <div class="project-actions actions" aria-label="Project file actions">
+              <button id="new-project">New Project</button>
+              <button id="save-project">Save Project</button>
+              <label class="file-btn">
+                Load Project
+                <input id="load-project" type="file" accept="application/json" />
+              </label>
+            </div>
             <div class="field-group">
               <label for="site-name">Site name</label>
               <input id="site-name" type="text" placeholder="New Site" />
