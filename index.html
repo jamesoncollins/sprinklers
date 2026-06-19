@@ -164,8 +164,9 @@
                   <dd>Runtime multiplier for zones that should intentionally water longer or shorter than the base schedule.</dd>
                 </div>
               </dl>
-              <p class="guide-copy">When no dynamic pressure is entered, the app solves operating pressure where source supply equals sprinkler demand:</p>
+              <p class="guide-copy">When no dynamic pressure is entered, the app calculates pressure drop by comparing static pressure to the operating pressure found at the source/head balance. The source curve starts at open-flow GPM at 0 PSI and falls to 0 GPM at static pressure:</p>
               <code class="guide-formula">supply = open-flow × sqrt(1 - operating ÷ static)</code>
+              <p class="guide-copy">For each trial pressure, sprinkler demand is the sum of every active head's pressure-adjusted flow. The app uses bisection between 0 PSI and static pressure until supply and demand intersect; the pressure drop shown in analysis is <code>static - operating</code>.</p>
               <p class="guide-copy">Unregulated heads scale flow and throw by <code>sqrt(operating ÷ rated)</code>. Pressure-regulated heads use that same curve below their regulator pressure and stop gaining flow/throw above the regulator setting.</p>
             </div>
             <div class="guide-card">
@@ -173,6 +174,7 @@
               <p class="guide-copy">Precipitation uses solved pressure, actual flow, and actual coverage geometry instead of treating manufacturer PR columns as authoritative:</p>
               <code class="guide-formula">PR = 96.3 × flow GPM ÷ irrigated sq ft</code>
               <p class="guide-copy">Catalog precipitation values are shown as nominal references because they may assume square or triangular spacing layouts.</p>
+              <p class="guide-copy">Point-map precipitation is not uniform inside the throw. Arc and rotor heads use the default radial spreading profile <code>S(ρ) = 1 / (1 + (ρ / 0.287)^2.48)</code>, where <code>ρ</code> is distance divided by throw radius. The 0.287 spreading factor controls how quickly water tapers with distance from the head; the profile is normalized so the map still integrates back to the solved head flow. Rectangular throws use a normalized <code>1 / distance</code> spreading model with a minimum distance of 8% of the larger rectangle dimension to avoid an infinite spike at the head.</p>
             </div>
           </details>
 
