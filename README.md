@@ -43,6 +43,27 @@ Optional later backend (not required for MVP):
    - Save project JSON and import later.
 
 
+## How to use the tool
+
+1. **Start with a site.** Use the Planning Canvas with the offline grid, upload/blank sketch workflow, or switch to satellite imagery by entering an address or latitude/longitude. Calibrate uploaded images with two known points so throw distances are scaled in feet.
+2. **Load sprinkler data.** The app auto-loads the built-in CSV catalog, and you can import additional manufacturer CSV rows when you need a different head or nozzle. Pick the manufacturer, head model, nozzle model, and rated catalog pressure for each sprinkler.
+3. **Create zones.** Add one zone per valve/runtime group. For each zone, enter static pressure, optional dynamic pressure, open-flow supply, and water share factor. Static pressure is the no-flow gauge reading, open-flow supply is the estimated source flow at 0 PSI, and dynamic pressure is an optional measured gauge reading while that zone is actually running.
+4. **Place and orient sprinklers.** Add sprinklers to the canvas, assign each one to a zone, set its arc or rectangular throw orientation, and use the coverage overlay to check head-to-head spacing and dry spots. Arc orientation is the left-hand lock angle; rectangular orientation points forward from the head.
+5. **Read the analysis.** Zone cards and summary tables report solved operating pressure, total actual flow, per-head effective throw, and precipitation rates. Use these values to rebalance nozzles, split overloaded zones, or adjust runtimes.
+6. **Save your work.** Export project JSON to preserve site settings, map view, imported catalog choices, zones, sprinklers, and analysis-related settings for later editing.
+
+## How the pressure and precipitation model works
+
+The tool treats pressure as a zone-level hydraulic balance rather than assuming every head receives the static pressure listed on a hose bib gauge. Each zone can use one of three pressure paths:
+
+- **Measured dynamic pressure wins when present.** If you enter dynamic pressure for a zone, the app uses that pressure directly, capped at static pressure, because it represents the best real-world measurement of that zone while running.
+- **Calculated operating pressure is used when static pressure and open-flow supply are available.** The app models source supply as `supply_gpm = open_flow_gpm * sqrt(1 - operating_pressure_psi / static_pressure_psi)`. It then solves for the operating pressure where supply equals the sum of all heads' demand at that same pressure.
+- **Static pressure is the fallback.** If open-flow supply is missing, the zone has no heads, or no demand can be calculated, the app uses static pressure as the operating pressure so the planner remains usable while data is incomplete.
+
+Head demand changes with pressure. Unregulated heads scale flow and throw by `sqrt(operating_pressure_psi / rated_pressure_psi)`. Pressure-regulated heads use the same square-root relationship below their regulator pressure, but cap their pressure scale at the regulator/rated pressure so they do not keep gaining flow and radius above the regulator setting. The solved operating pressure then drives actual flow, effective arc or rectangular coverage area, and calculated precipitation.
+
+Precipitation is calculated from actual water volume over actual coverage area: `PR = (96.3 * effective_total_flow_gpm) / effective_irrigated_area_sqft`. Manufacturer precipitation values from catalogs are kept as nominal reference metadata because they often assume a particular square or triangular spacing layout; the app's analysis uses solved pressure, effective flow, geometry, and the normalized distribution model instead. Zone water share is a runtime multiplier for comparing zones that are intentionally run longer or shorter than the base schedule.
+
 ## Satellite canvas background
 
 The Planning Canvas can use either the offline yard sketch grid or live imagery tiles. Enter a property address and click **Look Up Address** to geocode it and automatically switch to imagery, or manually select **Satellite imagery** and enter the property's center latitude/longitude. The imagery source selector currently offers Esri World Imagery as the global default, Esri World Imagery Clarity as an alternate archive-style source, and USGS Imagery Only for U.S. properties. Winter/leaf-off imagery is not guaranteed by any no-key public layer; try the alternate source list when the default capture is too leafy or low-detail.

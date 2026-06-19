@@ -145,6 +145,18 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .analysis-card span { color: var(--muted); font-size: 0.82rem; }
 .warning-card { border-color: #a66a25; background: #352716; }
 
+.guide-card { display: grid; gap: 8px; margin-top: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.guide-card h3 { margin: 0; }
+.guide-steps { margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.82rem; line-height: 1.35; }
+.guide-steps li + li { margin-top: 6px; }
+.guide-steps strong { color: var(--blue-900); }
+.guide-definitions { display: grid; gap: 7px; margin: 0; }
+.guide-definitions div { display: grid; gap: 2px; }
+.guide-definitions dt { color: var(--blue-900); font-size: 0.78rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
+.guide-definitions dd { margin: 0; color: var(--muted); font-size: 0.8rem; line-height: 1.32; }
+.guide-copy { margin: 0; color: var(--muted); font-size: 0.82rem; line-height: 1.35; }
+.guide-formula { display: block; padding: 7px 8px; border: 1px solid rgba(140,188,255,0.26); border-radius: 7px; background: rgba(10,16,24,0.72); color: var(--blue-900); font-size: 0.75rem; line-height: 1.35; white-space: normal; }
+
 @media (max-width: 980px) {
   .layout { grid-template-columns: 1fr; }
   .canvas-panel { position: static; height: auto; max-height: none; }
