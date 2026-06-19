@@ -16,9 +16,8 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--page); color: var(--text); }
-.topbar { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#101b2a; color:#fff; border-bottom: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.28); }
-.topbar h1 { margin:0; font-size:1.1rem; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--page); color: var(--text); overflow: hidden; }
 .actions { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
 button,.file-btn,select,input { border:1px solid var(--border); padding:8px 10px; border-radius:6px; background:var(--surface-3); color:var(--text); font-weight:600; }
 select,input { border-color: var(--border); color: var(--text); width: 100%; }
@@ -28,8 +27,9 @@ input[readonly] { color: var(--muted); background: #121c27; cursor: default; }
 button,.file-btn { cursor:pointer; color: #eef6ff; background: #244365; }
 button:hover,.file-btn:hover { filter: brightness(1.12); }
 .file-btn input { display:none; }
-.layout { display:grid; grid-template-columns: 330px minmax(420px, 1fr) 300px; gap:12px; align-items: start; padding:12px; min-height: calc(100vh - 56px); }
-.panel,.canvas-panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; box-shadow: 0 12px 30px rgba(0,0,0,0.22); }
+.layout { display:grid; grid-template-columns: 330px minmax(420px, 1fr) 300px; grid-template-rows: minmax(0, 1fr); gap:12px; align-items: stretch; padding:12px; height: 100vh; min-height: 0; overflow: hidden; }
+.panel,.canvas-panel { min-height: 0; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; box-shadow: 0 12px 30px rgba(0,0,0,0.22); }
+.panel { overflow: auto; }
 h2 { margin: 0 0 10px; font-size: 1rem; }
 h3 { margin: 0 0 8px; font-size: 0.92rem; color: var(--blue-900); }
 .section-card { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
@@ -76,7 +76,9 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .zone-calculated-note { grid-column: 1 / -1; color: var(--muted); font-size: 0.76rem; line-height: 1.25; }
 .zone-row button { padding: 5px 8px; color: var(--danger); border-color: #7f3030; background: #301922; }
 
-.canvas-panel { display: flex; flex-direction: column; gap: 8px; }
+.canvas-panel { display: flex; flex-direction: column; gap: 8px; height: 100%; overflow: hidden; }
+.project-actions { margin-bottom: 12px; }
+.project-actions button,.project-actions .file-btn { flex: 1 1 120px; text-align: center; }
 .canvas-toolbar { display:flex; justify-content:space-between; gap: 12px; align-items: center; }
 .canvas-toolbar h2 { flex: 0 0 auto; margin: 0; white-space: nowrap; }
 .canvas-toolbar-actions { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; justify-content: flex-end; min-width: 0; }
@@ -99,7 +101,7 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .canvas-zone-select { width: min(220px, calc(100vw - 190px)); margin: 0; }
 .canvas-zone-controls button { flex: 0 0 auto; }
 .inspector-panel .zones-list { grid-template-columns: 1fr; }
-.map-canvas { position: relative; flex: 0 0 100vh; height: 100vh; min-height: 100vh; overflow: hidden; border: 2px solid #38536f; border-radius: 10px; background: #101923; cursor: crosshair; touch-action: none; }
+.map-canvas { position: relative; flex: 1 1 0; height: 100%; min-height: 0; overflow: hidden; border: 2px solid #38536f; border-radius: 10px; background: #101923; cursor: crosshair; touch-action: none; }
 .map-canvas.panning { cursor: grabbing; }
 .map-canvas.calibrating { cursor: crosshair; }
 .map-canvas.satellite-enabled { background: #0e1722; }
@@ -146,7 +148,11 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .warning-card { border-color: #a66a25; background: #352716; }
 
 @media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
+  body { overflow: auto; }
+  .layout { grid-template-columns: 1fr; height: auto; min-height: 100vh; overflow: visible; }
+  .panel { overflow: visible; }
+  .canvas-panel { height: auto; overflow: visible; }
+  .map-canvas { height: 100vh; min-height: 100vh; }
   .canvas-toolbar { flex-wrap: wrap; }
   .canvas-toolbar-actions { flex-wrap: wrap; justify-content: flex-start; }
   .canvas-tools-list,.layer-selector-list { left: 0; right: auto; }
