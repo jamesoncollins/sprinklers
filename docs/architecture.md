@@ -58,7 +58,7 @@ The Analysis Engine computes a zone operating pressure with this priority order:
 1. If static pressure is missing or invalid, return zero pressure and zero flow.
 2. If measured dynamic pressure is present, use `min(staticPressurePsi, dynamicPressurePsi)` and compute each head at that pressure.
 3. If open-flow supply, active sprinklers, or demand are missing, fall back to static pressure.
-4. Otherwise, solve the intersection of source supply and head demand by bisection between 0 PSI and static pressure.
+4. Otherwise, solve the intersection of source supply and head demand by bisection between 0 PSI and static pressure. The pressure drop reported to the user is `static_pressure_psi - operating_pressure_psi`.
 
 The current source supply curve is:
 
@@ -66,7 +66,9 @@ The current source supply curve is:
 supply_gpm = open_flow_gpm * sqrt(1 - operating_pressure_psi / static_pressure_psi)
 ```
 
-Sprinkler demand is the sum of each head's pressure-adjusted flow at the candidate operating pressure. Unregulated heads use:
+Sprinkler demand is the sum of each head's pressure-adjusted flow at the candidate operating pressure. During bisection, each midpoint pressure is evaluated against the source curve and the summed demand curve. If supply is still greater than demand, the solution must be at a higher pressure and the lower bound moves up; if demand exceeds supply, the upper bound moves down. After the configured iterations, the midpoint is stored as `operatingPressurePsi`, and `pressurePsi - operatingPressurePsi` is the modeled zone pressure drop.
+
+Unregulated heads use:
 
 ```text
 pressure_scale = sqrt(operating_pressure_psi / rated_pressure_psi)
@@ -90,6 +92,18 @@ zone_adjusted_PR_in_hr = zone_base_PR_in_hr * waterShare
 ```
 
 Manufacturer precipitation columns remain catalog metadata for lookup display and sanity checks. They do not override calculated precipitation because manufacturer tables may assume a specific spacing pattern, arc, or test layout. Point-map precipitation uses effective flow, geometry, and the normalized distribution model so total distributed water recovers the solved flow for each sprinkler.
+
+### Point-map spreading factor
+
+The point-sampled heat map uses a relative spreading profile before converting flow density to inches/hour. Arc and rotor patterns use the default radial profile:
+
+```text
+S(rho) = 1 / (1 + (rho / 0.287)^2.48)
+```
+
+Here `rho = distance_ft / effective_radius_ft`. The `0.287` spreading factor is the radial scale parameter for the default Hunter MP2000-derived profile; smaller values concentrate more water near the head, and larger values spread more water toward the outside of the throw. The profile is dimensionless and is always normalized with `C = flow_gpm / (sector_angle_radians * radius_ft^2 * integral(S(rho) * rho d(rho)))`, so changing the profile shape changes point distribution but not the sprinkler's total solved flow.
+
+Rectangular patterns use a separate normalized `1 / distance` spreading profile. To avoid a singularity at the head, the minimum distance is 8% of the larger rectangle dimension before normalization.
 
 ## Suggested project JSON structure
 
@@ -162,7 +176,7 @@ For selected `(manufacturer, head_model, nozzle_model)`:
 
 - Head-to-head overlap scoring and DU estimate.
 - Soil infiltration and cycle/soak recommendations.
-- Pipe sizing and hydraulic pressure loss estimation.
+- Pipe-network sizing and detailed fitting-by-fitting pressure loss estimation beyond the current source-curve pressure drop model.
 - PDF report export with legends and zone summaries.
 - Optional cloud backend for collaboration and shared catalogs.
 
