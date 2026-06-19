@@ -38,6 +38,12 @@
                 <option value="image">Uploaded image</option>
               </select>
             </div>
+            <div class="field-group">
+              <label for="radial-decay-scale">Range decay scale</label>
+              <input id="radial-decay-scale" type="range" min="0.05" max="1" step="0.001" />
+              <span id="radial-decay-scale-value" class="range-value">0.287</span>
+              <p class="status-text">Adjusts the radial precipitation decay scale used by arc and rotor heat-map samples. Smaller values concentrate more water near the head; larger values spread water farther through the throw.</p>
+            </div>
             <div class="scale-calibration-controls">
               <h4>Distance scale</h4>
               <p id="scale-calibration-status" class="status-text">Use satellite imagery or calibrate a known distance on your uploaded image.</p>
