@@ -131,6 +131,51 @@
             <summary class="panel-summary">Analysis</summary>
             <div id="analysis-summary" class="analysis-grid"></div>
           </details>
+
+          <details class="panel-menu planner-guide-menu" open>
+            <summary class="panel-summary">How to Use / Pressure Guide</summary>
+            <div class="guide-card">
+              <h3>Plan a sprinkler layout</h3>
+              <ol class="guide-steps">
+                <li><strong>Set the site.</strong> Use the sketch grid, upload an image and calibrate a known distance, or look up an address for satellite imagery.</li>
+                <li><strong>Load catalog data.</strong> Use the built-in catalog or import CSV manufacturer rows, then choose the head, nozzle, and rated catalog pressure.</li>
+                <li><strong>Create zones.</strong> Add one zone per valve/runtime group and enter static pressure, optional dynamic pressure, open-flow supply, and water share.</li>
+                <li><strong>Place sprinklers.</strong> Click the canvas to add heads, assign each to a zone, then set arc, rectangular throw, and orientation.</li>
+                <li><strong>Review analysis.</strong> Use the cards and overlays to compare operating pressure, actual flow, throw, and precipitation before saving the project.</li>
+              </ol>
+            </div>
+            <div class="guide-card">
+              <h3>Water pressure model</h3>
+              <dl class="guide-definitions">
+                <div>
+                  <dt>Static pressure</dt>
+                  <dd>No-flow gauge pressure available to the zone.</dd>
+                </div>
+                <div>
+                  <dt>Dynamic pressure</dt>
+                  <dd>Optional measured pressure while the zone is running. When entered, it overrides the calculated pressure and is capped at static pressure.</dd>
+                </div>
+                <div>
+                  <dt>Open-flow supply</dt>
+                  <dd>Estimated source flow at 0 PSI. The app uses it with static pressure to solve the supply/demand balance.</dd>
+                </div>
+                <div>
+                  <dt>Water share</dt>
+                  <dd>Runtime multiplier for zones that should intentionally water longer or shorter than the base schedule.</dd>
+                </div>
+              </dl>
+              <p class="guide-copy">When no dynamic pressure is entered, the app solves operating pressure where source supply equals sprinkler demand:</p>
+              <code class="guide-formula">supply = open-flow × sqrt(1 - operating ÷ static)</code>
+              <p class="guide-copy">Unregulated heads scale flow and throw by <code>sqrt(operating ÷ rated)</code>. Pressure-regulated heads use that same curve below their regulator pressure and stop gaining flow/throw above the regulator setting.</p>
+            </div>
+            <div class="guide-card">
+              <h3>Precipitation results</h3>
+              <p class="guide-copy">Precipitation uses solved pressure, actual flow, and actual coverage geometry instead of treating manufacturer PR columns as authoritative:</p>
+              <code class="guide-formula">PR = 96.3 × flow GPM ÷ irrigated sq ft</code>
+              <p class="guide-copy">Catalog precipitation values are shown as nominal references because they may assume square or triangular spacing layouts.</p>
+            </div>
+          </details>
+
         </aside>
 
         <section class="canvas-panel" aria-label="Map canvas">

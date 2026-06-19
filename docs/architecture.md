@@ -27,6 +27,70 @@
    - Computes per-sprinkler actual flow, throw, and precipitation from solved operating pressure.
    - Aggregates per-zone flow and precipitation.
 
+## User workflow and documentation contract
+
+User-facing documentation in `README.md` is the canonical quick-start guide for operating the planner. Any feature that changes site setup, catalog import, sprinkler placement, zone configuration, hydraulic solving, precipitation analysis, persistence, or reporting should update both the relevant architecture section here and the matching user workflow section in the README in the same change. This keeps the tool instructions aligned with the implementation as the model evolves.
+
+Current workflow summary:
+
+1. Select a site background: offline grid/sketch, calibrated uploaded image, or geocoded/manual satellite imagery.
+2. Load sprinkler/nozzle data from the built-in CSV catalog or imported manufacturer CSV files.
+3. Create zones and enter pressure inputs: static pressure, optional measured dynamic pressure, open-flow supply, and water share.
+4. Place sprinklers, assign catalog selections and zones, set arc or rectangular orientation, then review throw overlays.
+5. Use zone and project analysis outputs to inspect solved operating pressure, actual flow, throw geometry, and precipitation.
+6. Export/import project JSON for persistence.
+
+## Hydraulic and precipitation architecture
+
+Pressure is solved at the zone level and then applied to every sprinkler in that zone. The persisted project stores user-entered inputs and analysis outputs separately so exported JSON remains editable while also restoring the most recent calculated view.
+
+### Zone pressure inputs
+
+- `pressurePsi`: static pressure, meaning the no-flow gauge pressure available to the zone.
+- `measuredFlowGpm`: open-flow supply estimate at 0 PSI. This anchors the supply curve used when no measured dynamic pressure is provided.
+- `dynamicPressurePsi` / `operatingPressureOverridePsi`: optional measured pressure while the zone is running. When present, it overrides the calculated supply/demand solve and is capped at static pressure.
+- `waterShare`: runtime multiplier used when aggregating zone precipitation for intentionally longer or shorter runtimes.
+
+### Supply/demand solve
+
+The Analysis Engine computes a zone operating pressure with this priority order:
+
+1. If static pressure is missing or invalid, return zero pressure and zero flow.
+2. If measured dynamic pressure is present, use `min(staticPressurePsi, dynamicPressurePsi)` and compute each head at that pressure.
+3. If open-flow supply, active sprinklers, or demand are missing, fall back to static pressure.
+4. Otherwise, solve the intersection of source supply and head demand by bisection between 0 PSI and static pressure.
+
+The current source supply curve is:
+
+```text
+supply_gpm = open_flow_gpm * sqrt(1 - operating_pressure_psi / static_pressure_psi)
+```
+
+Sprinkler demand is the sum of each head's pressure-adjusted flow at the candidate operating pressure. Unregulated heads use:
+
+```text
+pressure_scale = sqrt(operating_pressure_psi / rated_pressure_psi)
+actual_flow_gpm = rated_flow_gpm * pressure_scale
+actual_radius_ft = rated_radius_ft * pressure_scale
+```
+
+Pressure-regulated heads use the same square-root relationship below their regulator pressure and cap the input pressure at the regulator/rated pressure above that point:
+
+```text
+pressure_scale = sqrt(min(operating_pressure_psi, regulator_pressure_psi) / regulator_pressure_psi)
+```
+
+### Precipitation calculation
+
+After the zone operating pressure is known, the engine updates each sprinkler's actual flow and effective throw dimensions. Arc patterns use sector area, rectangular patterns use effective length times effective width, and zone/project precipitation uses actual flow divided by actual irrigated area:
+
+```text
+PR_in_hr = (96.3 * effective_total_flow_gpm) / effective_irrigated_area_sqft
+zone_adjusted_PR_in_hr = zone_base_PR_in_hr * waterShare
+```
+
+Manufacturer precipitation columns remain catalog metadata for lookup display and sanity checks. They do not override calculated precipitation because manufacturer tables may assume a specific spacing pattern, arc, or test layout. Point-map precipitation uses effective flow, geometry, and the normalized distribution model so total distributed water recovers the solved flow for each sprinkler.
+
 ## Suggested project JSON structure
 
 ```json
