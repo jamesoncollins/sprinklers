@@ -2767,10 +2767,9 @@ function renderAnalysis() {
     const operatingPressure = hydraulicSolution.operatingPressurePsi;
     if (staticPressure > 0 && operatingPressure < staticPressure * 0.9) {
       addAnalysisCard(
-        'Pressure drop',
+        'Operating pressure',
         `${zone.name}: ${formatNumber(operatingPressure, 1)} psi`,
-        `Solved operating pressure is below static pressure (${formatNumber(staticPressure, 1)} psi) at ${formatNumber(hydraulicSolution.totalFlowGpm)} gpm.`,
-        true,
+        `Modeled pressure drop from static pressure (${formatNumber(staticPressure, 1)} psi) at ${formatNumber(hydraulicSolution.totalFlowGpm)} gpm.`,
       );
     }
   });
