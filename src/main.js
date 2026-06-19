@@ -13,6 +13,10 @@ const maxPrecipitationGridCellFeet = 5;
 const precipitationGridCellFeetStep = 0.5;
 const minPrecipitationGridCellPx = 1;
 const minRadialSpreadRadiusRatio = 0.08;
+const defaultRadialDecayScale = 0.287;
+const minRadialDecayScale = 0.05;
+const maxRadialDecayScale = 1;
+const radialDecayScaleStep = 0.001;
 const rectangleSpreadNormalizationSampleCount = 32;
 const rectangleSpreadNormalizationCache = new Map();
 const minPrecipitationContourInterval = 0.05;
@@ -59,6 +63,7 @@ const emptyProject = {
     canvasLayers: {},
     precipitationContourInterval: defaultPrecipitationContourInterval,
     precipitationGridCellFeet: defaultPrecipitationGridCellFeet,
+    radialDecayScale: defaultRadialDecayScale,
     grassAreas: [],
   },
   zones: [],
@@ -81,6 +86,7 @@ let suppressEmptyCanvasHint = false;
 let showPrecipitationMap = false;
 let precipitationContourInterval = defaultPrecipitationContourInterval;
 let precipitationGridCellFeet = defaultPrecipitationGridCellFeet;
+let radialDecayScale = defaultRadialDecayScale;
 let grassDrawingState = null;
 
 const newBtn = document.getElementById('new-project');
@@ -112,6 +118,8 @@ const satelliteLongitudeInput = document.getElementById('satellite-longitude');
 const satelliteSourceSelect = document.getElementById('satellite-source');
 const satelliteZoomInput = document.getElementById('satellite-zoom');
 const satelliteZoomValue = document.getElementById('satellite-zoom-value');
+const radialDecayScaleInput = document.getElementById('radial-decay-scale');
+const radialDecayScaleValue = document.getElementById('radial-decay-scale-value');
 const backgroundRotationInput = document.getElementById('background-rotation');
 const backgroundRotationValue = document.getElementById('background-rotation-value');
 const addressLookupBtn = document.getElementById('lookup-address');
@@ -404,6 +412,13 @@ function normalizePrecipitationGridCellFeet(value) {
   return Number(Math.min(maxPrecipitationGridCellFeet, Math.max(minPrecipitationGridCellFeet, snapped)).toFixed(1));
 }
 
+function normalizeRadialDecayScale(value) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return defaultRadialDecayScale;
+  const snapped = Math.round(parsed / radialDecayScaleStep) * radialDecayScaleStep;
+  return Number(Math.min(maxRadialDecayScale, Math.max(minRadialDecayScale, snapped)).toFixed(3));
+}
+
 function formatFeetSetting(feet) {
   return feet === 1 ? '1 ft' : `${formatNumber(feet, 1)} ft`;
 }
@@ -415,6 +430,9 @@ function updatePrecipitationContourControl() {
   precipitationGridCellInput.value = String(precipitationGridCellFeet);
   precipitationGridCellInput.setAttribute('aria-valuetext', `${formatFeetSetting(precipitationGridCellFeet)} grid cells`);
   precipitationGridCellValue.textContent = formatFeetSetting(precipitationGridCellFeet);
+  radialDecayScaleInput.value = String(radialDecayScale);
+  radialDecayScaleInput.setAttribute('aria-valuetext', `${formatNumber(radialDecayScale, 3)} radial decay scale`);
+  radialDecayScaleValue.textContent = formatNumber(radialDecayScale, 3);
 }
 
 function updatePrecipitationSettingsFromControl(control) {
@@ -424,6 +442,9 @@ function updatePrecipitationSettingsFromControl(control) {
   } else if (control === precipitationGridCellInput) {
     precipitationGridCellFeet = normalizePrecipitationGridCellFeet(control.value);
     project.site.precipitationGridCellFeet = precipitationGridCellFeet;
+  } else if (control === radialDecayScaleInput) {
+    radialDecayScale = normalizeRadialDecayScale(control.value);
+    project.site.radialDecayScale = radialDecayScale;
   } else {
     return;
   }
@@ -1214,6 +1235,7 @@ function hydrateProject(loaded, options = {}) {
       canvasLayers: normalizeCanvasLayerSettings({ ...emptyProject.site.canvasLayers, ...(loaded.site?.canvasLayers || {}) }),
       precipitationContourInterval: normalizePrecipitationContourInterval(loaded.site?.precipitationContourInterval),
       precipitationGridCellFeet: normalizePrecipitationGridCellFeet(loaded.site?.precipitationGridCellFeet),
+      radialDecayScale: normalizeRadialDecayScale(loaded.site?.radialDecayScale),
       grassAreas: normalizeGrassAreas(loaded.site?.grassAreas),
     },
     zones: Array.isArray(loaded.zones) ? loaded.zones.map((zone, index) => normalizeZone(zone, index)) : [],
@@ -1223,6 +1245,7 @@ function hydrateProject(loaded, options = {}) {
   };
   precipitationContourInterval = project.site.precipitationContourInterval;
   precipitationGridCellFeet = project.site.precipitationGridCellFeet;
+  radialDecayScale = project.site.radialDecayScale;
   ensureDefaultZone();
   syncSprinklersFromGps();
   selectedSprinklerId = project.sprinklers[0]?.id || null;
@@ -2427,7 +2450,7 @@ function sprinklerPrecipitationAtPoint(sprinkler, point, feetPerPixel) {
     radiusFt: effectiveRadiusFt(sprinkler),
     sectorAngleRadians: (clampArcDegrees(sprinkler.arcDegrees) * Math.PI) / 180,
     distanceFt: coverage.distanceFt,
-    model: sprinkler.radialDistributionModel,
+    model: sprinkler.radialDistributionModel || { scale: radialDecayScale, exponent: 2.48 },
   });
 }
 
@@ -3338,7 +3361,7 @@ zoneSprinklerSelect.addEventListener('change', () => {
   renderZoneInspectorControls();
 });
 
-[precipitationContourIntervalInput, precipitationGridCellInput].forEach((control) => {
+[precipitationContourIntervalInput, precipitationGridCellInput, radialDecayScaleInput].forEach((control) => {
   control.addEventListener('input', () => updatePrecipitationSettingsFromControl(control));
   control.addEventListener('change', () => updatePrecipitationSettingsFromControl(control));
 });
