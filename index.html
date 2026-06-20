@@ -200,9 +200,17 @@
               <details class="canvas-tools-menu">
                 <summary class="canvas-tools-summary">Canvas tools</summary>
                 <div class="canvas-tools-list">
-                  <label class="overlay-toggle" for="show-precipitation-map" title="Show a combined precipitation-rate heat map across all sprinkler throw overlaps.">
+                  <label class="overlay-toggle" for="show-precipitation-map" title="Show the precipitation-rate heat map for the selected sprinkler scope.">
                     <input id="show-precipitation-map" type="checkbox" />
-                    Combined precipitation rate
+                    Precipitation rate
+                  </label>
+                  <label class="overlay-toggle precipitation-scope-control" for="precipitation-scope-mode" title="Choose which sprinklers are included in the precipitation map.">
+                    <span>Map</span>
+                    <select id="precipitation-scope-mode" aria-label="Precipitation map sprinkler scope">
+                      <option value="all">All sprinklers</option>
+                      <option value="zone">Current zone</option>
+                      <option value="selected">Selected sprinkler</option>
+                    </select>
                   </label>
                   <label class="overlay-toggle precipitation-contour-control" for="precipitation-contour-interval" title="Choose the precipitation-rate interval between contour lines.">
                     <span>Contours</span>
@@ -237,7 +245,7 @@
               <div class="canvas-grid" data-canvas-layer data-layer-id="reference-grid" data-layer-label="Reference grid" data-layer-description="The planning grid overlay." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="grass-layer" class="grass-layer" data-canvas-layer data-layer-label="Grass areas" data-layer-description="Closed lawn shapes that constrain combined precipitation-rate display." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="coverage-layer" class="coverage-layer" data-canvas-layer data-layer-label="Throw arcs" data-layer-description="Sprinkler throw radius circles and arc sectors." data-layer-default-visible="true" aria-hidden="true"></div>
-              <div id="precipitation-layer" class="precipitation-layer" data-canvas-layer data-layer-label="Combined precipitation rate" data-layer-description="Heat map showing stacked precipitation where sprinkler throws overlap." data-layer-default-visible="true" aria-hidden="true"></div>
+              <div id="precipitation-layer" class="precipitation-layer" data-canvas-layer data-layer-label="Precipitation rate" data-layer-description="Heat map showing stacked precipitation where sprinkler throws overlap." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="calibration-layer" class="calibration-layer" data-canvas-layer data-layer-label="Measurements" data-layer-description="Distance calibration points, lines, and labels." data-layer-default-visible="true" aria-hidden="true"></div>
               <div id="sprinkler-layer" class="sprinkler-layer" data-canvas-layer data-layer-label="Sprinklers" data-layer-description="Clickable sprinkler head markers." data-layer-default-visible="true"></div>
             </div>
