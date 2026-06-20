@@ -24,6 +24,7 @@ const minPrecipitationContourInterval = 0.05;
 const maxPrecipitationContourInterval = 1;
 const precipitationContourIntervalStep = 0.05;
 const defaultPrecipitationContourInterval = 0.25;
+const minPrecipitationLabelCells = 1;
 const defaultZoneWaterShare = 1;
 const precipitationScopeModes = ['all', 'zone', 'selected'];
 const defaultPrecipitationScopeMode = 'all';
@@ -2672,6 +2673,127 @@ function drawPrecipitationContours(context, rates, rows, columns, cellSize, maxR
   return contourThresholds.length;
 }
 
+function precipitationIslandLabels(rates, rows, columns, cellSize, maxRate) {
+  const contourThresholds = [0, ...contourThresholdsForMaxRate(maxRate)];
+  const labels = [];
+  const directions = [
+    { row: -1, column: 0 },
+    { row: 1, column: 0 },
+    { row: 0, column: -1 },
+    { row: 0, column: 1 },
+  ];
+  const rateIsInsideIsland = (rate, threshold) => (threshold <= 0 ? rate > 0 : rate >= threshold);
+
+  contourThresholds.forEach((threshold) => {
+    const visited = Array.from({ length: rows }, () => Array(columns).fill(false));
+
+    for (let startRow = 0; startRow < rows; startRow += 1) {
+      for (let startColumn = 0; startColumn < columns; startColumn += 1) {
+        if (visited[startRow][startColumn] || !rateIsInsideIsland(rates[startRow][startColumn], threshold)) continue;
+
+        const stack = [{ row: startRow, column: startColumn }];
+        let cellCount = 0;
+        let totalRateAboveThreshold = 0;
+        let weightedX = 0;
+        let weightedY = 0;
+        let peakRate = 0;
+        let peakX = startColumn * cellSize + cellSize / 2;
+        let peakY = startRow * cellSize + cellSize / 2;
+        visited[startRow][startColumn] = true;
+
+        while (stack.length) {
+          const cell = stack.pop();
+          const rate = rates[cell.row][cell.column];
+          const rateAboveThreshold = Math.max(rate - threshold, 0.000001);
+          const x = cell.column * cellSize + cellSize / 2;
+          const y = cell.row * cellSize + cellSize / 2;
+          cellCount += 1;
+          totalRateAboveThreshold += rateAboveThreshold;
+          weightedX += x * rateAboveThreshold;
+          weightedY += y * rateAboveThreshold;
+
+          if (rate > peakRate) {
+            peakRate = rate;
+            peakX = x;
+            peakY = y;
+          }
+
+          directions.forEach((direction) => {
+            const nextRow = cell.row + direction.row;
+            const nextColumn = cell.column + direction.column;
+            if (
+              nextRow < 0
+              || nextColumn < 0
+              || nextRow >= rows
+              || nextColumn >= columns
+              || visited[nextRow][nextColumn]
+              || !rateIsInsideIsland(rates[nextRow][nextColumn], threshold)
+            ) {
+              return;
+            }
+            visited[nextRow][nextColumn] = true;
+            stack.push({ row: nextRow, column: nextColumn });
+          });
+        }
+
+        if (cellCount >= minPrecipitationLabelCells) {
+          labels.push({
+            x: totalRateAboveThreshold > 0 ? weightedX / totalRateAboveThreshold : peakX,
+            y: totalRateAboveThreshold > 0 ? weightedY / totalRateAboveThreshold : peakY,
+            peakX,
+            peakY,
+            threshold,
+            peakRate,
+            cellCount,
+          });
+        }
+      }
+    }
+  });
+
+  return labels.sort((first, second) => first.threshold - second.threshold || second.peakRate - first.peakRate);
+}
+
+function drawPrecipitationIslandLabels(
+  context,
+  rates,
+  rows,
+  columns,
+  cellSize,
+  maxRate,
+  box,
+  feetPerPixel,
+  scopedSprinklers,
+) {
+  const labels = precipitationIslandLabels(rates, rows, columns, cellSize, maxRate);
+  if (!labels.length) return 0;
+
+  context.save();
+  context.font = '800 12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.lineJoin = 'round';
+
+  labels.forEach((label) => {
+    const exactRate = combinedPrecipitationAtPoint(
+      { x: box.left + label.x, y: box.top + label.y },
+      feetPerPixel,
+      scopedSprinklers,
+    );
+    const text = `${formatNumber(exactRate, 2)} in/hr`;
+    const labelX = Math.round(label.x);
+    const labelY = Math.round(label.y);
+    context.lineWidth = 4;
+    context.strokeStyle = 'rgba(0, 0, 0, 0.72)';
+    context.strokeText(text, labelX, labelY);
+    context.fillStyle = 'rgba(255, 255, 255, 0.96)';
+    context.fillText(text, labelX, labelY);
+  });
+
+  context.restore();
+  return labels.length;
+}
+
 function nextAnimationFrame() {
   return new Promise((resolve) => window.requestAnimationFrame(resolve));
 }
@@ -2769,6 +2891,17 @@ async function buildPrecipitationLayerAsync(token, box, feetPerPixel, scopedSpri
   contourContext.save();
   applyGrassClip(contourContext, box);
   const contourCount = drawPrecipitationContours(contourContext, rates, rows, columns, cellSize, maxRate);
+  const labelCount = drawPrecipitationIslandLabels(
+    contourContext,
+    rates,
+    rows,
+    columns,
+    cellSize,
+    maxRate,
+    box,
+    feetPerPixel,
+    scopedSprinklers,
+  );
   contourContext.restore();
   if (!isActivePrecipitationRender(token)) return;
 
@@ -2782,7 +2915,7 @@ async function buildPrecipitationLayerAsync(token, box, feetPerPixel, scopedSpri
       ? 'No irrigated grass cells found in the current canvas view.'
       : 'No irrigated cells found in the current canvas view; draw grass areas to limit the overlay.';
   precipitationContourSummary.textContent = maxRate > 0
-    ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr on a ${formatFeetSetting(precipitationGridCellFeet)} grid (${contourCount} line${contourCount === 1 ? '' : 's'}).`
+    ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr on a ${formatFeetSetting(precipitationGridCellFeet)} grid (${contourCount} line${contourCount === 1 ? '' : 's'}, ${labelCount} island label${labelCount === 1 ? '' : 's'}).`
     : '';
   updatePrecipitationProgress(100, 'Contours ready.');
   window.setTimeout(() => {
