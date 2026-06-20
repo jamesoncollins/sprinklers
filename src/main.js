@@ -1,4 +1,5 @@
 import { colorForPrecipitationRate, precipitationColorScaleMax, precipitationLegendGradient } from './precipitation-colors.js';
+import { averageScopedPrecipitationRateAtSamples } from './precipitation-grid.js';
 import { radialPrecipitationRateInHr } from './precipitation-model.js';
 import { solveZoneHydraulics, sprinklerPressureScaleFactorAtPressure } from './hydraulic-model.js';
 import { selectedCatalogPressurePsi } from './catalog-model.js';
@@ -24,6 +25,8 @@ const maxPrecipitationContourInterval = 1;
 const precipitationContourIntervalStep = 0.05;
 const defaultPrecipitationContourInterval = 0.25;
 const defaultZoneWaterShare = 1;
+const precipitationScopeModes = ['all', 'zone', 'selected'];
+const defaultPrecipitationScopeMode = 'all';
 const arcPatternType = 'arc';
 const rectanglePatternType = 'rectangle';
 
@@ -63,6 +66,7 @@ const emptyProject = {
     canvasLayers: {},
     precipitationContourInterval: defaultPrecipitationContourInterval,
     precipitationGridCellFeet: defaultPrecipitationGridCellFeet,
+    precipitationScopeMode: defaultPrecipitationScopeMode,
     radialDecayScale: defaultRadialDecayScale,
     grassAreas: [],
   },
@@ -86,6 +90,7 @@ let suppressEmptyCanvasHint = false;
 let showPrecipitationMap = false;
 let precipitationContourInterval = defaultPrecipitationContourInterval;
 let precipitationGridCellFeet = defaultPrecipitationGridCellFeet;
+let precipitationScopeMode = defaultPrecipitationScopeMode;
 let radialDecayScale = defaultRadialDecayScale;
 let grassDrawingState = null;
 
@@ -184,6 +189,7 @@ const precipitationContourSummary = precipitationUi.contourSummary;
 const precipitationContourIntervalSelect = precipitationUi.contourIntervalSelect;
 const precipitationGridCellInput = precipitationUi.gridCellInput;
 const precipitationGridCellValue = precipitationUi.gridCellValue;
+const precipitationScopeSelect = precipitationUi.scopeSelect;
 const startGrassAreaBtn = document.getElementById('start-grass-area');
 const finishGrassAreaBtn = document.getElementById('finish-grass-area');
 const cancelGrassAreaBtn = document.getElementById('cancel-grass-area');
@@ -204,8 +210,8 @@ function createPrecipitationUi() {
     mapWorld.insertBefore(layer, calibrationLayer);
   }
   layer.dataset.canvasLayer = '';
-  layer.dataset.layerLabel = 'Combined precipitation rate';
-  layer.dataset.layerDescription = 'Heat map showing stacked precipitation where sprinkler throws overlap inside marked grass areas.';
+  layer.dataset.layerLabel = 'Precipitation rate';
+  layer.dataset.layerDescription = 'Heat map showing precipitation for all sprinklers, the current zone, or the selected sprinkler.';
   layer.dataset.layerDefaultVisible = 'true';
 
   let input = document.getElementById('show-precipitation-map');
@@ -213,13 +219,31 @@ function createPrecipitationUi() {
     const label = document.createElement('label');
     label.className = 'overlay-toggle';
     label.htmlFor = 'show-precipitation-map';
-    label.title = 'Show a combined precipitation-rate heat map across all sprinkler throw overlaps.';
+    label.title = 'Show the precipitation-rate heat map for the selected sprinkler scope.';
 
     input = document.createElement('input');
     input.id = 'show-precipitation-map';
     input.type = 'checkbox';
 
-    label.append(input, document.createTextNode(' Combined precipitation rate'));
+    label.append(input, document.createTextNode(' Precipitation rate'));
+    sprinklerCount.parentElement.insertBefore(label, sprinklerCount);
+  }
+
+  let scopeSelect = document.getElementById('precipitation-scope-mode');
+  if (!scopeSelect) {
+    const label = document.createElement('label');
+    label.className = 'overlay-toggle precipitation-scope-control';
+    label.htmlFor = 'precipitation-scope-mode';
+    label.title = 'Choose which sprinklers are included in the precipitation map.';
+
+    const labelText = document.createElement('span');
+    labelText.textContent = 'Map';
+
+    scopeSelect = document.createElement('select');
+    scopeSelect.id = 'precipitation-scope-mode';
+    scopeSelect.setAttribute('aria-label', 'Precipitation map sprinkler scope');
+
+    label.append(labelText, scopeSelect);
     sprinklerCount.parentElement.insertBefore(label, sprinklerCount);
   }
 
@@ -305,7 +329,7 @@ function createPrecipitationUi() {
     legend.id = 'precipitation-legend';
     legend.className = 'precipitation-legend hidden';
     legend.innerHTML = `
-      <div class="precipitation-legend-title">Combined precipitation rate</div>
+      <div class="precipitation-legend-title">Precipitation rate</div>
       <div class="precipitation-legend-gradient"></div>
       <div class="precipitation-legend-labels"><span>Dry</span><span>Wet</span></div>
       <div id="precipitation-legend-range" class="precipitation-legend-range">0 in/hr</div>
@@ -343,7 +367,7 @@ function createPrecipitationUi() {
     mapCanvas.insertBefore(tooltip, sprinklerContextMenu);
   }
 
-  return { layer, input, legend, legendRange, contourSummary, contourIntervalInput, contourIntervalValue, gridCellInput, gridCellValue, tooltip };
+  return { layer, input, legend, legendRange, contourSummary, contourIntervalInput, contourIntervalValue, gridCellInput, gridCellValue, scopeSelect, tooltip };
 }
 
 function setCatalogStatus(message) {
@@ -405,6 +429,10 @@ function normalizePrecipitationContourInterval(value) {
   return Number(Math.min(maxPrecipitationContourInterval, Math.max(minPrecipitationContourInterval, snapped)).toFixed(2));
 }
 
+function normalizePrecipitationScopeMode(value) {
+  return precipitationScopeModes.includes(value) ? value : defaultPrecipitationScopeMode;
+}
+
 function normalizePrecipitationGridCellFeet(value) {
   const parsed = Number.parseFloat(value);
   if (!Number.isFinite(parsed)) return defaultPrecipitationGridCellFeet;
@@ -421,6 +449,53 @@ function normalizeRadialDecayScale(value) {
 
 function formatFeetSetting(feet) {
   return feet === 1 ? '1 ft' : `${formatNumber(feet, 1)} ft`;
+}
+
+function precipitationScopeOptions() {
+  const selected = selectedSprinkler();
+  const zone = project.zones.find((candidate) => candidate.id === currentInspectorZoneId());
+  return [
+    { value: 'all', label: 'All sprinklers' },
+    { value: 'zone', label: zone ? `Zone: ${zone.name}` : 'Current zone' },
+    { value: 'selected', label: selected ? `Selected: ${sprinklerLabel(selected)}` : 'Selected sprinkler' },
+  ];
+}
+
+function updatePrecipitationScopeControl() {
+  const options = precipitationScopeOptions();
+  precipitationScopeSelect.replaceChildren(...options.map((option) => {
+    const element = document.createElement('option');
+    element.value = option.value;
+    element.textContent = option.label;
+    return element;
+  }));
+  precipitationScopeSelect.value = normalizePrecipitationScopeMode(precipitationScopeMode);
+  precipitationScopeSelect.title = 'Choose whether the precipitation map includes all sprinklers, the current zone, or only the selected sprinkler.';
+}
+
+function sprinklersForPrecipitationScope() {
+  const completeSprinklers = project.sprinklers.filter((sprinkler) => effectiveFlowGpm(sprinkler) > 0 && effectiveRadiusFt(sprinkler) > 0 && (!isRectanglePattern(sprinkler) || effectiveWidthFt(sprinkler) > 0));
+  if (precipitationScopeMode === 'selected') {
+    const selected = selectedSprinkler();
+    return selected ? completeSprinklers.filter((sprinkler) => sprinkler.id === selected.id) : [];
+  }
+  if (precipitationScopeMode === 'zone') {
+    const zoneId = currentInspectorZoneId();
+    return completeSprinklers.filter((sprinkler) => sprinkler.zoneId === zoneId);
+  }
+  return completeSprinklers;
+}
+
+function precipitationScopeDescription(scopedSprinklers) {
+  if (precipitationScopeMode === 'selected') {
+    const sprinkler = scopedSprinklers[0] || selectedSprinkler();
+    return sprinkler ? `selected sprinkler ${sprinklerLabel(sprinkler)}` : 'selected sprinkler';
+  }
+  if (precipitationScopeMode === 'zone') {
+    const zone = project.zones.find((candidate) => candidate.id === currentInspectorZoneId());
+    return zone ? `${zone.name} zone` : 'current zone';
+  }
+  return 'all sprinklers';
 }
 
 function updatePrecipitationContourControl() {
@@ -449,6 +524,7 @@ function updatePrecipitationSettingsFromControl(control) {
     return;
   }
 
+  updatePrecipitationScopeControl();
   updatePrecipitationContourControl();
   renderCanvas();
 }
@@ -946,6 +1022,7 @@ function updateProjectInputs() {
   imageRotationValue.textContent = `${Math.round(backgroundImage.rotationDegrees)}°`;
 
   showPrecipitationMapInput.checked = showPrecipitationMap;
+  updatePrecipitationScopeControl();
   updatePrecipitationContourControl();
 
   const satellite = normalizeSatelliteSettings(project.site?.satellite);
@@ -1235,6 +1312,7 @@ function hydrateProject(loaded, options = {}) {
       canvasLayers: normalizeCanvasLayerSettings({ ...emptyProject.site.canvasLayers, ...(loaded.site?.canvasLayers || {}) }),
       precipitationContourInterval: normalizePrecipitationContourInterval(loaded.site?.precipitationContourInterval),
       precipitationGridCellFeet: normalizePrecipitationGridCellFeet(loaded.site?.precipitationGridCellFeet),
+      precipitationScopeMode: normalizePrecipitationScopeMode(loaded.site?.precipitationScopeMode),
       radialDecayScale: normalizeRadialDecayScale(loaded.site?.radialDecayScale),
       grassAreas: normalizeGrassAreas(loaded.site?.grassAreas),
     },
@@ -1245,6 +1323,7 @@ function hydrateProject(loaded, options = {}) {
   };
   precipitationContourInterval = project.site.precipitationContourInterval;
   precipitationGridCellFeet = project.site.precipitationGridCellFeet;
+  precipitationScopeMode = project.site.precipitationScopeMode;
   radialDecayScale = project.site.radialDecayScale;
   ensureDefaultZone();
   syncSprinklersFromGps();
@@ -2454,8 +2533,8 @@ function sprinklerPrecipitationAtPoint(sprinkler, point, feetPerPixel) {
   });
 }
 
-function combinedPrecipitationAtPoint(point, feetPerPixel) {
-  return project.sprinklers.reduce((total, sprinkler) => {
+function combinedPrecipitationAtPoint(point, feetPerPixel, sprinklers = project.sprinklers) {
+  return sprinklers.reduce((total, sprinkler) => {
     if (!effectiveFlowGpm(sprinkler) || !effectiveRadiusFt(sprinkler)) return total;
     return total + sprinklerPrecipitationAtPoint(sprinkler, point, feetPerPixel);
   }, 0);
@@ -2476,6 +2555,26 @@ function createPrecipitationCanvas(box, className) {
   canvas.style.width = `${box.width}px`;
   canvas.style.height = `${box.height}px`;
   return canvas;
+}
+
+function precipitationSamplesForCell(box, cellSize, row, column) {
+  const x = column * cellSize;
+  const y = row * cellSize;
+  const right = Math.min(box.width, x + cellSize);
+  const bottom = Math.min(box.height, y + cellSize);
+  const sampleFractions = [1 / 6, 0.5, 5 / 6];
+  const samples = [];
+
+  sampleFractions.forEach((yFraction) => {
+    sampleFractions.forEach((xFraction) => {
+      samples.push({
+        x: box.left + Math.min(box.width - 1, x + (right - x) * xFraction),
+        y: box.top + Math.min(box.height - 1, y + (bottom - y) * yFraction),
+      });
+    });
+  });
+
+  return samples;
 }
 
 function contourIntersectionsForCell(values, threshold, x, y, cellSize) {
@@ -2559,9 +2658,11 @@ function renderPrecipitationLayer() {
 
   const box = activeCoordinateBox();
   const feetPerPixel = currentFeetPerPixel();
-  const completeSprinklers = project.sprinklers.filter((sprinkler) => effectiveFlowGpm(sprinkler) > 0 && effectiveRadiusFt(sprinkler) > 0 && (!isRectanglePattern(sprinkler) || effectiveWidthFt(sprinkler) > 0));
-  if (!box.width || !box.height || !completeSprinklers.length) {
-    precipitationLegendRange.textContent = 'Add sprinkler flow and radius data to calculate combined PR.';
+  const scopedSprinklers = sprinklersForPrecipitationScope();
+  if (!box.width || !box.height || !scopedSprinklers.length) {
+    precipitationLegendRange.textContent = precipitationScopeMode === 'selected'
+      ? 'Select a sprinkler with flow and radius data to calculate its precipitation map.'
+      : 'Add sprinkler flow and radius data to calculate the precipitation map.';
     precipitationContourSummary.textContent = '';
     hidePrecipitationTooltip();
     return;
@@ -2581,13 +2682,11 @@ function renderPrecipitationLayer() {
 
   for (let row = 0; row < rows; row += 1) {
     for (let column = 0; column < columns; column += 1) {
-      const x = column * cellSize;
-      const y = row * cellSize;
-      const sample = {
-        x: box.left + Math.min(box.width - 1, x + cellSize / 2),
-        y: box.top + Math.min(box.height - 1, y + cellSize / 2),
-      };
-      const rate = localPointIsInsideGrass(sample) ? combinedPrecipitationAtPoint(sample, feetPerPixel) : 0;
+      const rate = averageScopedPrecipitationRateAtSamples(
+        precipitationSamplesForCell(box, cellSize, row, column),
+        (sample) => combinedPrecipitationAtPoint(sample, feetPerPixel, scopedSprinklers),
+        localPointIsInsideGrass,
+      );
       maxRate = Math.max(maxRate, rate);
       if (rate > 0) positiveRates.push(rate);
       rates[row][column] = rate;
@@ -2616,8 +2715,9 @@ function renderPrecipitationLayer() {
 
   precipitationLayer.append(canvas, contourCanvas);
   const grassScopeText = hasGrassAreas() ? ` inside ${normalizeGrassAreas(project.site.grassAreas).length} grass area${normalizeGrassAreas(project.site.grassAreas).length === 1 ? '' : 's'}` : '';
+  const sprinklerScopeText = precipitationScopeDescription(scopedSprinklers);
   precipitationLegendRange.textContent = maxRate > 0
-    ? `0–${formatNumber(colorScaleMax, 2)} in/hr color scale; max ${formatNumber(maxRate, 2)}${grassScopeText} across ${completeSprinklers.length} sprinkler${completeSprinklers.length === 1 ? '' : 's'}`
+    ? `0–${formatNumber(colorScaleMax, 2)} in/hr color scale; max ${formatNumber(maxRate, 2)}${grassScopeText} for ${sprinklerScopeText} (${scopedSprinklers.length} sprinkler${scopedSprinklers.length === 1 ? '' : 's'})`
     : hasGrassAreas()
       ? 'No irrigated grass cells found in the current canvas view.'
       : 'No irrigated cells found in the current canvas view; draw grass areas to limit the overlay.';
@@ -2678,6 +2778,7 @@ function renderCanvas() {
   coverageLayer.replaceChildren();
   sprinklerLayer.replaceChildren();
   renderGrassLayer();
+  updatePrecipitationScopeControl();
   renderPrecipitationLayer();
   renderCalibrationLayer();
   updateGrassDrawingControls();
@@ -2865,13 +2966,14 @@ function updatePrecipitationTooltip(event) {
     return;
   }
 
-  const rate = combinedPrecipitationAtPoint(point, currentFeetPerPixel());
+  const scopedSprinklers = sprinklersForPrecipitationScope();
+  const rate = combinedPrecipitationAtPoint(point, currentFeetPerPixel(), scopedSprinklers);
   const rect = mapCanvas.getBoundingClientRect();
   const left = Math.min(rect.width - 16, Math.max(8, event.clientX - rect.left));
   const top = Math.min(rect.height - 8, Math.max(28, event.clientY - rect.top));
   precipitationTooltip.style.left = `${left}px`;
   precipitationTooltip.style.top = `${top}px`;
-  precipitationTooltip.innerHTML = `<strong>${formatNumber(rate, 2)} in/hr</strong><span>Combined precipitation rate here</span>`;
+  precipitationTooltip.innerHTML = `<strong>${formatNumber(rate, 2)} in/hr</strong><span>${precipitationScopeDescription(scopedSprinklers)} precipitation rate here</span>`;
   precipitationTooltip.classList.remove('hidden');
 }
 
@@ -3359,6 +3461,12 @@ zoneSprinklerSelect.addEventListener('change', () => {
   renderCanvas();
   renderInspector();
   renderZoneInspectorControls();
+});
+
+precipitationScopeSelect.addEventListener('change', () => {
+  precipitationScopeMode = normalizePrecipitationScopeMode(precipitationScopeSelect.value);
+  project.site.precipitationScopeMode = precipitationScopeMode;
+  renderCanvas();
 });
 
 [precipitationContourIntervalInput, precipitationGridCellInput, radialDecayScaleInput].forEach((control) => {

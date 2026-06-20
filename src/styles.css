@@ -167,9 +167,10 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 }
 .overlay-toggle { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid var(--border); border-radius:999px; background:var(--surface-3); color:var(--text); font-weight:800; white-space:nowrap; }
 .overlay-toggle input { margin:0; accent-color:var(--blue-500); }
-.precipitation-contour-control, .precipitation-grid-control { gap:8px; }
+.precipitation-contour-control, .precipitation-grid-control, .precipitation-scope-control { gap:8px; }
 .precipitation-contour-control input[type='range'], .precipitation-grid-control input[type='range'] { width:110px; padding:0; }
 .precipitation-contour-value { min-width:62px; color:var(--muted); font-size:0.78rem; font-weight:900; text-align:right; }
+.precipitation-scope-control select { width:150px; min-width:0; padding:5px 8px; font-size:0.78rem; }
 .precipitation-layer { position:absolute; inset:0; z-index:4; pointer-events:none; overflow:visible; }
 .precipitation-map, .precipitation-contours { position:absolute; image-rendering:auto; mix-blend-mode:normal; }
 .precipitation-map { opacity:0.82; filter: blur(2px) saturate(1.35); }
