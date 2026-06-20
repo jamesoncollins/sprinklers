@@ -24,7 +24,8 @@ const minPrecipitationContourInterval = 0.05;
 const maxPrecipitationContourInterval = 1;
 const precipitationContourIntervalStep = 0.05;
 const defaultPrecipitationContourInterval = 0.25;
-const minPrecipitationLabelCells = 1;
+const minPrecipitationLabelCells = 4;
+const minPrecipitationLabelSpacingPx = 34;
 const defaultZoneWaterShare = 1;
 const precipitationScopeModes = ['all', 'zone', 'selected'];
 const defaultPrecipitationScopeMode = 'all';
@@ -2673,8 +2674,8 @@ function drawPrecipitationContours(context, rates, rows, columns, cellSize, maxR
   return contourThresholds.length;
 }
 
-function precipitationIslandLabels(rates, rows, columns, cellSize, maxRate) {
-  const contourThresholds = [0, ...contourThresholdsForMaxRate(maxRate)];
+function precipitationIslandLabels(rates, rows, columns, cellSize) {
+  const visited = Array.from({ length: rows }, () => Array(columns).fill(false));
   const labels = [];
   const directions = [
     { row: -1, column: 0 },
@@ -2682,90 +2683,79 @@ function precipitationIslandLabels(rates, rows, columns, cellSize, maxRate) {
     { row: 0, column: -1 },
     { row: 0, column: 1 },
   ];
-  const rateIsInsideIsland = (rate, threshold) => (threshold <= 0 ? rate > 0 : rate >= threshold);
 
-  contourThresholds.forEach((threshold) => {
-    const visited = Array.from({ length: rows }, () => Array(columns).fill(false));
+  for (let startRow = 0; startRow < rows; startRow += 1) {
+    for (let startColumn = 0; startColumn < columns; startColumn += 1) {
+      if (visited[startRow][startColumn] || rates[startRow][startColumn] <= 0) continue;
 
-    for (let startRow = 0; startRow < rows; startRow += 1) {
-      for (let startColumn = 0; startColumn < columns; startColumn += 1) {
-        if (visited[startRow][startColumn] || !rateIsInsideIsland(rates[startRow][startColumn], threshold)) continue;
+      const stack = [{ row: startRow, column: startColumn }];
+      let cellCount = 0;
+      let totalRate = 0;
+      let weightedX = 0;
+      let weightedY = 0;
+      let peakRate = 0;
+      let peakX = startColumn * cellSize + cellSize / 2;
+      let peakY = startRow * cellSize + cellSize / 2;
+      visited[startRow][startColumn] = true;
 
-        const stack = [{ row: startRow, column: startColumn }];
-        let cellCount = 0;
-        let totalRateAboveThreshold = 0;
-        let weightedX = 0;
-        let weightedY = 0;
-        let peakRate = 0;
-        let peakX = startColumn * cellSize + cellSize / 2;
-        let peakY = startRow * cellSize + cellSize / 2;
-        visited[startRow][startColumn] = true;
+      while (stack.length) {
+        const cell = stack.pop();
+        const rate = rates[cell.row][cell.column];
+        const x = cell.column * cellSize + cellSize / 2;
+        const y = cell.row * cellSize + cellSize / 2;
+        cellCount += 1;
+        totalRate += rate;
+        weightedX += x * rate;
+        weightedY += y * rate;
 
-        while (stack.length) {
-          const cell = stack.pop();
-          const rate = rates[cell.row][cell.column];
-          const rateAboveThreshold = Math.max(rate - threshold, 0.000001);
-          const x = cell.column * cellSize + cellSize / 2;
-          const y = cell.row * cellSize + cellSize / 2;
-          cellCount += 1;
-          totalRateAboveThreshold += rateAboveThreshold;
-          weightedX += x * rateAboveThreshold;
-          weightedY += y * rateAboveThreshold;
+        if (rate > peakRate) {
+          peakRate = rate;
+          peakX = x;
+          peakY = y;
+        }
 
-          if (rate > peakRate) {
-            peakRate = rate;
-            peakX = x;
-            peakY = y;
+        directions.forEach((direction) => {
+          const nextRow = cell.row + direction.row;
+          const nextColumn = cell.column + direction.column;
+          if (
+            nextRow < 0
+            || nextColumn < 0
+            || nextRow >= rows
+            || nextColumn >= columns
+            || visited[nextRow][nextColumn]
+            || rates[nextRow][nextColumn] <= 0
+          ) {
+            return;
           }
+          visited[nextRow][nextColumn] = true;
+          stack.push({ row: nextRow, column: nextColumn });
+        });
+      }
 
-          directions.forEach((direction) => {
-            const nextRow = cell.row + direction.row;
-            const nextColumn = cell.column + direction.column;
-            if (
-              nextRow < 0
-              || nextColumn < 0
-              || nextRow >= rows
-              || nextColumn >= columns
-              || visited[nextRow][nextColumn]
-              || !rateIsInsideIsland(rates[nextRow][nextColumn], threshold)
-            ) {
-              return;
-            }
-            visited[nextRow][nextColumn] = true;
-            stack.push({ row: nextRow, column: nextColumn });
-          });
-        }
-
-        if (cellCount >= minPrecipitationLabelCells) {
-          labels.push({
-            x: totalRateAboveThreshold > 0 ? weightedX / totalRateAboveThreshold : peakX,
-            y: totalRateAboveThreshold > 0 ? weightedY / totalRateAboveThreshold : peakY,
-            peakX,
-            peakY,
-            threshold,
-            peakRate,
-            cellCount,
-          });
-        }
+      if (cellCount >= minPrecipitationLabelCells) {
+        labels.push({
+          x: totalRate > 0 ? weightedX / totalRate : peakX,
+          y: totalRate > 0 ? weightedY / totalRate : peakY,
+          peakX,
+          peakY,
+          rate: peakRate,
+          cellCount,
+        });
       }
     }
-  });
+  }
 
-  return labels.sort((first, second) => first.threshold - second.threshold || second.peakRate - first.peakRate);
+  return labels
+    .sort((first, second) => second.rate - first.rate)
+    .filter((label, index, accepted) => accepted.slice(0, index).every((other) => {
+      const dx = label.x - other.x;
+      const dy = label.y - other.y;
+      return Math.hypot(dx, dy) >= minPrecipitationLabelSpacingPx;
+    }));
 }
 
-function drawPrecipitationIslandLabels(
-  context,
-  rates,
-  rows,
-  columns,
-  cellSize,
-  maxRate,
-  box,
-  feetPerPixel,
-  scopedSprinklers,
-) {
-  const labels = precipitationIslandLabels(rates, rows, columns, cellSize, maxRate);
+function drawPrecipitationIslandLabels(context, rates, rows, columns, cellSize) {
+  const labels = precipitationIslandLabels(rates, rows, columns, cellSize);
   if (!labels.length) return 0;
 
   context.save();
@@ -2775,12 +2765,7 @@ function drawPrecipitationIslandLabels(
   context.lineJoin = 'round';
 
   labels.forEach((label) => {
-    const exactRate = combinedPrecipitationAtPoint(
-      { x: box.left + label.x, y: box.top + label.y },
-      feetPerPixel,
-      scopedSprinklers,
-    );
-    const text = `${formatNumber(exactRate, 2)} in/hr`;
+    const text = `${formatNumber(label.rate, 2)} in/hr`;
     const labelX = Math.round(label.x);
     const labelY = Math.round(label.y);
     context.lineWidth = 4;
@@ -2891,17 +2876,7 @@ async function buildPrecipitationLayerAsync(token, box, feetPerPixel, scopedSpri
   contourContext.save();
   applyGrassClip(contourContext, box);
   const contourCount = drawPrecipitationContours(contourContext, rates, rows, columns, cellSize, maxRate);
-  const labelCount = drawPrecipitationIslandLabels(
-    contourContext,
-    rates,
-    rows,
-    columns,
-    cellSize,
-    maxRate,
-    box,
-    feetPerPixel,
-    scopedSprinklers,
-  );
+  const labelCount = drawPrecipitationIslandLabels(contourContext, rates, rows, columns, cellSize);
   contourContext.restore();
   if (!isActivePrecipitationRender(token)) return;
 
