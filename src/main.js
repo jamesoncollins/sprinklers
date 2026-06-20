@@ -198,6 +198,10 @@ const grassAreaCount = document.getElementById('grass-area-count');
 const precipitationContourIntervalInput = precipitationUi.contourIntervalInput;
 const precipitationContourIntervalValue = precipitationUi.contourIntervalValue;
 const precipitationTooltip = precipitationUi.tooltip;
+const precipitationProgress = precipitationUi.progress;
+const precipitationProgressBar = precipitationUi.progressBar;
+const precipitationProgressText = precipitationUi.progressText;
+let precipitationRenderToken = 0;
 
 
 function createPrecipitationUi() {
@@ -357,6 +361,28 @@ function createPrecipitationUi() {
     legend.appendChild(contourSummary);
   }
 
+  let progress = document.getElementById('precipitation-progress');
+  let progressBar = document.getElementById('precipitation-progress-bar');
+  let progressText = document.getElementById('precipitation-progress-text');
+  if (!progress || !progressBar || !progressText) {
+    progress = document.createElement('div');
+    progress.id = 'precipitation-progress';
+    progress.className = 'precipitation-progress hidden';
+    progress.setAttribute('role', 'status');
+    progress.setAttribute('aria-live', 'polite');
+    progress.setAttribute('aria-label', 'Precipitation contour progress');
+    progress.innerHTML = `
+      <div class="precipitation-progress-card">
+        <div class="precipitation-progress-title">Recalculating contours…</div>
+        <div id="precipitation-progress-text" class="precipitation-progress-text">Preparing precipitation map</div>
+        <div class="precipitation-progress-track"><div id="precipitation-progress-bar" class="precipitation-progress-bar"></div></div>
+      </div>
+    `;
+    mapCanvas.insertBefore(progress, sprinklerContextMenu);
+    progressBar = progress.querySelector('#precipitation-progress-bar');
+    progressText = progress.querySelector('#precipitation-progress-text');
+  }
+
   let tooltip = document.getElementById('precipitation-tooltip');
   if (!tooltip) {
     tooltip = document.createElement('div');
@@ -367,7 +393,7 @@ function createPrecipitationUi() {
     mapCanvas.insertBefore(tooltip, sprinklerContextMenu);
   }
 
-  return { layer, input, legend, legendRange, contourSummary, contourIntervalInput, contourIntervalValue, gridCellInput, gridCellValue, scopeSelect, tooltip };
+  return { layer, input, legend, legendRange, contourSummary, contourIntervalInput, contourIntervalValue, gridCellInput, gridCellValue, scopeSelect, tooltip, progress, progressBar, progressText };
 }
 
 function setCatalogStatus(message) {
@@ -2646,28 +2672,30 @@ function drawPrecipitationContours(context, rates, rows, columns, cellSize, maxR
   return contourThresholds.length;
 }
 
-function renderPrecipitationLayer() {
-  precipitationLayer.replaceChildren();
-  const enabled = showPrecipitationMap;
-  mapCanvas.classList.toggle('precipitation-enabled', enabled);
-  precipitationLegend.classList.toggle('hidden', !enabled);
-  if (!enabled) {
-    hidePrecipitationTooltip();
-    return;
-  }
+function nextAnimationFrame() {
+  return new Promise((resolve) => window.requestAnimationFrame(resolve));
+}
 
-  const box = activeCoordinateBox();
-  const feetPerPixel = currentFeetPerPixel();
-  const scopedSprinklers = sprinklersForPrecipitationScope();
-  if (!box.width || !box.height || !scopedSprinklers.length) {
-    precipitationLegendRange.textContent = precipitationScopeMode === 'selected'
-      ? 'Select a sprinkler with flow and radius data to calculate its precipitation map.'
-      : 'Add sprinkler flow and radius data to calculate the precipitation map.';
-    precipitationContourSummary.textContent = '';
-    hidePrecipitationTooltip();
-    return;
-  }
+function updatePrecipitationProgress(percent, message) {
+  const clampedPercent = Math.max(0, Math.min(100, percent));
+  precipitationProgressBar.style.width = `${clampedPercent}%`;
+  precipitationProgressText.textContent = message;
+}
 
+function showPrecipitationProgress(message = 'Preparing precipitation map') {
+  updatePrecipitationProgress(0, message);
+  precipitationProgress.classList.remove('hidden');
+}
+
+function hidePrecipitationProgress() {
+  precipitationProgress.classList.add('hidden');
+}
+
+function isActivePrecipitationRender(token) {
+  return token === precipitationRenderToken;
+}
+
+async function buildPrecipitationLayerAsync(token, box, feetPerPixel, scopedSprinklers) {
   const canvas = createPrecipitationCanvas(box, 'precipitation-map');
   const contourCanvas = createPrecipitationCanvas(box, 'precipitation-contours');
 
@@ -2680,6 +2708,11 @@ function renderPrecipitationLayer() {
   const positiveRates = [];
   let maxRate = 0;
 
+  showPrecipitationProgress('Sampling precipitation grid…');
+  await nextAnimationFrame();
+  if (!isActivePrecipitationRender(token)) return;
+
+  const sampleProgressEnd = 70;
   for (let row = 0; row < rows; row += 1) {
     for (let column = 0; column < columns; column += 1) {
       const rate = averageScopedPrecipitationRateAtSamples(
@@ -2691,9 +2724,18 @@ function renderPrecipitationLayer() {
       if (rate > 0) positiveRates.push(rate);
       rates[row][column] = rate;
     }
-  }
-  const colorScaleMax = precipitationColorScaleMax(positiveRates);
 
+    if (row % 4 === 0 || row === rows - 1) {
+      updatePrecipitationProgress(
+        ((row + 1) / rows) * sampleProgressEnd,
+        `Sampling precipitation grid (${row + 1} of ${rows} rows)…`,
+      );
+      await nextAnimationFrame();
+      if (!isActivePrecipitationRender(token)) return;
+    }
+  }
+
+  const colorScaleMax = precipitationColorScaleMax(positiveRates);
   context.save();
   applyGrassClip(context, box);
   for (let row = 0; row < rows; row += 1) {
@@ -2705,16 +2747,34 @@ function renderPrecipitationLayer() {
       context.fillStyle = colorForPrecipitationRate(rate, colorScaleMax);
       context.fillRect(x, y, Math.min(cellSize, box.width - x), Math.min(cellSize, box.height - y));
     }
+
+    if (row % 8 === 0 || row === rows - 1) {
+      updatePrecipitationProgress(
+        70 + ((row + 1) / rows) * 15,
+        `Painting precipitation heat map (${row + 1} of ${rows} rows)…`,
+      );
+      await nextAnimationFrame();
+      if (!isActivePrecipitationRender(token)) {
+        context.restore();
+        return;
+      }
+    }
   }
   context.restore();
+
+  updatePrecipitationProgress(92, 'Drawing contour lines…');
+  await nextAnimationFrame();
+  if (!isActivePrecipitationRender(token)) return;
 
   contourContext.save();
   applyGrassClip(contourContext, box);
   const contourCount = drawPrecipitationContours(contourContext, rates, rows, columns, cellSize, maxRate);
   contourContext.restore();
+  if (!isActivePrecipitationRender(token)) return;
 
-  precipitationLayer.append(canvas, contourCanvas);
-  const grassScopeText = hasGrassAreas() ? ` inside ${normalizeGrassAreas(project.site.grassAreas).length} grass area${normalizeGrassAreas(project.site.grassAreas).length === 1 ? '' : 's'}` : '';
+  precipitationLayer.replaceChildren(canvas, contourCanvas);
+  const grassAreaCount = normalizeGrassAreas(project.site.grassAreas).length;
+  const grassScopeText = hasGrassAreas() ? ` inside ${grassAreaCount} grass area${grassAreaCount === 1 ? '' : 's'}` : '';
   const sprinklerScopeText = precipitationScopeDescription(scopedSprinklers);
   precipitationLegendRange.textContent = maxRate > 0
     ? `0–${formatNumber(colorScaleMax, 2)} in/hr color scale; max ${formatNumber(maxRate, 2)}${grassScopeText} for ${sprinklerScopeText} (${scopedSprinklers.length} sprinkler${scopedSprinklers.length === 1 ? '' : 's'})`
@@ -2724,6 +2784,39 @@ function renderPrecipitationLayer() {
   precipitationContourSummary.textContent = maxRate > 0
     ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr on a ${formatFeetSetting(precipitationGridCellFeet)} grid (${contourCount} line${contourCount === 1 ? '' : 's'}).`
     : '';
+  updatePrecipitationProgress(100, 'Contours ready.');
+  window.setTimeout(() => {
+    if (isActivePrecipitationRender(token)) hidePrecipitationProgress();
+  }, 250);
+}
+
+function renderPrecipitationLayer() {
+  precipitationRenderToken += 1;
+  const token = precipitationRenderToken;
+  precipitationLayer.replaceChildren();
+  const enabled = showPrecipitationMap;
+  mapCanvas.classList.toggle('precipitation-enabled', enabled);
+  precipitationLegend.classList.toggle('hidden', !enabled);
+  if (!enabled) {
+    hidePrecipitationProgress();
+    hidePrecipitationTooltip();
+    return;
+  }
+
+  const box = activeCoordinateBox();
+  const feetPerPixel = currentFeetPerPixel();
+  const scopedSprinklers = sprinklersForPrecipitationScope();
+  if (!box.width || !box.height || !scopedSprinklers.length) {
+    precipitationLegendRange.textContent = precipitationScopeMode === 'selected'
+      ? 'Select a sprinkler with flow and radius data to calculate its precipitation map.'
+      : 'Add sprinkler flow and radius data to calculate the precipitation map.';
+    precipitationContourSummary.textContent = '';
+    hidePrecipitationProgress();
+    hidePrecipitationTooltip();
+    return;
+  }
+
+  buildPrecipitationLayerAsync(token, box, feetPerPixel, scopedSprinklers);
 }
 
 function rectangleCoverageClass(patternType) {
