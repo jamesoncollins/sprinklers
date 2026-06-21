@@ -94,6 +94,7 @@ let precipitationScopeMode = defaultPrecipitationScopeMode;
 let radialDecayScale = defaultRadialDecayScale;
 let grassDrawingState = null;
 let addSprinklerMode = false;
+let duplicateSprinklerTemplate = null;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
@@ -181,6 +182,7 @@ const applyCatalogToSelectedBtn = document.getElementById('apply-catalog-to-sele
 const deleteSelectedBtn = document.getElementById('delete-selected');
 const sprinklerContextMenu = document.getElementById('sprinkler-context-menu');
 const contextApplyCatalogBtn = document.getElementById('context-apply-catalog');
+const contextDuplicateSprinklerBtn = document.getElementById('context-duplicate-sprinkler');
 const contextDeleteSprinklerBtn = document.getElementById('context-delete-sprinkler');
 const contextZoneSelect = document.getElementById('context-zone-select');
 const precipitationUi = createPrecipitationUi();
@@ -3160,9 +3162,13 @@ function updateAddSprinklerModeButton() {
   toggleAddSprinklerBtn?.setAttribute('aria-pressed', String(addSprinklerMode));
   mapCanvas.classList.toggle('adding-sprinkler', addSprinklerMode);
   if (!addSprinklerMode) hideAddSprinklerCursor();
+  if (toggleAddSprinklerBtn) {
+    toggleAddSprinklerBtn.textContent = duplicateSprinklerTemplate ? 'Place duplicate' : 'Add sprinkler';
+  }
 }
 
-function setAddSprinklerMode(enabled) {
+function setAddSprinklerMode(enabled, options = {}) {
+  duplicateSprinklerTemplate = options.duplicateSprinklerTemplate || null;
   addSprinklerMode = Boolean(enabled);
   if (addSprinklerMode) {
     grassDrawingState = null;
@@ -3175,8 +3181,36 @@ function setAddSprinklerMode(enabled) {
   updateAddSprinklerModeButton();
 }
 
+function duplicateSprinklerAt(sourceSprinkler, position) {
+  const { id, latitude, longitude, ...sprinklerSettings } = sourceSprinkler;
+  const sprinkler = {
+    ...sprinklerSettings,
+    id: crypto.randomUUID(),
+    ...position,
+  };
+  syncSprinklerGps(sprinkler);
+  project.sprinklers.push(sprinkler);
+  selectedSprinklerId = sprinkler.id;
+  inspectedZoneId = sprinkler.zoneId;
+  setAddSprinklerMode(false);
+  render();
+}
+
+function startDuplicateSprinklerPlacement(sprinkler) {
+  if (!sprinkler) return;
+  selectedSprinklerId = sprinkler.id;
+  inspectedZoneId = sprinkler.zoneId;
+  closeSprinklerContextMenu();
+  setAddSprinklerMode(true, { duplicateSprinklerTemplate: { ...sprinkler } });
+}
+
 function addSprinklerAt(position) {
   ensureDefaultZone();
+  if (duplicateSprinklerTemplate) {
+    duplicateSprinklerAt(duplicateSprinklerTemplate, position);
+    return;
+  }
+
   const model = findSelectedModel();
   const pressurePsi = selectedCatalogPressurePsi(model) || 45;
   const performance = model ? lookupPerformance(model, pressurePsi) : null;
@@ -3692,6 +3726,10 @@ contextApplyCatalogBtn.addEventListener('click', () => {
   selectedSprinklerId = sprinkler.id;
   closeSprinklerContextMenu();
   render();
+});
+contextDuplicateSprinklerBtn.addEventListener('click', () => {
+  const sprinkler = project.sprinklers.find((candidate) => candidate.id === contextMenuSprinklerId);
+  startDuplicateSprinklerPlacement(sprinkler);
 });
 contextDeleteSprinklerBtn.addEventListener('click', () => deleteSprinklerById(contextMenuSprinklerId));
 
