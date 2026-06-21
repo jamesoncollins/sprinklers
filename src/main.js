@@ -24,8 +24,6 @@ const minPrecipitationContourInterval = 0.05;
 const maxPrecipitationContourInterval = 1;
 const precipitationContourIntervalStep = 0.05;
 const defaultPrecipitationContourInterval = 0.25;
-const minPrecipitationLabelCells = 4;
-const minPrecipitationLabelSpacingPx = 34;
 const defaultZoneWaterShare = 1;
 const precipitationScopeModes = ['all', 'zone', 'selected'];
 const defaultPrecipitationScopeMode = 'all';
@@ -95,6 +93,7 @@ let precipitationGridCellFeet = defaultPrecipitationGridCellFeet;
 let precipitationScopeMode = defaultPrecipitationScopeMode;
 let radialDecayScale = defaultRadialDecayScale;
 let grassDrawingState = null;
+let addSprinklerMode = false;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
@@ -138,6 +137,7 @@ const zoneInspectorSelect = document.getElementById('zone-inspector-select');
 const canvasZoneControls = document.querySelector('.canvas-zone-controls');
 const zoneSprinklerSelect = document.getElementById('zone-sprinkler-select');
 const addZoneBtn = document.getElementById('add-zone');
+const toggleAddSprinklerBtn = document.getElementById('toggle-add-sprinkler');
 const openZonesPopoutBtn = document.getElementById('open-zones-popout');
 const openSprinklersPopoutBtn = document.getElementById('open-sprinklers-popout');
 const quickEditBackdrop = document.getElementById('quick-edit-backdrop');
@@ -157,6 +157,7 @@ const coverageLayer = document.getElementById('coverage-layer');
 const calibrationLayer = document.getElementById('calibration-layer');
 const sprinklerLayer = document.getElementById('sprinkler-layer');
 const emptyCanvasHint = document.getElementById('empty-canvas-hint');
+const addSprinklerCursor = document.getElementById('add-sprinkler-cursor');
 const layerSelectorList = document.getElementById('layer-selector-list');
 const sprinklerCount = document.getElementById('sprinkler-count');
 const analysisSummary = document.getElementById('analysis-summary');
@@ -2030,7 +2031,7 @@ function copySprinklerSettings(target, source) {
 
 function renderSprinklersQuickTable() {
   if (project.sprinklers.length === 0) {
-    sprinklersQuickTable.innerHTML = '<div class="quick-edit-empty">No sprinklers yet. Click the canvas to add sprinklers, then use this table for quick edits.</div>';
+    sprinklersQuickTable.innerHTML = '<div class="quick-edit-empty">No sprinklers yet. Turn on Add sprinkler, click the canvas to place heads, then use this table for quick edits.</div>';
     return;
   }
 
@@ -2266,6 +2267,8 @@ function renderCalibrationLayer() {
 }
 
 function startScaleCalibration() {
+  addSprinklerMode = false;
+  updateAddSprinklerModeButton();
   calibrationState = { points: [] };
   mapCanvas.classList.add('calibrating');
   emptyCanvasHint.classList.add('hidden');
@@ -2433,6 +2436,8 @@ function updateGrassDrawingControls() {
 }
 
 function startGrassAreaDrawing() {
+  addSprinklerMode = false;
+  updateAddSprinklerModeButton();
   closeSprinklerContextMenu();
   calibrationState = null;
   mapCanvas.classList.remove('calibrating');
@@ -2674,111 +2679,6 @@ function drawPrecipitationContours(context, rates, rows, columns, cellSize, maxR
   return contourThresholds.length;
 }
 
-function precipitationIslandLabels(rates, rows, columns, cellSize) {
-  const visited = Array.from({ length: rows }, () => Array(columns).fill(false));
-  const labels = [];
-  const directions = [
-    { row: -1, column: 0 },
-    { row: 1, column: 0 },
-    { row: 0, column: -1 },
-    { row: 0, column: 1 },
-  ];
-
-  for (let startRow = 0; startRow < rows; startRow += 1) {
-    for (let startColumn = 0; startColumn < columns; startColumn += 1) {
-      if (visited[startRow][startColumn] || rates[startRow][startColumn] <= 0) continue;
-
-      const stack = [{ row: startRow, column: startColumn }];
-      let cellCount = 0;
-      let totalRate = 0;
-      let weightedX = 0;
-      let weightedY = 0;
-      let peakRate = 0;
-      let peakX = startColumn * cellSize + cellSize / 2;
-      let peakY = startRow * cellSize + cellSize / 2;
-      visited[startRow][startColumn] = true;
-
-      while (stack.length) {
-        const cell = stack.pop();
-        const rate = rates[cell.row][cell.column];
-        const x = cell.column * cellSize + cellSize / 2;
-        const y = cell.row * cellSize + cellSize / 2;
-        cellCount += 1;
-        totalRate += rate;
-        weightedX += x * rate;
-        weightedY += y * rate;
-
-        if (rate > peakRate) {
-          peakRate = rate;
-          peakX = x;
-          peakY = y;
-        }
-
-        directions.forEach((direction) => {
-          const nextRow = cell.row + direction.row;
-          const nextColumn = cell.column + direction.column;
-          if (
-            nextRow < 0
-            || nextColumn < 0
-            || nextRow >= rows
-            || nextColumn >= columns
-            || visited[nextRow][nextColumn]
-            || rates[nextRow][nextColumn] <= 0
-          ) {
-            return;
-          }
-          visited[nextRow][nextColumn] = true;
-          stack.push({ row: nextRow, column: nextColumn });
-        });
-      }
-
-      if (cellCount >= minPrecipitationLabelCells) {
-        labels.push({
-          x: totalRate > 0 ? weightedX / totalRate : peakX,
-          y: totalRate > 0 ? weightedY / totalRate : peakY,
-          peakX,
-          peakY,
-          rate: peakRate,
-          cellCount,
-        });
-      }
-    }
-  }
-
-  return labels
-    .sort((first, second) => second.rate - first.rate)
-    .filter((label, index, accepted) => accepted.slice(0, index).every((other) => {
-      const dx = label.x - other.x;
-      const dy = label.y - other.y;
-      return Math.hypot(dx, dy) >= minPrecipitationLabelSpacingPx;
-    }));
-}
-
-function drawPrecipitationIslandLabels(context, rates, rows, columns, cellSize) {
-  const labels = precipitationIslandLabels(rates, rows, columns, cellSize);
-  if (!labels.length) return 0;
-
-  context.save();
-  context.font = '800 12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.lineJoin = 'round';
-
-  labels.forEach((label) => {
-    const text = `${formatNumber(label.rate, 2)} in/hr`;
-    const labelX = Math.round(label.x);
-    const labelY = Math.round(label.y);
-    context.lineWidth = 4;
-    context.strokeStyle = 'rgba(0, 0, 0, 0.72)';
-    context.strokeText(text, labelX, labelY);
-    context.fillStyle = 'rgba(255, 255, 255, 0.96)';
-    context.fillText(text, labelX, labelY);
-  });
-
-  context.restore();
-  return labels.length;
-}
-
 function nextAnimationFrame() {
   return new Promise((resolve) => window.requestAnimationFrame(resolve));
 }
@@ -2876,7 +2776,6 @@ async function buildPrecipitationLayerAsync(token, box, feetPerPixel, scopedSpri
   contourContext.save();
   applyGrassClip(contourContext, box);
   const contourCount = drawPrecipitationContours(contourContext, rates, rows, columns, cellSize, maxRate);
-  const labelCount = drawPrecipitationIslandLabels(contourContext, rates, rows, columns, cellSize);
   contourContext.restore();
   if (!isActivePrecipitationRender(token)) return;
 
@@ -2890,7 +2789,7 @@ async function buildPrecipitationLayerAsync(token, box, feetPerPixel, scopedSpri
       ? 'No irrigated grass cells found in the current canvas view.'
       : 'No irrigated cells found in the current canvas view; draw grass areas to limit the overlay.';
   precipitationContourSummary.textContent = maxRate > 0
-    ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr on a ${formatFeetSetting(precipitationGridCellFeet)} grid (${contourCount} line${contourCount === 1 ? '' : 's'}, ${labelCount} island label${labelCount === 1 ? '' : 's'}).`
+    ? `Contours every ${formatNumber(precipitationContourInterval, 2)} in/hr on a ${formatFeetSetting(precipitationGridCellFeet)} grid (${contourCount} line${contourCount === 1 ? '' : 's'}).`
     : '';
   updatePrecipitationProgress(100, 'Contours ready.');
   window.setTimeout(() => {
@@ -2967,14 +2866,15 @@ function renderArcCoverage(sprinkler, color) {
 
 function renderEmptyCanvasHint() {
   const title = document.createElement('strong');
-  title.textContent = 'Click anywhere to place your first sprinkler.';
+  title.textContent = 'Turn on Add sprinkler to place your first head.';
   const details = document.createElement('span');
-  details.textContent = 'Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.';
+  details.textContent = 'Use the Add sprinkler toolbar button, then click the canvas. Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.';
   emptyCanvasHint.replaceChildren(title, details);
 }
 
 function renderCanvas() {
   applyMapViewTransform();
+  updateAddSprinklerModeButton();
   grassLayer.replaceChildren();
   coverageLayer.replaceChildren();
   sprinklerLayer.replaceChildren();
@@ -3239,6 +3139,42 @@ function zoomMapView(event) {
   renderSatelliteLayer();
 }
 
+function hideAddSprinklerCursor() {
+  addSprinklerCursor?.classList.add('hidden');
+}
+
+function updateAddSprinklerCursor(event) {
+  if (!addSprinklerMode || panState || dragState || event.target.closest('.context-menu') || event.target.closest('.precipitation-legend')) {
+    hideAddSprinklerCursor();
+    return;
+  }
+
+  const rect = mapCanvas.getBoundingClientRect();
+  addSprinklerCursor.style.left = `${event.clientX - rect.left}px`;
+  addSprinklerCursor.style.top = `${event.clientY - rect.top}px`;
+  addSprinklerCursor.classList.remove('hidden');
+}
+
+function updateAddSprinklerModeButton() {
+  toggleAddSprinklerBtn?.classList.toggle('active', addSprinklerMode);
+  toggleAddSprinklerBtn?.setAttribute('aria-pressed', String(addSprinklerMode));
+  mapCanvas.classList.toggle('adding-sprinkler', addSprinklerMode);
+  if (!addSprinklerMode) hideAddSprinklerCursor();
+}
+
+function setAddSprinklerMode(enabled) {
+  addSprinklerMode = Boolean(enabled);
+  if (addSprinklerMode) {
+    grassDrawingState = null;
+    calibrationState = null;
+    mapCanvas.classList.remove('calibrating');
+    renderCanvas();
+    updateScaleCalibrationStatus();
+    return;
+  }
+  updateAddSprinklerModeButton();
+}
+
 function addSprinklerAt(position) {
   ensureDefaultZone();
   const model = findSelectedModel();
@@ -3269,6 +3205,7 @@ function addSprinklerAt(position) {
   project.sprinklers.push(sprinkler);
   selectedSprinklerId = sprinkler.id;
   inspectedZoneId = sprinkler.zoneId;
+  setAddSprinklerMode(false);
   render();
 }
 
@@ -3690,6 +3627,8 @@ showPrecipitationMapInput.addEventListener('change', () => {
   renderCanvas();
 });
 
+toggleAddSprinklerBtn?.addEventListener('click', () => setAddSprinklerMode(!addSprinklerMode));
+
 addZoneBtn.addEventListener('click', () => {
   project.zones.push(normalizeZone({ name: `Zone ${project.zones.length + 1}` }, project.zones.length));
   render();
@@ -3698,7 +3637,9 @@ addZoneBtn.addEventListener('click', () => {
 mapCanvas.addEventListener('pointerdown', startMapPan);
 mapCanvas.addEventListener('pointermove', updateMapPan);
 mapCanvas.addEventListener('pointermove', updatePrecipitationTooltip);
+mapCanvas.addEventListener('pointermove', updateAddSprinklerCursor);
 mapCanvas.addEventListener('pointerleave', hidePrecipitationTooltip);
+mapCanvas.addEventListener('pointerleave', hideAddSprinklerCursor);
 mapCanvas.addEventListener('pointerup', endMapPan);
 mapCanvas.addEventListener('pointercancel', endMapPan);
 mapCanvas.addEventListener('wheel', zoomMapView, { passive: false });
@@ -3724,6 +3665,7 @@ mapCanvas.addEventListener('click', (event) => {
     return;
   }
   if (event.target.closest('.sprinkler-marker')) return;
+  if (!addSprinklerMode) return;
   addSprinklerAt(canvasPositionFromEvent(event));
 });
 if (canvasZoneControls) {

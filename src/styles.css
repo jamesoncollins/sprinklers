@@ -45,6 +45,7 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .hidden { display: none !important; }
 .danger { background: #3c1b21; color: var(--danger); border-color: #7f3030; }
 .secondary-btn { border-color: var(--border); color: var(--blue-900); background: #1a314c; }
+.secondary-btn.active,.secondary-btn[aria-pressed='true'] { border-color: #ffbf47; color: #18202a; background: #ffbf47; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .checkbox-field { display: flex; align-items: center; gap: 8px; color: var(--blue-900); font-weight: 800; }
 .checkbox-field input { width: auto; }
@@ -99,9 +100,10 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .canvas-zone-select { width: min(220px, calc(100vw - 190px)); margin: 0; }
 .canvas-zone-controls button { flex: 0 0 auto; }
 .inspector-panel .zones-list { grid-template-columns: 1fr; }
-.map-canvas { position: relative; flex: 1 1 auto; height: auto; min-height: 420px; overflow: hidden; border: 2px solid #38536f; border-radius: 10px; background: #101923; cursor: crosshair; touch-action: none; }
+.map-canvas { position: relative; flex: 1 1 auto; height: auto; min-height: 420px; overflow: hidden; border: 2px solid #38536f; border-radius: 10px; background: #101923; cursor: default; touch-action: none; }
 .map-canvas.panning { cursor: grabbing; }
 .map-canvas.calibrating { cursor: crosshair; }
+.map-canvas.adding-sprinkler { cursor: none; }
 .map-canvas.satellite-enabled { background: #0e1722; }
 .map-canvas.image-enabled { background: #101923; }
 .map-canvas.satellite-enabled::before { content: 'Satellite imagery needs an address or coordinates'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; color: #d8e7f7; font-weight: 800; text-align: center; pointer-events: none; z-index: 0; }
@@ -131,7 +133,8 @@ input[type='range'] { padding: 0; accent-color: var(--accent); }
 .coverage.sector { background: conic-gradient(from var(--start-angle), currentColor 0deg var(--arc-angle), transparent var(--arc-angle) 360deg); }
 .coverage.rectangle { border-radius:4px; background: currentColor; }
 .sprinkler-marker { position:absolute; width:12px; height:12px; border-radius:50%; transform:translate(-50%, -50%) scale(var(--marker-scale, 1)); border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.35); cursor:grab; display:flex; align-items:center; justify-content:center; }
-.sprinkler-marker::after { content:''; width:3px; height:3px; border-radius:50%; background:#fff; }
+.add-sprinkler-cursor { position:absolute; z-index:9; width:18px; height:18px; border-radius:50%; transform:translate(-50%, -50%); border:2px solid #fff; background:#ffbf47; box-shadow:0 2px 8px rgba(0,0,0,0.45), 0 0 0 4px rgba(255,191,71,0.22); pointer-events:none; }
+.sprinkler-marker::after,.add-sprinkler-cursor::after { content:''; width:4px; height:4px; border-radius:50%; background:#fff; }
 .sprinkler-marker.selected { outline:3px solid #ffbf47; outline-offset:2px; z-index:3; }
 .sprinkler-marker:active { cursor: grabbing; }
 .context-menu { position: absolute; z-index: 10; min-width: 180px; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); box-shadow: 0 12px 30px rgba(0,0,0,0.36); }

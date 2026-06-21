@@ -10,16 +10,16 @@
     <div id="app">
       <main class="layout">
         <aside class="panel left-panel">
+          <div class="project-actions actions" aria-label="Project file actions">
+            <button id="new-project">New Project</button>
+            <button id="save-project">Save Project</button>
+            <label class="file-btn">
+              Load Project
+              <input id="load-project" type="file" accept="application/json" />
+            </label>
+          </div>
           <details class="panel-menu">
             <summary class="panel-summary">Project</summary>
-            <div class="project-actions actions" aria-label="Project file actions">
-              <button id="new-project">New Project</button>
-              <button id="save-project">Save Project</button>
-              <label class="file-btn">
-                Load Project
-                <input id="load-project" type="file" accept="application/json" />
-              </label>
-            </div>
             <div class="field-group">
               <label for="site-name">Site name</label>
               <input id="site-name" type="text" placeholder="New Site" />
@@ -146,7 +146,7 @@
                 <li><strong>Set the site.</strong> Use the sketch grid, upload an image and calibrate a known distance, or look up an address for satellite imagery.</li>
                 <li><strong>Load catalog data.</strong> Use the built-in catalog or import CSV manufacturer rows, then choose the head, nozzle, and rated catalog pressure.</li>
                 <li><strong>Create zones.</strong> Add one zone per valve/runtime group and enter static pressure, optional dynamic pressure, open-flow supply, and water share.</li>
-                <li><strong>Place sprinklers.</strong> Click the canvas to add heads, assign each to a zone, then set arc, rectangular throw, and orientation.</li>
+                <li><strong>Place sprinklers.</strong> Turn on Add sprinkler, click the canvas to place heads, assign each to a zone, then set arc, rectangular throw, and orientation.</li>
                 <li><strong>Review analysis.</strong> Use the cards and overlays to compare operating pressure, actual flow, throw, and precipitation before saving the project.</li>
               </ol>
             </div>
@@ -194,6 +194,7 @@
                 <select id="zone-inspector-select" class="canvas-zone-select" aria-label="Zone"></select>
                 <button id="add-zone" type="button" class="secondary-btn">Add Zone</button>
               </div>
+              <button id="toggle-add-sprinkler" type="button" class="secondary-btn" aria-pressed="false" title="Turn on before clicking the canvas to place sprinkler heads.">Add sprinkler</button>
               <button id="open-zones-popout" type="button" class="secondary-btn">Zones</button>
               <button id="open-sprinklers-popout" type="button" class="secondary-btn">Sprinklers</button>
               <div id="sprinkler-count" class="metric-pill">0 sprinklers</div>
@@ -250,9 +251,10 @@
               <div id="sprinkler-layer" class="sprinkler-layer" data-canvas-layer data-layer-label="Sprinklers" data-layer-description="Clickable sprinkler head markers." data-layer-default-visible="true"></div>
             </div>
             <div id="empty-canvas-hint" class="empty-canvas-hint">
-              <strong>Click anywhere to place your first sprinkler.</strong>
-              <span>Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.</span>
+              <strong>Turn on Add sprinkler to place your first head.</strong>
+              <span>Use the Add sprinkler toolbar button, then click the canvas. Drag points to reposition. Right-click a sprinkler to change its zone or delete it. Ctrl+drag to pan, and use the scroll wheel to zoom.</span>
             </div>
+            <div id="add-sprinkler-cursor" class="add-sprinkler-cursor hidden" aria-hidden="true"></div>
             <div id="sprinkler-context-menu" class="context-menu hidden" role="menu" aria-label="Sprinkler actions">
               <label class="context-menu-label" for="context-zone-select">Zone</label>
               <select id="context-zone-select" class="context-menu-select" aria-label="Change sprinkler zone"></select>
