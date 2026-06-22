@@ -29,6 +29,7 @@ const precipitationScopeModes = ['all', 'zone', 'selected'];
 const defaultPrecipitationScopeMode = 'all';
 const arcPatternType = 'arc';
 const rectanglePatternType = 'rectangle';
+const arcHandleTypes = new Set(['arc-start', 'arc-end']);
 
 const imagerySources = {
   'esri-world': {
@@ -1009,6 +1010,9 @@ function applyMapViewTransform() {
   const { scale } = normalizeMapViewSettings(project.site?.mapView);
   sprinklerLayer.querySelectorAll('.sprinkler-marker').forEach((marker) => {
     marker.style.setProperty('--marker-scale', `${1 / scale}`);
+  });
+  sprinklerLayer.querySelectorAll('.arc-edit-handle').forEach((handle) => {
+    handle.style.setProperty('--handle-scale', `${1 / scale}`);
   });
 }
 
@@ -2866,6 +2870,88 @@ function renderArcCoverage(sprinkler, color) {
   return coverage;
 }
 
+
+function arcEdgePoint(sprinkler, angleDegrees) {
+  const center = localPointFromPercent(sprinkler);
+  const radiusPx = Math.max(10, effectiveRadiusFt(sprinkler) / currentFeetPerPixel());
+  const angle = (normalizeDegrees(angleDegrees) * Math.PI) / 180;
+  return {
+    x: center.x + Math.sin(angle) * radiusPx,
+    y: center.y - Math.cos(angle) * radiusPx,
+  };
+}
+
+function pointerAngleForSprinkler(sprinkler, event) {
+  const rect = mapCanvas.getBoundingClientRect();
+  const point = screenPointToLocalPoint(event.clientX - rect.left, event.clientY - rect.top);
+  const center = localPointFromPercent(sprinkler);
+  return normalizeDegrees((Math.atan2(point.x - center.x, center.y - point.y) * 180) / Math.PI);
+}
+
+function setArcHandlePosition(handle, point) {
+  handle.style.left = `${point.x}px`;
+  handle.style.top = `${point.y}px`;
+}
+
+function updateArcEditGeometry(state, sprinkler) {
+  if (!state || !sprinkler) return;
+  const arc = clampArcDegrees(sprinkler.arcDegrees);
+  const leftHandLock = normalizeDegrees(sprinkler.orientationDegrees);
+  if (state.coverage) {
+    state.coverage.className = `coverage ${arc >= 360 ? 'full' : 'sector'}`;
+    state.coverage.style.setProperty('--arc-angle', `${arc}deg`);
+    state.coverage.style.setProperty('--start-angle', `${leftHandLock}deg`);
+  }
+  if (state.startHandle) setArcHandlePosition(state.startHandle, arcEdgePoint(sprinkler, leftHandLock));
+  if (state.endHandle) setArcHandlePosition(state.endHandle, arcEdgePoint(sprinkler, leftHandLock + arc));
+}
+
+function renderArcEditHandles(sprinkler, coverage) {
+  if (sprinkler.id !== selectedSprinklerId || isRectanglePattern(sprinkler)) return;
+
+  const arc = clampArcDegrees(sprinkler.arcDegrees);
+  const leftHandLock = normalizeDegrees(sprinkler.orientationDegrees);
+  const handleScale = 1 / normalizeMapViewSettings(project.site.mapView).scale;
+  const handles = [
+    { type: 'arc-start', label: 'left lock', angle: leftHandLock },
+    { type: 'arc-end', label: 'right arc edge', angle: leftHandLock + arc },
+  ];
+
+  handles.forEach(({ type, label, angle }) => {
+    const handle = document.createElement('button');
+    handle.type = 'button';
+    handle.className = `arc-edit-handle ${type}`;
+    handle.style.setProperty('--handle-scale', `${handleScale}`);
+    setArcHandlePosition(handle, arcEdgePoint(sprinkler, angle));
+    handle.title = type === 'arc-start'
+      ? 'Drag to rotate the left lock edge while keeping the arc size.'
+      : 'Drag to change the sprinkler arc sweep.';
+    handle.setAttribute('aria-label', `Drag ${label} for sprinkler ${sprinkler.headModel || sprinkler.id}`);
+    handle.addEventListener('pointerdown', (event) => {
+      if (event.ctrlKey || event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeSprinklerContextMenu();
+      selectedSprinklerId = sprinkler.id;
+      inspectedZoneId = sprinkler.zoneId;
+      dragState = {
+        kind: type,
+        id: sprinkler.id,
+        pointerId: event.pointerId,
+        coverage,
+        startHandle: sprinklerLayer.querySelector(`.arc-edit-handle.arc-start[data-sprinkler-id="${CSS.escape(sprinkler.id)}"]`),
+        endHandle: sprinklerLayer.querySelector(`.arc-edit-handle.arc-end[data-sprinkler-id="${CSS.escape(sprinkler.id)}"]`),
+      };
+      handle.setPointerCapture(event.pointerId);
+      handle.classList.add('active');
+      renderInspector();
+      renderZoneInspectorControls();
+    });
+    handle.dataset.sprinklerId = sprinkler.id;
+    sprinklerLayer.appendChild(handle);
+  });
+}
+
 function renderEmptyCanvasHint() {
   const title = document.createElement('strong');
   title.textContent = 'Turn on Add sprinkler to place your first head.';
@@ -2930,6 +3016,7 @@ function renderCanvas() {
     });
     marker.addEventListener('contextmenu', (event) => openSprinklerContextMenu(event, sprinkler));
     sprinklerLayer.appendChild(marker);
+    renderArcEditHandles(sprinkler, coverage);
   });
 }
 
@@ -3734,9 +3821,24 @@ contextDuplicateSprinklerBtn.addEventListener('click', () => {
 contextDeleteSprinklerBtn.addEventListener('click', () => deleteSprinklerById(contextMenuSprinklerId));
 
 sprinklerLayer.addEventListener('pointermove', (event) => {
-  if (!dragState) return;
+  if (!dragState || event.pointerId !== dragState.pointerId) return;
   const sprinkler = project.sprinklers.find((candidate) => candidate.id === dragState.id);
   if (!sprinkler) return;
+
+  if (arcHandleTypes.has(dragState.kind)) {
+    const pointerAngle = pointerAngleForSprinkler(sprinkler, event);
+    if (dragState.kind === 'arc-start') {
+      sprinkler.orientationDegrees = pointerAngle;
+    } else {
+      const sweep = normalizeDegrees(pointerAngle - normalizeDegrees(sprinkler.orientationDegrees));
+      sprinkler.arcDegrees = sweep === 0 ? 360 : clampArcDegrees(sweep);
+    }
+    updateArcEditGeometry(dragState, sprinkler);
+    renderInspector();
+    renderAnalysis();
+    return;
+  }
+
   Object.assign(sprinkler, canvasPositionFromEvent(event));
   syncSprinklerGps(sprinkler);
   setPositionFromPercent(dragState.marker, sprinkler);
