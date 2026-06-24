@@ -1672,8 +1672,8 @@ function gpsToCanvasPosition(latitude, longitude) {
   const northFeet = deltaLatRad * earthRadiusFeet;
   const eastFeet = deltaLonRad * earthRadiusFeet * Math.cos((center.latitude * Math.PI) / 180);
   return {
-    xPercent: Math.min(100, Math.max(0, ((width / 2 + eastFeet / feetPerPixel) / width) * 100)),
-    yPercent: Math.min(100, Math.max(0, ((height / 2 - northFeet / feetPerPixel) / height) * 100)),
+    xPercent: ((width / 2 + eastFeet / feetPerPixel) / width) * 100,
+    yPercent: ((height / 2 - northFeet / feetPerPixel) / height) * 100,
   };
 }
 
@@ -3134,8 +3134,8 @@ function canvasPositionFromEvent(event) {
   const box = activeCoordinateBox();
   const local = screenPointToLocalPoint(event.clientX - rect.left, event.clientY - rect.top);
   return {
-    xPercent: Math.min(100, Math.max(0, ((local.x - box.left) / box.width) * 100)),
-    yPercent: Math.min(100, Math.max(0, ((local.y - box.top) / box.height) * 100)),
+    xPercent: ((local.x - box.left) / box.width) * 100,
+    yPercent: ((local.y - box.top) / box.height) * 100,
   };
 }
 
