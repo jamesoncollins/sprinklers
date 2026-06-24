@@ -159,6 +159,7 @@ const zonesQuickTable = document.getElementById('zones-quick-table');
 const sprinklersQuickTable = document.getElementById('sprinklers-quick-table');
 const mapCanvas = document.getElementById('map-canvas');
 const mapWorld = document.getElementById('map-world');
+const canvasGrid = document.querySelector('.canvas-grid');
 const satelliteLayer = document.getElementById('satellite-layer');
 const imageLayer = document.getElementById('image-layer');
 const grassLayer = document.getElementById('grass-layer');
@@ -916,10 +917,6 @@ function normalizeGrassArea(area = {}, index = 0) {
     ? area.points
         .map((point) => ({ xPercent: Number(point.xPercent), yPercent: Number(point.yPercent) }))
         .filter((point) => Number.isFinite(point.xPercent) && Number.isFinite(point.yPercent))
-        .map((point) => ({
-          xPercent: Math.min(100, Math.max(0, point.xPercent)),
-          yPercent: Math.min(100, Math.max(0, point.yPercent)),
-        }))
     : [];
 
   return {
@@ -1014,6 +1011,7 @@ function mapViewTransform() {
 
 function applyMapViewTransform() {
   mapWorld.style.transform = mapViewTransform();
+  applyReferenceGridBounds();
   const { scale } = normalizeMapViewSettings(project.site?.mapView);
   sprinklerLayer.querySelectorAll('.sprinkler-marker').forEach((marker) => {
     marker.style.setProperty('--marker-scale', `${1 / scale}`);
@@ -1021,6 +1019,78 @@ function applyMapViewTransform() {
   sprinklerLayer.querySelectorAll('.arc-edit-handle').forEach((handle) => {
     handle.style.setProperty('--handle-scale', `${1 / scale}`);
   });
+}
+
+function currentViewportLocalBounds() {
+  const { width, height } = canvasCenter();
+  const corners = [
+    screenPointToLocalPoint(0, 0),
+    screenPointToLocalPoint(width, 0),
+    screenPointToLocalPoint(0, height),
+    screenPointToLocalPoint(width, height),
+  ];
+  return {
+    left: Math.min(...corners.map((point) => point.x)),
+    top: Math.min(...corners.map((point) => point.y)),
+    right: Math.max(...corners.map((point) => point.x)),
+    bottom: Math.max(...corners.map((point) => point.y)),
+  };
+}
+
+function expandBoundsToIncludePoint(bounds, point) {
+  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return bounds;
+  bounds.left = Math.min(bounds.left, point.x);
+  bounds.top = Math.min(bounds.top, point.y);
+  bounds.right = Math.max(bounds.right, point.x);
+  bounds.bottom = Math.max(bounds.bottom, point.y);
+  return bounds;
+}
+
+function percentPointToLocalPoint(point, box = activeCoordinateBox()) {
+  return {
+    x: box.left + (point.xPercent / 100) * box.width,
+    y: box.top + (point.yPercent / 100) * box.height,
+  };
+}
+
+function planningContentLocalBounds() {
+  const box = activeCoordinateBox();
+  const bounds = {
+    left: box.left,
+    top: box.top,
+    right: box.left + box.width,
+    bottom: box.top + box.height,
+  };
+
+  const viewportBounds = currentViewportLocalBounds();
+  expandBoundsToIncludePoint(bounds, { x: viewportBounds.left, y: viewportBounds.top });
+  expandBoundsToIncludePoint(bounds, { x: viewportBounds.right, y: viewportBounds.bottom });
+
+  project.sprinklers.forEach((sprinkler) => expandBoundsToIncludePoint(bounds, percentPointToLocalPoint(sprinkler, box)));
+  normalizeGrassAreas(project.site?.grassAreas).forEach((area) => {
+    area.points.forEach((point) => expandBoundsToIncludePoint(bounds, percentPointToLocalPoint(point, box)));
+  });
+  (grassDrawingState?.points || []).forEach((point) => expandBoundsToIncludePoint(bounds, percentPointToLocalPoint(point, box)));
+  normalizeDistanceScaleSettings(project.site?.distanceScale).points.forEach((point) => expandBoundsToIncludePoint(bounds, percentPointToLocalPoint(point, box)));
+
+  return bounds;
+}
+
+function applyReferenceGridBounds() {
+  if (!canvasGrid) return;
+  const bounds = planningContentLocalBounds();
+  const padding = 96;
+  const left = Math.floor(bounds.left - padding);
+  const top = Math.floor(bounds.top - padding);
+  const right = Math.ceil(bounds.right + padding);
+  const bottom = Math.ceil(bounds.bottom + padding);
+  canvasGrid.style.left = `${left}px`;
+  canvasGrid.style.top = `${top}px`;
+  canvasGrid.style.right = 'auto';
+  canvasGrid.style.bottom = 'auto';
+  canvasGrid.style.width = `${Math.max(0, right - left)}px`;
+  canvasGrid.style.height = `${Math.max(0, bottom - top)}px`;
+  canvasGrid.style.backgroundPosition = `${-left}px ${-top}px`;
 }
 
 function hasSatelliteCenter() {
@@ -1672,8 +1742,8 @@ function gpsToCanvasPosition(latitude, longitude) {
   const northFeet = deltaLatRad * earthRadiusFeet;
   const eastFeet = deltaLonRad * earthRadiusFeet * Math.cos((center.latitude * Math.PI) / 180);
   return {
-    xPercent: Math.min(100, Math.max(0, ((width / 2 + eastFeet / feetPerPixel) / width) * 100)),
-    yPercent: Math.min(100, Math.max(0, ((height / 2 - northFeet / feetPerPixel) / height) * 100)),
+    xPercent: ((width / 2 + eastFeet / feetPerPixel) / width) * 100,
+    yPercent: ((height / 2 - northFeet / feetPerPixel) / height) * 100,
   };
 }
 
@@ -3134,8 +3204,8 @@ function canvasPositionFromEvent(event) {
   const box = activeCoordinateBox();
   const local = screenPointToLocalPoint(event.clientX - rect.left, event.clientY - rect.top);
   return {
-    xPercent: Math.min(100, Math.max(0, ((local.x - box.left) / box.width) * 100)),
-    yPercent: Math.min(100, Math.max(0, ((local.y - box.top) / box.height) * 100)),
+    xPercent: ((local.x - box.left) / box.width) * 100,
+    yPercent: ((local.y - box.top) / box.height) * 100,
   };
 }
 
