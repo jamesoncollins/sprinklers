@@ -53,6 +53,12 @@ const imagerySources = {
 };
 
 const defaultCatalog = { label: 'Built-in sprinkler catalog', path: 'data/default-catalogs/default_sprinkler_catalog.csv' };
+const exampleProjects = {
+  tpcSawgrass: {
+    label: 'TPC Sawgrass demo project',
+    path: 'data/example_tpc_sawgrass_project.json',
+  },
+};
 
 const emptyProject = {
   version: 1,
@@ -99,6 +105,7 @@ let duplicateSprinklerTemplate = null;
 
 const newBtn = document.getElementById('new-project');
 const saveBtn = document.getElementById('save-project');
+const loadTpcDemoBtn = document.getElementById('load-tpc-demo');
 const loadInput = document.getElementById('load-project');
 const catalogInput = document.getElementById('load-catalog');
 const catalogStatus = document.getElementById('catalog-status');
@@ -3522,6 +3529,20 @@ async function loadDefaultCatalog() {
 
 newBtn.addEventListener('click', () => {
   hydrateProject(structuredClone(emptyProject), { suppressEmptyCanvasHint: false });
+});
+
+loadTpcDemoBtn.addEventListener('click', async () => {
+  try {
+    const example = exampleProjects.tpcSawgrass;
+    const response = await fetch(example.path);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    hydrateProject(await response.json(), { suppressEmptyCanvasHint: true });
+    setSatelliteStatus(`Loaded ${example.label}. Satellite imagery will appear as map tiles load.`);
+  } catch (error) {
+    alert(`Failed to load TPC Sawgrass demo project: ${error.message}`);
+  }
 });
 
 saveBtn.addEventListener('click', async () => {

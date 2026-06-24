@@ -1,0 +1,254 @@
+{
+    "version": 1,
+    "site": {
+        "name": "TPC Sawgrass 17th Hole Demo",
+        "address": "110 Championship Way, Ponte Vedra Beach, FL 32082",
+        "imageSource": "satellite",
+        "satellite": {
+            "latitude": 30.198,
+            "longitude": -81.394,
+            "zoom": 19,
+            "source": "esri-world"
+        },
+        "mapView": {
+            "scale": 1.35,
+            "panX": 0,
+            "panY": 0,
+            "rotationDegrees": 0
+        },
+        "precipitationContourInterval": 0.25,
+        "precipitationGridCellFeet": 2,
+        "precipitationScopeMode": "all",
+        "radialDecayScale": 0.287,
+        "grassAreas": [
+            {
+                "id": "grass-island-green-demo",
+                "name": "Illustrative island green",
+                "points": [
+                    {
+                        "xPercent": 41,
+                        "yPercent": 37
+                    },
+                    {
+                        "xPercent": 54,
+                        "yPercent": 34
+                    },
+                    {
+                        "xPercent": 63,
+                        "yPercent": 44
+                    },
+                    {
+                        "xPercent": 60,
+                        "yPercent": 59
+                    },
+                    {
+                        "xPercent": 48,
+                        "yPercent": 64
+                    },
+                    {
+                        "xPercent": 37,
+                        "yPercent": 55
+                    }
+                ]
+            },
+            {
+                "id": "grass-approach-demo",
+                "name": "Illustrative approach turf",
+                "points": [
+                    {
+                        "xPercent": 25,
+                        "yPercent": 66
+                    },
+                    {
+                        "xPercent": 48,
+                        "yPercent": 61
+                    },
+                    {
+                        "xPercent": 69,
+                        "yPercent": 70
+                    },
+                    {
+                        "xPercent": 75,
+                        "yPercent": 87
+                    },
+                    {
+                        "xPercent": 31,
+                        "yPercent": 90
+                    }
+                ]
+            }
+        ]
+    },
+    "zones": [
+        {
+            "id": "zone-green-ring",
+            "name": "Island Green Ring",
+            "pressurePsi": 90,
+            "measuredFlowGpm": 230,
+            "dynamicPressurePsi": null,
+            "waterShare": 1
+        },
+        {
+            "id": "zone-approach-rotors",
+            "name": "Approach Rotors",
+            "pressurePsi": 85,
+            "measuredFlowGpm": 180,
+            "dynamicPressurePsi": null,
+            "waterShare": 0.85
+        },
+        {
+            "id": "zone-perimeter-touchup",
+            "name": "Perimeter Touch-up",
+            "pressurePsi": 80,
+            "measuredFlowGpm": 150,
+            "dynamicPressurePsi": null,
+            "waterShare": 0.65
+        }
+    ],
+    "sprinklers": [
+        {
+            "id": "tpc-green-northwest",
+            "zoneId": "zone-green-ring",
+            "xPercent": 42,
+            "yPercent": 39,
+            "manufacturer": "Rain Bird",
+            "headModel": "EAGLE 900",
+            "nozzleModel": "#44 Blue",
+            "pressurePsi": 80,
+            "ratedPressurePsi": 80,
+            "pressureRegulating": false,
+            "arcDegrees": 210,
+            "orientationDegrees": 115,
+            "radiusFt": 71,
+            "flowGpm": 24.7,
+            "baseRadiusFt": 71,
+            "baseFlowGpm": 24.7
+        },
+        {
+            "id": "tpc-green-northeast",
+            "zoneId": "zone-green-ring",
+            "xPercent": 58,
+            "yPercent": 39,
+            "manufacturer": "Rain Bird",
+            "headModel": "EAGLE 900",
+            "nozzleModel": "#44 Blue",
+            "pressurePsi": 80,
+            "ratedPressurePsi": 80,
+            "pressureRegulating": false,
+            "arcDegrees": 210,
+            "orientationDegrees": 205,
+            "radiusFt": 71,
+            "flowGpm": 24.7,
+            "baseRadiusFt": 71,
+            "baseFlowGpm": 24.7
+        },
+        {
+            "id": "tpc-green-southeast",
+            "zoneId": "zone-green-ring",
+            "xPercent": 59,
+            "yPercent": 58,
+            "manufacturer": "Rain Bird",
+            "headModel": "EAGLE 900",
+            "nozzleModel": "#44 Blue",
+            "pressurePsi": 80,
+            "ratedPressurePsi": 80,
+            "pressureRegulating": false,
+            "arcDegrees": 210,
+            "orientationDegrees": 295,
+            "radiusFt": 71,
+            "flowGpm": 24.7,
+            "baseRadiusFt": 71,
+            "baseFlowGpm": 24.7
+        },
+        {
+            "id": "tpc-green-southwest",
+            "zoneId": "zone-green-ring",
+            "xPercent": 42,
+            "yPercent": 58,
+            "manufacturer": "Rain Bird",
+            "headModel": "EAGLE 900",
+            "nozzleModel": "#44 Blue",
+            "pressurePsi": 80,
+            "ratedPressurePsi": 80,
+            "pressureRegulating": false,
+            "arcDegrees": 210,
+            "orientationDegrees": 25,
+            "radiusFt": 71,
+            "flowGpm": 24.7,
+            "baseRadiusFt": 71,
+            "baseFlowGpm": 24.7
+        },
+        {
+            "id": "tpc-approach-left",
+            "zoneId": "zone-approach-rotors",
+            "xPercent": 35,
+            "yPercent": 76,
+            "manufacturer": "Rain Bird",
+            "headModel": "EAGLE 900",
+            "nozzleModel": "#48 Yellow",
+            "pressurePsi": 80,
+            "ratedPressurePsi": 80,
+            "pressureRegulating": false,
+            "arcDegrees": 180,
+            "orientationDegrees": 300,
+            "radiusFt": 75,
+            "flowGpm": 34.1,
+            "baseRadiusFt": 75,
+            "baseFlowGpm": 34.1
+        },
+        {
+            "id": "tpc-approach-right",
+            "zoneId": "zone-approach-rotors",
+            "xPercent": 65,
+            "yPercent": 76,
+            "manufacturer": "Rain Bird",
+            "headModel": "EAGLE 900",
+            "nozzleModel": "#48 Yellow",
+            "pressurePsi": 80,
+            "ratedPressurePsi": 80,
+            "pressureRegulating": false,
+            "arcDegrees": 180,
+            "orientationDegrees": 240,
+            "radiusFt": 75,
+            "flowGpm": 34.1,
+            "baseRadiusFt": 75,
+            "baseFlowGpm": 34.1
+        },
+        {
+            "id": "tpc-perimeter-west",
+            "zoneId": "zone-perimeter-touchup",
+            "xPercent": 30,
+            "yPercent": 51,
+            "manufacturer": "Rain Bird",
+            "headModel": "EAGLE 900",
+            "nozzleModel": "#44 Blue",
+            "pressurePsi": 70,
+            "ratedPressurePsi": 70,
+            "pressureRegulating": false,
+            "arcDegrees": 120,
+            "orientationDegrees": 35,
+            "radiusFt": 67,
+            "flowGpm": 23.5,
+            "baseRadiusFt": 67,
+            "baseFlowGpm": 23.5
+        },
+        {
+            "id": "tpc-perimeter-east",
+            "zoneId": "zone-perimeter-touchup",
+            "xPercent": 70,
+            "yPercent": 51,
+            "manufacturer": "Rain Bird",
+            "headModel": "EAGLE 900",
+            "nozzleModel": "#44 Blue",
+            "pressurePsi": 70,
+            "ratedPressurePsi": 70,
+            "pressureRegulating": false,
+            "arcDegrees": 120,
+            "orientationDegrees": 205,
+            "radiusFt": 67,
+            "flowGpm": 23.5,
+            "baseRadiusFt": 67,
+            "baseFlowGpm": 23.5
+        }
+    ]
+}
